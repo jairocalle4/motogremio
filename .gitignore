@@ -1,0 +1,26 @@
+# Dependencias
+node_modules/
+
+# Build
+dist/
+dist-ssr/
+
+# Entorno — NUNCA subir al repositorio
+.env.local
+.env.*.local
+
+# Logs
+*.log
+npm-debug.log*
+
+# Editor
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Sistema
+.DS_Store
+Thumbs.db

@@ -1,0 +1,121 @@
+import type { UserRole, MemberStatus, VehicleStatus, DocumentStatus, PaymentStatus, SanctionStatus, MeetingType, PlanName } from '@/types'
+
+// ─── Aplicación ───────────────────────────────────────
+export const APP_NAME = 'MotoGremio'
+export const APP_SLOGAN = 'Gestión inteligente para compañías de mototaxi'
+export const APP_VERSION = '0.1.0'
+
+// ─── Etiquetas de roles ───────────────────────────────
+export const ROLE_LABELS: Record<UserRole, string> = {
+  super_admin:   'Super Administrador',
+  admin_company: 'Administrador',
+  gerente:       'Gerente',
+  presidente:    'Presidente',
+  secretaria:    'Secretaria',
+  tesorero:      'Tesorero',
+  socio:         'Socio',
+}
+
+export const ROLE_COLORS: Record<UserRole, string> = {
+  super_admin:   'bg-purple-100 text-purple-800',
+  admin_company: 'bg-primary-100 text-primary-800',
+  gerente:       'bg-blue-100 text-blue-800',
+  presidente:    'bg-indigo-100 text-indigo-800',
+  secretaria:    'bg-teal-100 text-teal-800',
+  tesorero:      'bg-amber-100 text-amber-800',
+  socio:         'bg-gray-100 text-gray-700',
+}
+
+// ─── Estados de socio ─────────────────────────────────
+export const MEMBER_STATUS_LABELS: Record<MemberStatus, string> = {
+  activo:     'Activo',
+  suspendido: 'Suspendido',
+  retirado:   'Retirado',
+  fallecido:  'Fallecido',
+}
+
+export const MEMBER_STATUS_COLORS: Record<MemberStatus, string> = {
+  activo:     'bg-success-50 text-success-700 border-success-200',
+  suspendido: 'bg-warning-50 text-warning-700 border-warning-200',
+  retirado:   'bg-gray-100 text-gray-600 border-gray-200',
+  fallecido:  'bg-gray-100 text-gray-500 border-gray-200',
+}
+
+// ─── Estados de unidad ────────────────────────────────
+export const VEHICLE_STATUS_LABELS: Record<VehicleStatus, string> = {
+  activa:        'Activa',
+  suspendida:    'Suspendida',
+  inactiva:      'Inactiva',
+  en_reparacion: 'En reparación',
+  retirada:      'Retirada',
+}
+
+export const VEHICLE_STATUS_COLORS: Record<VehicleStatus, string> = {
+  activa:        'bg-success-50 text-success-700 border-success-200',
+  suspendida:    'bg-warning-50 text-warning-700 border-warning-200',
+  inactiva:      'bg-gray-100 text-gray-600 border-gray-200',
+  en_reparacion: 'bg-orange-50 text-orange-700 border-orange-200',
+  retirada:      'bg-gray-100 text-gray-500 border-gray-200',
+}
+
+// ─── Estados de documento ─────────────────────────────
+export const DOCUMENT_STATUS_LABELS: Record<DocumentStatus, string> = {
+  vigente:   'Vigente',
+  por_vencer: 'Por vencer',
+  vencido:   'Vencido',
+}
+
+export const DOCUMENT_STATUS_COLORS: Record<DocumentStatus, string> = {
+  vigente:   'bg-success-50 text-success-700 border-success-200',
+  por_vencer: 'bg-warning-50 text-warning-700 border-warning-200',
+  vencido:   'bg-danger-50 text-danger-700 border-danger-200',
+}
+
+// ─── Estados de pago ──────────────────────────────────
+export const PAYMENT_STATUS_LABELS: Record<PaymentStatus, string> = {
+  pagado:   'Pagado',
+  pendiente: 'Pendiente',
+  moroso:   'Moroso',
+  anulado:  'Anulado',
+}
+
+export const PAYMENT_STATUS_COLORS: Record<PaymentStatus, string> = {
+  pagado:   'bg-success-50 text-success-700 border-success-200',
+  pendiente: 'bg-warning-50 text-warning-700 border-warning-200',
+  moroso:   'bg-danger-50 text-danger-700 border-danger-200',
+  anulado:  'bg-gray-100 text-gray-500 border-gray-200',
+}
+
+// ─── Estados de sanción ───────────────────────────────
+export const SANCTION_STATUS_LABELS: Record<SanctionStatus, string> = {
+  pendiente: 'Pendiente',
+  aplicada:  'Aplicada',
+  anulada:   'Anulada',
+  cumplida:  'Cumplida',
+}
+
+// ─── Tipos de reunión ─────────────────────────────────
+export const MEETING_TYPE_LABELS: Record<MeetingType, string> = {
+  ordinaria:     'Ordinaria',
+  extraordinaria: 'Extraordinaria',
+  urgente:       'Urgente',
+}
+
+// ─── Planes ───────────────────────────────────────────
+export const PLAN_LABELS: Record<PlanName, string> = {
+  basico:    'Básico',
+  estandar:  'Estándar',
+  premium:   'Premium',
+}
+
+export const PLAN_COLORS: Record<PlanName, string> = {
+  basico:   'bg-gray-100 text-gray-700',
+  estandar: 'bg-primary-100 text-primary-800',
+  premium:  'bg-purple-100 text-purple-800',
+}
+
+// ─── Paginación ───────────────────────────────────────
+export const DEFAULT_PAGE_SIZE = 20
+
+// ─── Alertas de vencimiento ───────────────────────────
+export const EXPIRY_WARNING_DAYS = 30  // días antes del vencimiento para mostrar alerta
