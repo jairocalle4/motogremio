@@ -1,13 +1,21 @@
 import { Navigate, Outlet, useLocation } from 'react-router-dom'
 import { useAuth } from '@/context/useAuth'
+import { usePermissions } from '@/hooks/usePermissions'
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
+import type { UserRole } from '@/types'
+
+interface ProtectedRouteProps {
+  allowedRoles?: UserRole[]
+}
 
 /**
  * Protege rutas que requieren autenticación.
  * Redirige al login si no hay sesión activa.
+ * Valida roles permitidos si se especifica allowedRoles.
  */
-export function ProtectedRoute() {
+export function ProtectedRoute({ allowedRoles }: ProtectedRouteProps) {
   const { user, loading } = useAuth()
+  const { role } = usePermissions()
   const location = useLocation()
 
   if (loading) {
@@ -20,6 +28,10 @@ export function ProtectedRoute() {
 
   if (!user) {
     return <Navigate to="/login" state={{ from: location }} replace />
+  }
+
+  if (allowedRoles && role && !allowedRoles.includes(role)) {
+    return <Navigate to="/dashboard" replace />
   }
 
   return <Outlet />

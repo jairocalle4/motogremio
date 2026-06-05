@@ -54,53 +54,43 @@ Reglas obligatorias:
 
 ---
 
-## 4. Usuarios y roles
+## 4. Usuarios y roles y Escenarios de Uso
 
-El sistema debe contemplar como mínimo estos roles:
+El sistema no debe asumir que todas las compañías de mototaxis tienen varios usuarios usando el sistema. Muchas compañías pequeñas pueden operar con una sola persona encargada de registrar socios, unidades, documentos, pagos y convocatorias.
 
-### Superadministrador SaaS
+### Regla principal de administración de compañía
 
-Pertenece al propietario del producto.
+El rol `admin` representa al administrador principal de una compañía y puede gestionar todos los módulos de su propia compañía. Este rol puede ser asignado al gerente, presidente, secretaria o encargado de oficina, según la realidad de cada compañía.
 
-Puede:
+### Roles vigentes del sistema
 
-* Registrar compañías.
-* Activar o suspender compañías.
-* Administrar planes.
-* Consultar suscripciones.
-* Consultar métricas generales del SaaS.
-* Gestionar configuraciones globales.
+* **`super_admin`**: propietario global y administrador de MotoGremio.
+* **`admin`**: administrador total de una compañía. Acceso total a los datos de su compañía y gestión de todos los módulos.
+* **`gerente`**: gestión y supervisión general. Lectura general y supervisión; edición limitada según módulo.
+* **`presidente`**: supervisión directiva, reuniones, sanciones y reportes. Sin acceso a finanzas y edición de socios.
+* **`secretaria`**: gestión operativa y alta capacidad de socios, unidades, documentos, convocatorias, asistencia y actas.
+* **`tesorero`**: gestión financiera de cuotas, pagos, deudas, multas y reportes financieros. Lectura de socios y unidades.
+* **`operador`**: rol auxiliar configurable o limitado para apoyo administrativo.
+* **`socio`**: acceso individual del socio/conductor a sus propios datos, cuando el plan de la compañía lo habilite.
 
-### Administrador de compañía
+### Escenarios de uso
 
-Usuario principal de una compañía.
+* **Compañía pequeña**: Puede tener un solo usuario con el rol `admin`, quien controla todo el sistema.
+* **Compañía mediana**: Puede tener un usuario `admin`, una `secretaria` y un `tesorero`.
+* **Compañía organizada**: Puede usar todos los roles separados: gerente, presidente, secretaria, tesorero y socios.
+* **Socios/conductores**: No es obligatorio que los socios usen el sistema desde la primera versión. El registro de socios y unidades será realizado principalmente por el administrador o personal de oficina.
 
-Puede:
+### Permisos base iniciales
 
-* Configurar los datos de su compañía.
-* Administrar usuarios internos.
-* Gestionar socios, unidades, pagos, documentos, sanciones y reuniones.
-* Consultar reportes.
+* **`admin`**: Acceso total a los datos de su compañía.
+* **`gerente`**: Lectura general y supervisión; edición limitada según módulo.
+* **`presidente`**: Lectura directiva, reuniones, sanciones y reportes.
+* **`secretaria`**: Alta capacidad operativa en socios, unidades, documentos, convocatorias, asistencias y actas.
+* **`tesorero`**: Acceso completo a finanzas; lectura de socios y unidades.
+* **`operador`**: Acceso limitado configurable.
+* **`socio`**: Solo datos propios (opcional, futuro).
 
-### Gerente
-
-Puede consultar y administrar información institucional y operativa según permisos asignados.
-
-### Presidente
-
-Puede consultar socios, unidades, reuniones, sanciones y reportes administrativos.
-
-### Secretaria
-
-Puede registrar socios, documentos, convocatorias, asistencias y actas.
-
-### Tesorero
-
-Puede gestionar pagos, cuotas, multas, deudas, comprobantes y reportes financieros.
-
-### Socio
-
-En versiones avanzadas podrá consultar sus propios datos, estado de cuenta, documentos, convocatorias, sanciones y notificaciones.
+No implementar todavía permisos personalizados por usuario, pero dejar la arquitectura preparada para una futura tabla de permisos avanzados si el producto lo requiere.
 
 ---
 

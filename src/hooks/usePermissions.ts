@@ -13,61 +13,77 @@ export function usePermissions() {
   const role = profile?.role
 
   const isSuperAdmin = role === 'super_admin'
-  const isAdminCompany = role === 'admin_company'
-  const isGerente = role === 'gerente'
+  const isAdmin      = role === 'admin'
+  const isGerente    = role === 'gerente'
   const isPresidente = role === 'presidente'
   const isSecretaria = role === 'secretaria'
-  const isTesorero = role === 'tesorero'
-  const isSocio = role === 'socio'
+  const isTesorero   = role === 'tesorero'
+  const isOperador   = role === 'operador'
+  const isSocio      = role === 'socio'
 
   /** True si el rol del usuario es uno de los indicados */
   const hasRole = (...roles: UserRole[]) => !!role && roles.includes(role)
 
-  /** True si puede gestionar (crear/editar/eliminar) socios */
-  const canManageMembers = hasRole('super_admin', 'admin_company', 'gerente', 'secretaria')
+  /** Gestión de socios */
+  const canManageMembers = hasRole('super_admin', 'admin', 'secretaria')
+  const canViewMembers   = hasRole('super_admin', 'admin', 'gerente', 'presidente', 'secretaria', 'tesorero', 'operador')
 
-  /** True si puede ver socios (lectura) */
-  const canViewMembers = hasRole('super_admin', 'admin_company', 'gerente', 'presidente', 'secretaria', 'tesorero')
+  /** Gestión de unidades / mototaxis */
+  const canManageVehicles = hasRole('super_admin', 'admin', 'secretaria')
+  const canViewVehicles   = hasRole('super_admin', 'admin', 'gerente', 'presidente', 'secretaria', 'tesorero', 'operador')
 
-  /** True si puede gestionar pagos */
-  const canManagePayments = hasRole('super_admin', 'admin_company', 'tesorero')
+  /** Gestión de documentos y licencias */
+  const canManageDocuments = hasRole('super_admin', 'admin', 'secretaria')
+  const canViewDocuments   = hasRole('super_admin', 'admin', 'gerente', 'presidente', 'secretaria', 'tesorero', 'operador')
 
-  /** True si puede ver pagos */
-  const canViewPayments = hasRole('super_admin', 'admin_company', 'gerente', 'presidente', 'tesorero')
+  /** Gestión financiera / pagos */
+  const canManagePayments = hasRole('super_admin', 'admin', 'tesorero')
+  const canViewPayments   = hasRole('super_admin', 'admin', 'gerente', 'tesorero', 'operador')
 
-  /** True si puede gestionar sanciones */
-  const canManageSanctions = hasRole('super_admin', 'admin_company', 'gerente', 'secretaria')
+  /** Gestión de sanciones */
+  const canManageSanctions = hasRole('super_admin', 'admin', 'gerente', 'secretaria')
+  const canViewSanctions   = hasRole('super_admin', 'admin', 'gerente', 'presidente', 'secretaria', 'operador')
 
-  /** True si puede gestionar convocatorias */
-  const canManageMeetings = hasRole('super_admin', 'admin_company', 'gerente', 'secretaria')
+  /** Gestión de convocatorias, reuniones y asistencias */
+  const canManageMeetings = hasRole('super_admin', 'admin', 'gerente', 'secretaria')
+  const canViewMeetings   = hasRole('super_admin', 'admin', 'gerente', 'presidente', 'secretaria', 'operador')
 
-  /** True si puede ver reportes */
-  const canViewReports = hasRole('super_admin', 'admin_company', 'gerente', 'presidente', 'tesorero')
+  /** Gestión de reportes */
+  const canViewReports = hasRole('super_admin', 'admin', 'gerente', 'presidente', 'tesorero', 'operador')
 
-  /** True si puede gestionar usuarios y roles */
-  const canManageUsers = hasRole('super_admin', 'admin_company')
+  /** Gestión de configuraciones y usuarios */
+  const canManageUsers = hasRole('super_admin', 'admin')
+  const canManageCoopeSettings = hasRole('super_admin', 'admin')
 
-  /** True si puede ver el panel de super administrador */
+  /** Panel de super administrador del SaaS */
   const canAccessSaasAdmin = isSuperAdmin
 
   return {
     role,
     isSuperAdmin,
-    isAdminCompany,
+    isAdmin,
     isGerente,
     isPresidente,
     isSecretaria,
     isTesorero,
+    isOperador,
     isSocio,
     hasRole,
     canManageMembers,
     canViewMembers,
+    canManageVehicles,
+    canViewVehicles,
+    canManageDocuments,
+    canViewDocuments,
     canManagePayments,
     canViewPayments,
     canManageSanctions,
+    canViewSanctions,
     canManageMeetings,
+    canViewMeetings,
     canViewReports,
     canManageUsers,
+    canManageCoopeSettings,
     canAccessSaasAdmin,
   }
 }

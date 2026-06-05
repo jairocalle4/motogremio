@@ -4,11 +4,12 @@
 
 export type UserRole =
   | 'super_admin'
-  | 'admin_company'
+  | 'admin'
   | 'gerente'
   | 'presidente'
   | 'secretaria'
   | 'tesorero'
+  | 'operador'
   | 'socio'
 
 export type CompanyStatus = 'activa' | 'suspendida' | 'inactiva'

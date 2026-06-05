@@ -7,23 +7,25 @@ export const APP_VERSION = '0.1.0'
 
 // ─── Etiquetas de roles ───────────────────────────────
 export const ROLE_LABELS: Record<UserRole, string> = {
-  super_admin:   'Super Administrador',
-  admin_company: 'Administrador',
-  gerente:       'Gerente',
-  presidente:    'Presidente',
-  secretaria:    'Secretaria',
-  tesorero:      'Tesorero',
-  socio:         'Socio',
+  super_admin: 'Super Administrador',
+  admin:       'Administrador',
+  gerente:     'Gerente',
+  presidente:  'Presidente',
+  secretaria:  'Secretaria',
+  tesorero:    'Tesorero',
+  operador:    'Operador',
+  socio:       'Socio',
 }
 
 export const ROLE_COLORS: Record<UserRole, string> = {
-  super_admin:   'bg-purple-100 text-purple-800',
-  admin_company: 'bg-primary-100 text-primary-800',
-  gerente:       'bg-blue-100 text-blue-800',
-  presidente:    'bg-indigo-100 text-indigo-800',
-  secretaria:    'bg-teal-100 text-teal-800',
-  tesorero:      'bg-amber-100 text-amber-800',
-  socio:         'bg-gray-100 text-gray-700',
+  super_admin: 'bg-purple-100 text-purple-800',
+  admin:       'bg-primary-100 text-primary-800',
+  gerente:     'bg-blue-100 text-blue-800',
+  presidente:  'bg-indigo-100 text-indigo-800',
+  secretaria:  'bg-teal-100 text-teal-800',
+  tesorero:    'bg-amber-100 text-amber-800',
+  operador:    'bg-gray-100 text-gray-800',
+  socio:       'bg-gray-100 text-gray-700',
 }
 
 // ─── Estados de socio ─────────────────────────────────

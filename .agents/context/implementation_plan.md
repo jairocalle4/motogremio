@@ -108,5 +108,26 @@ Realizaremos una lectura de las unidades simulando la sesión del Admin Alfa. El
 > [!IMPORTANT]
 > **Aprobación Definitiva de Arquitectura**
 >
-> Todas las observaciones han sido corregidas mediante tablas dedicadas. Las migraciones están actualizadas localmente.
-> Si la matriz y la expansión de la BD te satisfacen, responde "Aprobado" para aplicar finalmente estas bases remotamente en el proyecto Supabase `motogremio-ec-dev`.
+> Todas las observaciones han sido corregidas mediante tablas dedicadas. Las migraciones están actualizadas localmente y aplicadas remotamente.
+
+## 6. Actualización de Roles y Permisos (Decisión de Negocio Junio 2026)
+
+Se actualiza el modelo para no obligar a las cooperativas pequeñas a tener múltiples usuarios. Un único usuario con rol `admin` puede realizar toda la operatividad.
+
+### Matriz de Permisos Base del Frontend
+
+| Módulo / Recurso | admin | gerente | presidente | secretaria | tesorero | operador | socio |
+| :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| **Socios** | CRUD | L (Limitado) | L | CUD | L | L | Propios |
+| **Unidades** | CRUD | L (Limitado) | L | CUD | L | L | Propios |
+| **Documentos** | CRUD | L | L | CRUD | L | L | Propios |
+| **Pagos/Finanzas** | CRUD | L | - | - | CRUD | L | Propios |
+| **Sanciones** | CRUD | CRUD | L | CRUD | - | L | Propios |
+| **Convocatorias** | CRUD | CRUD | L | CRUD | - | L | L |
+| **Asistencias** | CRUD | CRUD | L | CRUD | - | L | L |
+| **Reportes** | CRUD | L | L | L | Finanzas | L | - |
+| **Usuarios/Roles** | CRUD | - | - | - | - | - | - |
+| **Config. Coope** | CRUD | - | - | - | - | - | - |
+
+*Leyenda: CRUD = Crear/Leer/Actualizar/Borrar; CUD = Crear/Actualizar/Borrar; L = Solo Leer; - = Sin Acceso.*
+
