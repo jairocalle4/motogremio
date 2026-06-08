@@ -4,7 +4,7 @@ import { cn } from '@/lib/utils'
 
 interface ModalProps {
   isOpen:        boolean
-  onClose:       () => void
+  onClose?:      () => void
   title:         string
   children:      ReactNode
   footer?:       ReactNode
@@ -28,7 +28,7 @@ export function Modal({
   // Cerrar con Escape
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && isOpen) onClose()
+      if (e.key === 'Escape' && isOpen) onClose?.()
     }
     document.addEventListener('keydown', handleKey)
     return () => document.removeEventListener('keydown', handleKey)
@@ -51,7 +51,7 @@ export function Modal({
       ref={overlayRef}
       className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-fade-in"
       onClick={(e) => {
-        if (closeOnOverlay && e.target === overlayRef.current) onClose()
+        if (closeOnOverlay && e.target === overlayRef.current) onClose?.()
       }}
     >
       {/* Overlay */}
@@ -74,9 +74,10 @@ export function Modal({
             {title}
           </h2>
           <button
-            onClick={onClose}
-            className="p-1 rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
+            onClick={onClose ?? undefined}
+            className="p-1 rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
             aria-label="Cerrar"
+            disabled={!onClose}
           >
             <X className="h-5 w-5" />
           </button>
