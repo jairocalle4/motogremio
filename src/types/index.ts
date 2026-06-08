@@ -55,10 +55,11 @@ export interface Company {
   phone: string | null
   email: string | null
   legal_rep: string | null
-  manager: string | null
-  president: string | null
-  secretary: string | null
-  treasurer: string | null
+  manager_name: string | null
+  president_name: string | null
+  secretary_name: string | null
+  treasurer_name: string | null
+  institutional_info: string | null
   operation_permit: string | null
   max_vehicles: number | null
   plan_id: string | null

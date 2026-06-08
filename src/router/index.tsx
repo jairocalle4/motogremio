@@ -5,6 +5,7 @@ import { AppLayout } from '@/components/layout/AppLayout'
 import { LoginPage } from '@/features/auth/LoginPage'
 import { DashboardPage } from '@/features/dashboard/DashboardPage'
 import { ChangePasswordPage } from '@/features/account/ChangePasswordPage'
+import { CompanyConfigPage } from '@/features/company/CompanyConfigPage'
 
 // ─── Páginas placeholder (se crearán en Fase 3–5) ─────
 const Placeholder = ({ title }: { title: string }) => (
@@ -58,7 +59,7 @@ export function AppRouter() {
                 {/* Administración interna */}
                 <Route path="/usuarios"      element={<Placeholder title="Usuarios y Roles" />} />
                 <Route path="/auditoria"     element={<Placeholder title="Auditoría" />} />
-                <Route path="/configuracion" element={<Placeholder title="Configuración" />} />
+                <Route path="/configuracion" element={<CompanyConfigPage />} />
               </Route>
 
               {/* Super admin — Fase 5 */}

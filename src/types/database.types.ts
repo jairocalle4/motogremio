@@ -1,4 +1,4 @@
-﻿export type Json =
+export type Json =
   | string
   | number
   | boolean
@@ -195,13 +195,18 @@ export type Database = {
           created_at: string | null
           email: string | null
           id: string
+          institutional_info: string | null
           legal_name: string
           logo_url: string | null
+          manager_name: string | null
           phone: string | null
           plan_id: string | null
+          president_name: string | null
           ruc: string
+          secretary_name: string | null
           status: string | null
           trade_name: string | null
+          treasurer_name: string | null
           updated_at: string | null
         }
         Insert: {
@@ -209,13 +214,18 @@ export type Database = {
           created_at?: string | null
           email?: string | null
           id?: string
+          institutional_info?: string | null
           legal_name: string
           logo_url?: string | null
+          manager_name?: string | null
           phone?: string | null
           plan_id?: string | null
+          president_name?: string | null
           ruc: string
+          secretary_name?: string | null
           status?: string | null
           trade_name?: string | null
+          treasurer_name?: string | null
           updated_at?: string | null
         }
         Update: {
@@ -223,13 +233,18 @@ export type Database = {
           created_at?: string | null
           email?: string | null
           id?: string
+          institutional_info?: string | null
           legal_name?: string
           logo_url?: string | null
+          manager_name?: string | null
           phone?: string | null
           plan_id?: string | null
+          president_name?: string | null
           ruc?: string
+          secretary_name?: string | null
           status?: string | null
           trade_name?: string | null
+          treasurer_name?: string | null
           updated_at?: string | null
         }
         Relationships: [
@@ -1290,6 +1305,18 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      assign_user_role: {
+        Args: {
+          target_company_id: string
+          target_role: Database["public"]["Enums"]["user_role"]
+          target_user_id: string
+        }
+        Returns: undefined
+      }
+      bootstrap_first_super_admin: {
+        Args: { target_user: string }
+        Returns: undefined
+      }
       get_my_company_id: { Args: never; Returns: string }
       is_super_admin: { Args: never; Returns: boolean }
     }
