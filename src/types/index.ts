@@ -13,7 +13,7 @@ export type UserRole =
   | 'socio'
 
 export type CompanyStatus = 'activa' | 'suspendida' | 'inactiva'
-export type MemberStatus  = 'activo' | 'suspendido' | 'retirado' | 'fallecido'
+export type MemberStatus  = 'activo' | 'inactivo' | 'suspendido'
 export type VehicleStatus = 'activa' | 'suspendida' | 'inactiva' | 'en_reparacion' | 'retirada'
 export type DocumentStatus  = 'vigente' | 'por_vencer' | 'vencido'
 export type PaymentStatus   = 'pagado'  | 'pendiente'  | 'moroso'  | 'anulado'
@@ -94,19 +94,19 @@ export interface Profile {
 export interface Member {
   id: string
   company_id: string
-  cedula: string
+  profile_id: string | null
+  document_id: string
   first_name: string
   last_name: string
-  birth_date: string | null
-  address: string | null
-  phone: string | null
-  whatsapp: string | null
   email: string | null
-  photo_url: string | null
-  join_date: string
+  phone: string | null
+  address: string | null
   status: MemberStatus
-  observations: string | null
-  created_by: string | null
+  admission_date: string
+  blood_type: string | null
+  emergency_contact_name: string | null
+  emergency_contact_phone: string | null
+  notes: string | null
   created_at: string
   updated_at: string
   licenses?: MemberLicense[]

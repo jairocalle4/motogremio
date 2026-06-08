@@ -6,6 +6,8 @@ import { LoginPage } from '@/features/auth/LoginPage'
 import { DashboardPage } from '@/features/dashboard/DashboardPage'
 import { ChangePasswordPage } from '@/features/account/ChangePasswordPage'
 import { CompanyConfigPage } from '@/features/company/CompanyConfigPage'
+import { MembersListPage } from '@/features/members/MembersListPage'
+import { MemberDetailPage } from '@/features/members/MemberDetailPage'
 
 // ─── Páginas placeholder (se crearán en Fase 3–5) ─────
 const Placeholder = ({ title }: { title: string }) => (
@@ -41,8 +43,8 @@ export function AppRouter() {
               {/* Rutas de Compañía (Cooperativa) */}
               <Route element={<ProtectedRoute allowedRoles={['admin', 'gerente', 'presidente', 'secretaria', 'tesorero', 'operador', 'socio']} />}>
                 {/* Módulos — Fase 3 */}
-                <Route path="/socios"        element={<Placeholder title="Gestión de Socios" />} />
-                <Route path="/socios/:id"    element={<Placeholder title="Perfil de Socio" />} />
+                <Route path="/socios"        element={<MembersListPage />} />
+                <Route path="/socios/:id"    element={<MemberDetailPage />} />
                 <Route path="/unidades"      element={<Placeholder title="Unidades / Mototaxis" />} />
                 <Route path="/unidades/:id"  element={<Placeholder title="Perfil de Unidad" />} />
                 <Route path="/pagos"         element={<Placeholder title="Pagos y Cuotas" />} />

@@ -28,19 +28,16 @@ export const ROLE_COLORS: Record<UserRole, string> = {
   socio:       'bg-gray-100 text-gray-700',
 }
 
-// ─── Estados de socio ─────────────────────────────────
 export const MEMBER_STATUS_LABELS: Record<MemberStatus, string> = {
   activo:     'Activo',
+  inactivo:   'Inactivo',
   suspendido: 'Suspendido',
-  retirado:   'Retirado',
-  fallecido:  'Fallecido',
 }
 
 export const MEMBER_STATUS_COLORS: Record<MemberStatus, string> = {
   activo:     'bg-success-50 text-success-700 border-success-200',
+  inactivo:   'bg-gray-100 text-gray-600 border-gray-200',
   suspendido: 'bg-warning-50 text-warning-700 border-warning-200',
-  retirado:   'bg-gray-100 text-gray-600 border-gray-200',
-  fallecido:  'bg-gray-100 text-gray-500 border-gray-200',
 }
 
 // ─── Estados de unidad ────────────────────────────────
