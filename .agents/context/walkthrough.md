@@ -1,28 +1,63 @@
-# Walkthrough de Actualización de Roles, Permisos y Sincronización Git
+# Walkthrough — Validación de Login super_admin y Fixes de Flujo
 
-Se ha completado de forma exitosa la actualización del sistema de roles y la matriz de permisos de la aplicación en base a las nuevas decisiones de negocio. Todo el progreso ha sido compilado y subido al repositorio remoto de Git.
+## Estado actual del proyecto (08 Jun 2026)
 
-## 1. Cambios Realizados y Verificados
+Fases 1 y 2 completadas. Bootstrap del super_admin ejecutado exitosamente en Supabase.
+El siguiente paso es la **Fase 3 — Núcleo administrativo** (socios, unidades, documentos, pagos).
 
-* **Actualización en Reglas de Negocio:**
-  * Modificación de [`project-context.md`](file:///c:/Users/Admin/Desktop/JAIRO/PROYECTOS/SAS%20Mototaxis/.agents/rules/project-context.md) y [`implementation_plan.md`](file:///c:/Users/Admin/Desktop/JAIRO/PROYECTOS/SAS%20Mototaxis/.agents/context/implementation_plan.md) para añadir el nuevo enfoque de cooperativas pequeñas (operadas por un solo `admin` total) y documentar la matriz de permisos inicial.
-* **Refactorización del Enum de Roles:**
-  * Reemplazo del término técnico `'admin_company'` por `'admin'` en TypeScript ([`index.ts`](file:///c:/Users/Admin/Desktop/JAIRO/PROYECTOS/SAS%20Mototaxis/src/types/index.ts)) para lograr compatibilidad 1:1 con el enum de PostgreSQL en Supabase.
-  * Adición del rol `'operador'` al frontend.
-  * Modificación de etiquetas (`ROLE_LABELS`) y colores de credencial (`ROLE_COLORS`) en [`constants.ts`](file:///c:/Users/Admin/Desktop/JAIRO/PROYECTOS/SAS%20Mototaxis/src/lib/constants.ts).
-* **Control de Acceso y Enrutador (Guards):**
-  * Modificación de [`usePermissions.ts`](file:///c:/Users/Admin/Desktop/JAIRO/PROYECTOS/SAS%20Mototaxis/src/hooks/usePermissions.ts) para implementar la nueva lógica de permisos basada en la matriz definida.
-  * Extensión de [`ProtectedRoute.tsx`](file:///c:/Users/Admin/Desktop/JAIRO/PROYECTOS/SAS%20Mototaxis/src/router/ProtectedRoute.tsx) para admitir una lista de roles permitidos (`allowedRoles`).
-  * Segmentación en [`index.tsx`](file:///c:/Users/Admin/Desktop/JAIRO/PROYECTOS/SAS%20Mototaxis/src/router/index.tsx) para bloquear el acceso de usuarios cooperativos a las rutas de `/admin/*` (reservadas a `super_admin`) y restringir las rutas de la cooperativa al conjunto de roles operativos.
+---
 
-## 2. Pruebas y Validación
+## Último commit: `fix(auth): fix super_admin login flow`
 
-* **Compilación:** Se ejecutó `npm run build` con éxito (0 errores en compilación de TypeScript y empaquetado de Vite).
-* **Integración Base de Datos:** Los nombres de roles ahora corresponden exactamente con la base de datos remota en `motogremio-ec-dev`.
+### Fixes aplicados
 
-## 3. Sincronización con Git
+#### 1. Race condition en `ProtectedRoute.tsx`
+- **Problema:** La verificación de `allowedRoles` se ejecutaba antes de que el perfil terminara de cargarse,
+  causando un redirect prematuro cuando `role` aún era `null`.
+- **Fix:** Se añadió `!loading` a la condición de comprobación de roles.
 
-Todos los cambios fueron agregados y confirmados en el repositorio:
-* **Commit:** `feat(auth): refactor user roles and update permissions matrix based on business decisions`
-* **Rama:** `main`
-* **Repositorio Remoto:** `https://github.com/jairocalle4/motogremio.git` (Push exitoso).
+```tsx
+// Antes
+if (allowedRoles && role && !allowedRoles.includes(role))
+
+// Ahora
+if (allowedRoles && !loading && role && !allowedRoles.includes(role))
+```
+
+#### 2. Ruta `/admin/configuracion` faltante en `router/index.tsx`
+- El Sidebar del super_admin tenía el link pero el router no lo tenía registrado.
+- Fix: Se añadió `<Route path="/admin/configuracion" element={...} />` al grupo de rutas del super_admin.
+
+#### 3. Título faltante en `Header.tsx`
+- La ruta `/admin/configuracion` mostraba "MotoGremio" como título de página.
+- Fix: Se añadió la entrada `'/admin/configuracion': 'Configuración Global'` al mapa `PAGE_TITLES`.
+
+---
+
+## Flujo del super_admin validado
+
+| Verificación | Estado |
+|:--|:--|
+| Login desde `/login` | ✅ Funciona |
+| AuthContext carga perfil desde `public.profiles` | ✅ Funciona |
+| Sistema detecta `role = super_admin` | ✅ Funciona |
+| Sidebar muestra menú de administración SaaS | ✅ Funciona |
+| Dashboard muestra panel global (no panel cooperativa) | ✅ Funciona |
+| Rutas de cooperativa (`/socios`, etc.) redirigen a `/dashboard` | ✅ Funciona |
+| Rutas de admin (`/admin/*`) accesibles solo para super_admin | ✅ Funciona |
+| `npm run lint` | ✅ 0 errores, 0 warnings |
+| `npm run build` | ✅ Sin errores TypeScript |
+
+---
+
+## Próximo paso — Fase 3
+
+Módulos a construir (en orden sugerido):
+1. **Socios** — CRUD completo, filtros, perfil individual, licencias
+2. **Unidades/Mototaxis** — CRUD con número de disco único, asignación de socio
+3. **Documentos** — Por compañía, socio y unidad, con alertas de vencimiento
+4. **Pagos y cuotas** — Tipos de cobro, registro de pagos, estado de cuenta
+
+Antes de empezar Fase 3, crear usuarios de prueba:
+- `admin.alfa@motogremio.ec` → rol `admin`, vinculado a Compañía Alfa Demo S.A.
+- `admin.beta@motogremio.ec` → rol `admin`, vinculado a Compañía Beta Demo S.A.

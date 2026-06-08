@@ -7,8 +7,9 @@ import type { PlanName } from '@/types'
 
 // Mapa de rutas a títulos de página
 const PAGE_TITLES: Record<string, string> = {
-  '/dashboard':          'Dashboard',
-  '/socios':             'Socios',
+  '/dashboard':           'Dashboard',
+  '/account/security':    'Seguridad de la cuenta',
+  '/socios':              'Socios',
   '/unidades':           'Unidades',
   '/pagos':              'Pagos y Cuotas',
   '/documentos':         'Documentos y Vencimientos',

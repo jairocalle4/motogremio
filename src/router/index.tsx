@@ -4,6 +4,7 @@ import { ProtectedRoute } from './ProtectedRoute'
 import { AppLayout } from '@/components/layout/AppLayout'
 import { LoginPage } from '@/features/auth/LoginPage'
 import { DashboardPage } from '@/features/dashboard/DashboardPage'
+import { ChangePasswordPage } from '@/features/account/ChangePasswordPage'
 
 // ─── Páginas placeholder (se crearán en Fase 3–5) ─────
 const Placeholder = ({ title }: { title: string }) => (
@@ -32,6 +33,9 @@ export function AppRouter() {
               {/* Dashboard común */}
               <Route index element={<Navigate to="/dashboard" replace />} />
               <Route path="/dashboard" element={<DashboardPage />} />
+
+              {/* Seguridad de cuenta — accesible para cualquier rol autenticado */}
+              <Route path="/account/security" element={<ChangePasswordPage />} />
 
               {/* Rutas de Compañía (Cooperativa) */}
               <Route element={<ProtectedRoute allowedRoles={['admin', 'gerente', 'presidente', 'secretaria', 'tesorero', 'operador', 'socio']} />}>

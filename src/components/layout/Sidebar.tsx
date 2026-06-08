@@ -4,7 +4,7 @@ import {
   LayoutDashboard, Users, Bike, Wallet, FileText,
   ShieldAlert, Bell, ClipboardCheck, BarChart3,
   Settings, UserCog, Activity, Building2, Package,
-  CreditCard, TrendingUp, LogOut,
+  CreditCard, TrendingUp, LogOut, ShieldCheck,
   X, Menu,
 } from 'lucide-react'
 
@@ -54,16 +54,18 @@ const companyNav: NavSection[] = [
 const adminNav: NavSection[] = [
   {
     items: [
-      { to: '/admin/companias',     label: 'Compañías',    icon: Building2 },
-      { to: '/admin/planes',        label: 'Planes',       icon: Package },
-      { to: '/admin/suscripciones', label: 'Suscripciones',icon: CreditCard },
-      { to: '/admin/metricas',      label: 'Métricas',     icon: TrendingUp },
+      { to: '/dashboard',           label: 'Dashboard',        icon: LayoutDashboard },
+      { to: '/admin/companias',     label: 'Compañías',        icon: Building2 },
+      { to: '/admin/planes',        label: 'Planes',           icon: Package },
+      { to: '/admin/suscripciones', label: 'Suscripciones',    icon: CreditCard },
+      { to: '/admin/metricas',      label: 'Métricas',         icon: TrendingUp },
     ],
   },
   {
     separator: true,
     items: [
-      { to: '/admin/configuracion', label: 'Configuración', icon: Settings },
+      { to: '/admin/configuracion', label: 'Configuración',    icon: Settings },
+      { to: '/account/security',    label: 'Seguridad',        icon: ShieldCheck },
     ],
   },
 ]
