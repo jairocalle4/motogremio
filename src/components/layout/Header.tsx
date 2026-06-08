@@ -23,6 +23,7 @@ const PAGE_TITLES: Record<string, string> = {
   '/admin/planes':       'Planes',
   '/admin/suscripciones':'Suscripciones',
   '/admin/metricas':     'Métricas Globales',
+  '/admin/configuracion':'Configuración Global',
 }
 
 interface HeaderProps {

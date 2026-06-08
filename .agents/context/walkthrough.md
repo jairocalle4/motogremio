@@ -1,41 +1,28 @@
-# Walkthrough de Verificación y Aplicación de Migración 0011
+# Walkthrough de Actualización de Roles, Permisos y Sincronización Git
 
-Se ha completado de forma exitosa la verificación y el despliegue del mecanismo seguro de roles y bootstrap en la base de datos de `motogremio-ec-dev`.
+Se ha completado de forma exitosa la actualización del sistema de roles y la matriz de permisos de la aplicación en base a las nuevas decisiones de negocio. Todo el progreso ha sido compilado y subido al repositorio remoto de Git.
 
-## Cambios Realizados
+## 1. Cambios Realizados y Verificados
 
-1. **Verificación de `audit_logs.company_id`**:
-   - Se validó en el archivo de migración `0007` y en la base de datos remota que la columna `company_id` de la tabla `audit_logs` acepta valores `NULL` (no tiene restricción `NOT NULL`).
-   - Esto hace compatible al bootstrap inicial con el registro de auditoría global del sistema sin requerir compañía.
+* **Actualización en Reglas de Negocio:**
+  * Modificación de [`project-context.md`](file:///c:/Users/Admin/Desktop/JAIRO/PROYECTOS/SAS%20Mototaxis/.agents/rules/project-context.md) y [`implementation_plan.md`](file:///c:/Users/Admin/Desktop/JAIRO/PROYECTOS/SAS%20Mototaxis/.agents/context/implementation_plan.md) para añadir el nuevo enfoque de cooperativas pequeñas (operadas por un solo `admin` total) y documentar la matriz de permisos inicial.
+* **Refactorización del Enum de Roles:**
+  * Reemplazo del término técnico `'admin_company'` por `'admin'` en TypeScript ([`index.ts`](file:///c:/Users/Admin/Desktop/JAIRO/PROYECTOS/SAS%20Mototaxis/src/types/index.ts)) para lograr compatibilidad 1:1 con el enum de PostgreSQL en Supabase.
+  * Adición del rol `'operador'` al frontend.
+  * Modificación de etiquetas (`ROLE_LABELS`) y colores de credencial (`ROLE_COLORS`) en [`constants.ts`](file:///c:/Users/Admin/Desktop/JAIRO/PROYECTOS/SAS%20Mototaxis/src/lib/constants.ts).
+* **Control de Acceso y Enrutador (Guards):**
+  * Modificación de [`usePermissions.ts`](file:///c:/Users/Admin/Desktop/JAIRO/PROYECTOS/SAS%20Mototaxis/src/hooks/usePermissions.ts) para implementar la nueva lógica de permisos basada en la matriz definida.
+  * Extensión de [`ProtectedRoute.tsx`](file:///c:/Users/Admin/Desktop/JAIRO/PROYECTOS/SAS%20Mototaxis/src/router/ProtectedRoute.tsx) para admitir una lista de roles permitidos (`allowedRoles`).
+  * Segmentación en [`index.tsx`](file:///c:/Users/Admin/Desktop/JAIRO/PROYECTOS/SAS%20Mototaxis/src/router/index.tsx) para bloquear el acceso de usuarios cooperativos a las rutas de `/admin/*` (reservadas a `super_admin`) y restringir las rutas de la cooperativa al conjunto de roles operativos.
 
-2. **Dry Run de la Migración**:
-   - Se ejecutó `npx supabase db push --dry-run` para asegurar que únicamente la migración `20260603000011_secure_role_assignment_and_bootstrap.sql` estaba pendiente por aplicar.
+## 2. Pruebas y Validación
 
-3. **Despliegue Exitoso**:
-   - Se ejecutó `npx supabase db push` para aplicar la migración `0011` en `motogremio-ec-dev`.
+* **Compilación:** Se ejecutó `npm run build` con éxito (0 errores en compilación de TypeScript y empaquetado de Vite).
+* **Integración Base de Datos:** Los nombres de roles ahora corresponden exactamente con la base de datos remota en `motogremio-ec-dev`.
 
-4. **Verificación de Funciones**:
-   - Se consultó la base de datos remota para asegurar la existencia y correcta definición de las funciones críticas:
-     - `bootstrap_first_super_admin`
-     - `assign_user_role`
+## 3. Sincronización con Git
 
-## Resultados Obtenidos
-
-La base de datos ya cuenta con el soporte para inicializar al primer superadministrador global y asignar roles de manera segura.
-
-A continuación se muestra el resultado de la consulta SQL ejecutada remotamente:
-
-```json
-{
-  "rows": [
-    {
-      "routine_name": "assign_user_role",
-      "routine_type": "FUNCTION"
-    },
-    {
-      "routine_name": "bootstrap_first_super_admin",
-      "routine_type": "FUNCTION"
-    }
-  ]
-}
-```
+Todos los cambios fueron agregados y confirmados en el repositorio:
+* **Commit:** `feat(auth): refactor user roles and update permissions matrix based on business decisions`
+* **Rama:** `main`
+* **Repositorio Remoto:** `https://github.com/jairocalle4/motogremio.git` (Push exitoso).

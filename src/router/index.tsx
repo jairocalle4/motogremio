@@ -63,6 +63,7 @@ export function AppRouter() {
                 <Route path="/admin/planes"        element={<Placeholder title="Planes" />} />
                 <Route path="/admin/suscripciones" element={<Placeholder title="Suscripciones" />} />
                 <Route path="/admin/metricas"      element={<Placeholder title="Métricas Globales" />} />
+                <Route path="/admin/configuracion" element={<Placeholder title="Configuración Global" />} />
               </Route>
             </Route>
           </Route>
