@@ -9,7 +9,8 @@ import { Textarea } from '@/components/ui/Textarea'
 import { Button } from '@/components/ui/Button'
 import { ConfirmModal } from '@/components/ui/ConfirmModal'
 import type { VehicleWithMember } from '@/hooks/useVehicles'
-import type { Member } from '@/types'
+import type { Driver, Member } from '@/types'
+import { AlertTriangle } from 'lucide-react'
 
 const currentYear = new Date().getFullYear()
 
@@ -77,6 +78,9 @@ const vehicleSchema = z.object({
     .max(500, 'Las observaciones no pueden superar los 500 caracteres')
     .optional()
     .or(z.literal('')),
+
+  // Conductor de la unidad (opcional)
+  driver_id: z.string().optional().or(z.literal('')),
 })
 
 export type VehicleFormData = z.infer<typeof vehicleSchema>
@@ -87,6 +91,7 @@ interface VehicleFormModalProps {
   onSubmit: (data: VehicleFormData) => Promise<void>
   vehicle?: VehicleWithMember | null
   members: Pick<Member, 'id' | 'first_name' | 'last_name' | 'document_id'>[]
+  drivers?: Pick<Driver, 'id' | 'first_name' | 'last_name' | 'document_id' | 'status'>[]
   loading?: boolean
 }
 
@@ -102,6 +107,7 @@ const defaultValues: VehicleFormData = {
   chassis_number: '',
   status: 'activa',
   observations: '',
+  driver_id: '',
 }
 
 export function VehicleFormModal({
@@ -110,6 +116,7 @@ export function VehicleFormModal({
   onSubmit,
   vehicle,
   members,
+  drivers = [],
   loading,
 }: VehicleFormModalProps) {
   const isEdit = !!vehicle
@@ -147,6 +154,7 @@ export function VehicleFormModal({
           chassis_number: vehicle.chassis_number || '',
           status: vehicle.status || 'activa',
           observations: vehicle.observations || '',
+          driver_id: vehicle.driver_id || '',
         })
       } else {
         reset(defaultValues)
@@ -257,7 +265,7 @@ export function VehicleFormModal({
             </div>
           </div>
 
-          {/* ── Sección: Propietario ──────────────────────────────────── */}
+          {/* ── Sección: Propietario ───────────────────────────────── */}
           <div className="border-t border-gray-100 pt-5 mt-1 mb-2">
             <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-4">
               Propietario
@@ -269,9 +277,77 @@ export function VehicleFormModal({
               {...register('member_id')}
               error={errors.member_id?.message}
             />
-            <p className="text-xs text-gray-400 mt-2">
-              El conductor será configurado en el módulo de Conductores (próxima fase).
+          </div>
+
+          {/* ── Sección: Conductor ────────────────────────────────── */}
+          <div className="border-t border-gray-100 pt-5 mt-1 mb-2">
+            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-4">
+              Conductor de la Unidad
             </p>
+
+            {/* Opción 1: Sin conductor */}
+            <div className="space-y-2">
+              <label className="flex items-start gap-3 p-3 rounded-lg border border-gray-200 cursor-pointer hover:border-primary-300 has-[:checked]:border-primary-500 has-[:checked]:bg-primary-50 transition-all">
+                <input
+                  type="radio"
+                  className="mt-0.5 h-4 w-4 text-primary-600 border-gray-300 focus:ring-primary-500"
+                  value=""
+                  {...register('driver_id')}
+                />
+                <div>
+                  <p className="text-sm font-semibold text-gray-700">Sin conductor asignado por ahora</p>
+                  <p className="text-xs text-gray-500">La unidad no tendrá conductor registrado</p>
+                </div>
+              </label>
+
+              {/* Opción 2: Socio propietario conduce */}
+              {watch('member_id') && (
+                <label className="flex items-start gap-3 p-3 rounded-lg border border-gray-200 cursor-pointer hover:border-primary-300 has-[:checked]:border-primary-500 has-[:checked]:bg-primary-50 transition-all">
+                  <input
+                    type="radio"
+                    className="mt-0.5 h-4 w-4 text-primary-600 border-gray-300 focus:ring-primary-500"
+                    value="_owner"
+                    {...register('driver_id')}
+                  />
+                  <div>
+                    <p className="text-sm font-semibold text-gray-700">El socio propietario también conduce</p>
+                    <p className="text-xs text-gray-500">
+                      Se vincula el conductor al socio seleccionado. Si aún no tiene conductor creado, hazlo desde el módulo de Conductores.
+                    </p>
+                  </div>
+                </label>
+              )}
+
+              {/* Opción 3: Seleccionar conductor existente */}
+              {drivers.length > 0 && (
+                <div className="border border-gray-200 rounded-lg p-3">
+                  <p className="text-sm font-semibold text-gray-700 mb-2">
+                    Seleccionar conductor existente
+                  </p>
+                  <Select
+                    options={[
+                      { value: '', label: 'Elegir conductor de la cooperativa...' },
+                      ...drivers
+                        .filter((d) => d.status === 'activo')
+                        .map((d) => ({
+                          value: d.id,
+                          label: `${d.last_name}, ${d.first_name} — C.I: ${d.document_id}`,
+                        })),
+                    ]}
+                    {...register('driver_id')}
+                  />
+                </div>
+              )}
+
+              {drivers.length === 0 && (
+                <div className="flex items-start gap-2 bg-blue-50 border border-blue-200 rounded-lg px-3 py-2.5">
+                  <AlertTriangle className="w-4 h-4 text-blue-400 shrink-0 mt-0.5" />
+                  <p className="text-xs text-blue-700">
+                    No hay conductores registrados. Ve al módulo de <strong>Conductores</strong> para registrarlos.
+                  </p>
+                </div>
+              )}
+            </div>
           </div>
 
           {/* ── Sección: Datos del vehículo ───────────────────────────── */}

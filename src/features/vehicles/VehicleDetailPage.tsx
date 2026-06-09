@@ -3,16 +3,19 @@ import { useParams, useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import { useVehicles } from '@/hooks/useVehicles'
 import { useMembers } from '@/hooks/useMembers'
+import { useDrivers, getA1License } from '@/hooks/useDrivers'
 import { usePermissions } from '@/hooks/usePermissions'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
 import { ConfirmModal } from '@/components/ui/ConfirmModal'
+import { LicenseBadge } from '@/components/ui/LicenseBadge'
 import { VehicleFormModal, type VehicleFormData } from './VehicleFormModal'
 import {
   ArrowLeft,
   Bike,
   User,
+  UserCheck,
   Wrench,
   FileText,
   DollarSign,
@@ -30,6 +33,10 @@ export function VehicleDetailPage() {
   const { canManageVehicles } = usePermissions()
   const { currentVehicle, loading, error, fetchVehicleById, updateVehicle } = useVehicles()
   const { members, fetchMembers } = useMembers()
+  const { fetchDriverById } = useDrivers()
+
+  // Driver cargado desde driver_id de la unidad
+  const [vehicleDriver, setVehicleDriver] = useState<Awaited<ReturnType<typeof fetchDriverById>>>(null)
 
   // ── Modal edición ────────────────────────────────────────────────────────────
   const [isEditOpen, setIsEditOpen] = useState(false)
@@ -49,6 +56,15 @@ export function VehicleDetailPage() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id])
+
+  // Cargar conductor si la unidad tiene driver_id
+  useEffect(() => {
+    if (currentVehicle?.driver_id) {
+      fetchDriverById(currentVehicle.driver_id).then(setVehicleDriver)
+    } else {
+      setVehicleDriver(null)
+    }
+  }, [currentVehicle?.driver_id, fetchDriverById])
 
   // ── Editar ───────────────────────────────────────────────────────────────────
   const handleEditSubmit = async (data: VehicleFormData) => {
@@ -318,22 +334,54 @@ export function VehicleDetailPage() {
             </CardContent>
           </Card>
 
-          {/* Conductor — placeholder */}
+          {/* Conductor Asignado — Real */}
           <Card>
             <CardHeader>
-              <CardTitle className="text-base flex items-center gap-2 text-gray-500">
-                <User className="w-4 h-4" />
+              <CardTitle className="text-base flex items-center gap-2">
+                <UserCheck className="w-4 h-4 text-amber-500" />
                 Conductor Asignado
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="border border-dashed rounded-lg p-5 text-center text-gray-400">
-                <User className="w-7 h-7 text-gray-300 mx-auto mb-2" />
-                <p className="text-sm">No hay conductor asignado.</p>
-                <p className="text-xs mt-1 text-gray-400">
-                  La gestión de conductores estará disponible en el Módulo de Conductores (Fase 3.4).
-                </p>
-              </div>
+              {vehicleDriver ? (
+                <div className="flex items-center justify-between gap-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-primary-100 flex items-center justify-center shrink-0">
+                      <span className="text-sm font-bold text-primary-700">
+                        {vehicleDriver.first_name[0]}{vehicleDriver.last_name[0]}
+                      </span>
+                    </div>
+                    <div>
+                      <p className="font-semibold text-gray-900 leading-tight">
+                        {vehicleDriver.first_name} {vehicleDriver.last_name}
+                      </p>
+                      <p className="text-xs text-gray-500 font-mono">{vehicleDriver.document_id}</p>
+                      <div className="mt-1">
+                        <LicenseBadge
+                          expiryDate={getA1License(vehicleDriver.licenses || [])?.expiry_date}
+                          licenseNumber={getA1License(vehicleDriver.licenses || [])?.license_number}
+                          compact
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => navigate(`/conductores/${vehicleDriver.id}`)}
+                  >
+                    Ver ficha
+                  </Button>
+                </div>
+              ) : (
+                <div className="border border-dashed rounded-lg p-5 text-center text-gray-400">
+                  <User className="w-7 h-7 text-gray-300 mx-auto mb-2" />
+                  <p className="text-sm">Sin conductor asignado.</p>
+                  <p className="text-xs mt-1 text-gray-400">
+                    Edita la unidad para asignar un conductor.
+                  </p>
+                </div>
+              )}
             </CardContent>
           </Card>
 

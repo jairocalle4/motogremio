@@ -15,6 +15,7 @@ export type UserRole =
 export type CompanyStatus = 'activa' | 'suspendida' | 'inactiva'
 export type MemberStatus  = 'activo' | 'inactivo' | 'suspendido'
 export type VehicleStatus = 'activa' | 'inactiva' | 'mantenimiento'
+export type DriverStatus  = 'activo' | 'inactivo'
 export type DocumentStatus  = 'vigente' | 'por_vencer' | 'vencido'
 export type PaymentStatus   = 'pagado'  | 'pendiente'  | 'moroso'  | 'anulado'
 export type SanctionStatus  = 'pendiente' | 'aplicada' | 'anulada' | 'cumplida'
@@ -146,7 +147,45 @@ export interface Vehicle {
   created_at: string
   updated_at: string
   // Relaciones cargadas con JOIN
-  member?: Member              // propietario
+  member?: Pick<Member, 'id' | 'first_name' | 'last_name' | 'document_id' | 'phone' | 'email' | 'status'> | null
+  driver?: Pick<Driver, 'id' | 'first_name' | 'last_name' | 'document_id' | 'status'> | null
+}
+
+// ═══════════════════════════════════════════════════════
+// CONDUCTORES
+// ═══════════════════════════════════════════════════════
+
+export interface Driver {
+  id: string
+  company_id: string
+  member_id: string | null        // nullable → conductor externo si es NULL
+  document_id: string             // UNIQUE(company_id, document_id)
+  first_name: string
+  last_name: string
+  phone: string | null
+  address: string | null
+  status: DriverStatus
+  notes: string | null            // migración 15
+  created_at: string
+  updated_at: string
+  // Relaciones cargadas con JOIN
+  member?: Pick<Member, 'id' | 'first_name' | 'last_name' | 'document_id'> | null
+  licenses?: DriverLicense[]
+  vehicles?: Pick<Vehicle, 'id' | 'disk_number' | 'plate' | 'status'>[]  
+}
+
+export interface DriverLicense {
+  id: string
+  driver_id: string
+  company_id: string
+  license_type: string            // default 'A1'
+  license_number: string
+  issue_date: string | null
+  expiry_date: string
+  status: DocumentStatus          // vigente | por_vencer | vencido
+  file_url: string | null
+  created_at: string
+  updated_at: string
 }
 
 // ═══════════════════════════════════════════════════════

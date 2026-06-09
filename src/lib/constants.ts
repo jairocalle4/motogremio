@@ -1,4 +1,4 @@
-import type { UserRole, MemberStatus, VehicleStatus, DocumentStatus, PaymentStatus, SanctionStatus, MeetingType, PlanName } from '@/types'
+import type { UserRole, MemberStatus, VehicleStatus, DriverStatus, DocumentStatus, PaymentStatus, SanctionStatus, MeetingType, PlanName } from '@/types'
 
 // ─── Aplicación ───────────────────────────────────────
 export const APP_NAME = 'MotoGremio'
@@ -51,6 +51,17 @@ export const VEHICLE_STATUS_COLORS: Record<VehicleStatus, string> = {
   activa:        'bg-success-50 text-success-700 border-success-200',
   inactiva:      'bg-gray-100 text-gray-600 border-gray-200',
   mantenimiento: 'bg-amber-50 text-amber-700 border-amber-200',
+}
+
+// ─── Estados de conductor ─────────────────────────────
+export const DRIVER_STATUS_LABELS: Record<DriverStatus, string> = {
+  activo:   'Activo',
+  inactivo: 'Inactivo',
+}
+
+export const DRIVER_STATUS_COLORS: Record<DriverStatus, string> = {
+  activo:   'bg-success-50 text-success-700 border-success-200',
+  inactivo: 'bg-gray-100 text-gray-600 border-gray-200',
 }
 
 // ─── Estados de documento ─────────────────────────────

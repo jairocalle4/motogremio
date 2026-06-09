@@ -32,6 +32,10 @@ export function usePermissions() {
   const canManageVehicles = hasRole('super_admin', 'admin', 'secretaria')
   const canViewVehicles   = hasRole('super_admin', 'admin', 'gerente', 'presidente', 'secretaria', 'tesorero', 'operador')
 
+  /** Gestión de conductores */
+  const canManageDrivers = hasRole('super_admin', 'admin', 'secretaria')
+  const canViewDrivers   = hasRole('super_admin', 'admin', 'gerente', 'presidente', 'secretaria', 'tesorero', 'operador')
+
   /** Gestión de documentos y licencias */
   const canManageDocuments = hasRole('super_admin', 'admin', 'secretaria')
   const canViewDocuments   = hasRole('super_admin', 'admin', 'gerente', 'presidente', 'secretaria', 'tesorero', 'operador')
@@ -73,6 +77,8 @@ export function usePermissions() {
     canViewMembers,
     canManageVehicles,
     canViewVehicles,
+    canManageDrivers,
+    canViewDrivers,
     canManageDocuments,
     canViewDocuments,
     canManagePayments,

@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
 import {
-  LayoutDashboard, Users, Bike, Wallet, FileText,
+  LayoutDashboard, Users, UserCheck, Bike, Wallet, FileText,
   ShieldAlert, Bell, ClipboardCheck, BarChart3,
   Settings, UserCog, Activity, Building2, Package,
   CreditCard, TrendingUp, LogOut, ShieldCheck,
@@ -32,6 +32,7 @@ const companyNav: NavSection[] = [
     items: [
       { to: '/dashboard',    label: 'Dashboard',      icon: LayoutDashboard },
       { to: '/socios',       label: 'Socios',         icon: Users },
+      { to: '/conductores',  label: 'Conductores',    icon: UserCheck },
       { to: '/unidades',     label: 'Unidades',       icon: Bike },
       { to: '/pagos',        label: 'Pagos',          icon: Wallet },
       { to: '/documentos',   label: 'Documentos',     icon: FileText },

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import { useVehicles, type VehicleInsert, type VehicleWithMember } from '@/hooks/useVehicles'
 import { useMembers } from '@/hooks/useMembers'
+import { useDrivers } from '@/hooks/useDrivers'
 import { usePermissions } from '@/hooks/usePermissions'
 import { Card, CardContent } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
@@ -30,6 +31,7 @@ export function VehiclesListPage() {
   const { canManageVehicles } = usePermissions()
   const { vehicles, loading, error, fetchVehicles, createVehicle, updateVehicle } = useVehicles()
   const { members, fetchMembers } = useMembers()
+  const { drivers, fetchDrivers } = useDrivers()
 
   // ── Filtros ──────────────────────────────────────────────────────────────────
   const [searchTerm, setSearchTerm] = useState('')
@@ -58,6 +60,7 @@ export function VehiclesListPage() {
   useEffect(() => {
     fetchVehicles()
     fetchMembers()
+    fetchDrivers()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
@@ -420,6 +423,7 @@ export function VehiclesListPage() {
         onSubmit={handleFormSubmit}
         vehicle={selectedVehicle}
         members={members}
+        drivers={drivers}
       />
 
       {/* ── Modal Confirmación de Estado ─────────────────────────────────────── */}
