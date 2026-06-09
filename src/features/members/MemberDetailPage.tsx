@@ -14,11 +14,11 @@ import {
   Heart,
   ShieldAlert,
   Car,
-  FileText,
   DollarSign,
   FilePenLine,
 } from 'lucide-react'
 import type { MemberStatus } from '@/types'
+import { DocumentsList } from '@/features/documents/DocumentsList'
 
 export function MemberDetailPage() {
   const { id } = useParams<{ id: string }>()
@@ -246,22 +246,10 @@ export function MemberDetailPage() {
             </CardContent>
           </Card>
 
-          {/* Licenses & Documents placeholder */}
+          {/* Documents */}
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle className="text-base flex items-center gap-2">
-                <FileText className="w-4 h-4 text-primary-500" />
-                Licencias y Credenciales
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="border border-dashed rounded-lg p-6 text-center text-gray-400">
-                <FileText className="w-8 h-8 text-gray-300 mx-auto mb-2" />
-                <p className="text-sm">No se han cargado licencias o contratos de conductor.</p>
-                <p className="text-xs mt-1 text-gray-400">
-                  Podrás cargar licencias vigentes, por vencer o vencidas en el Módulo de Documentos.
-                </p>
-              </div>
+            <CardContent className="p-6">
+              <DocumentsList targetEntity="member" entityId={currentMember.id} title="Documentos del Socio" />
             </CardContent>
           </Card>
 

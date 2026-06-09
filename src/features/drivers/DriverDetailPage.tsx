@@ -12,7 +12,10 @@ import { LicenseBadge } from '@/components/ui/LicenseBadge'
 import { useDrivers, getA1License, type DriverWithRelations } from '@/hooks/useDrivers'
 import { useMembers } from '@/hooks/useMembers'
 import { usePermissions } from '@/hooks/usePermissions'
+import { useLicenses } from '@/hooks/useLicenses'
 import { DriverFormModal } from './DriverFormModal'
+import { LicenseFormModal } from '@/features/licenses/LicenseFormModal'
+import { DocumentsList } from '@/features/documents/DocumentsList'
 import { DRIVER_STATUS_LABELS, DRIVER_STATUS_COLORS } from '@/lib/constants'
 import { cn } from '@/lib/utils'
 
@@ -31,7 +34,10 @@ export function DriverDetailPage() {
   const [editOpen,  setEditOpen]  = useState(false)
   const [toggling,  setToggling]  = useState(false)
   const [toggleModal, setToggleModal] = useState(false)
+  const [licenseModal, setLicenseModal] = useState(false)
   const [loading, setLoading] = useState(true)
+
+  const { createLicense, updateLicense } = useLicenses()
 
   useEffect(() => {
     if (!id) return
@@ -68,6 +74,24 @@ export function DriverDetailPage() {
     toast.success('Conductor actualizado.')
     setEditOpen(false)
     if (id) fetchDriverById(id)
+  }
+
+  const handleLicenseSubmit = async (data: any) => {
+    try {
+      if (a1) {
+        const { error } = await updateLicense(a1.id, data)
+        if (error) throw new Error(error)
+        toast.success('Licencia actualizada correctamente')
+      } else {
+        const { error } = await createLicense(data)
+        if (error) throw new Error(error)
+        toast.success('Licencia añadida correctamente')
+      }
+      setLicenseModal(false)
+      if (id) fetchDriverById(id)
+    } catch (err: any) {
+      toast.error(err.message || 'Error al guardar licencia')
+    }
   }
 
   // ── Estados de carga / error ──────────────────────────
@@ -238,10 +262,17 @@ export function DriverDetailPage() {
 
         {/* Licencia A1 */}
         <div className="bg-white rounded-xl border border-gray-200 p-5">
-          <h2 className="text-sm font-semibold text-gray-700 mb-4 flex items-center gap-2">
-            <FileText className="w-4 h-4 text-gray-400" />
-            Licencia A1
-          </h2>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+              <FileText className="w-4 h-4 text-gray-400" />
+              Licencia A1
+            </h2>
+            {canManageDrivers && a1 && (
+              <Button variant="outline" size="sm" onClick={() => setLicenseModal(true)}>
+                Editar licencia
+              </Button>
+            )}
+          </div>
 
           {a1 ? (
             <div className="space-y-3">
@@ -300,7 +331,7 @@ export function DriverDetailPage() {
                   variant="outline"
                   size="sm"
                   className="mt-3"
-                  onClick={() => setEditOpen(true)}
+                  onClick={() => setLicenseModal(true)}
                 >
                   Registrar licencia
                 </Button>
@@ -356,27 +387,11 @@ export function DriverDetailPage() {
           )}
         </div>
 
-        {/* Placeholders futuros */}
-        <div className="bg-white rounded-xl border border-dashed border-gray-300 p-5">
-          <h2 className="text-sm font-semibold text-gray-500 mb-3">Próximas funcionalidades</h2>
-          <ul className="space-y-2 text-xs text-gray-400">
-            <li className="flex items-center gap-2">
-              <div className="w-1.5 h-1.5 rounded-full bg-gray-300" />
-              Documentos del conductor
-            </li>
-            <li className="flex items-center gap-2">
-              <div className="w-1.5 h-1.5 rounded-full bg-gray-300" />
-              Historial de unidades conducidas
-            </li>
-            <li className="flex items-center gap-2">
-              <div className="w-1.5 h-1.5 rounded-full bg-gray-300" />
-              Sanciones e incidentes
-            </li>
-            <li className="flex items-center gap-2">
-              <div className="w-1.5 h-1.5 rounded-full bg-gray-300" />
-              Historial de licencias renovadas
-            </li>
-          </ul>
+        {/* Documentos */}
+        <div className="col-span-1 lg:col-span-2">
+          <div className="bg-white rounded-xl border border-gray-200 p-5">
+            <DocumentsList targetEntity="driver" entityId={driver.id} title="Otros Documentos" />
+          </div>
         </div>
       </div>
 
@@ -387,6 +402,14 @@ export function DriverDetailPage() {
         onCreated={handleEdited}
         driver={driver}
         members={members}
+      />
+
+      <LicenseFormModal
+        isOpen={licenseModal}
+        onClose={() => setLicenseModal(false)}
+        onSubmit={handleLicenseSubmit}
+        license={a1 as any}
+        driverId={driver.id}
       />
 
       {/* ── Modal toggle estado ──────────────────────────── */}

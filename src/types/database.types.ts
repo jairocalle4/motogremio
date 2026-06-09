@@ -1,4 +1,4 @@
-﻿export type Json =
+export type Json =
   | string
   | number
   | boolean
@@ -349,7 +349,7 @@ export type Database = {
           document_number: string | null
           document_type_id: string
           driver_id: string | null
-          expiry_date: string
+          expiry_date: string | null
           file_url: string | null
           id: string
           issue_date: string | null
@@ -365,7 +365,7 @@ export type Database = {
           document_number?: string | null
           document_type_id: string
           driver_id?: string | null
-          expiry_date: string
+          expiry_date?: string | null
           file_url?: string | null
           id?: string
           issue_date?: string | null
@@ -381,7 +381,7 @@ export type Database = {
           document_number?: string | null
           document_type_id?: string
           driver_id?: string | null
-          expiry_date?: string
+          expiry_date?: string | null
           file_url?: string | null
           id?: string
           issue_date?: string | null

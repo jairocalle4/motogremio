@@ -26,6 +26,7 @@ import {
   Calendar,
 } from 'lucide-react'
 import type { VehicleStatus } from '@/types'
+import { DocumentsList } from '@/features/documents/DocumentsList'
 
 export function VehicleDetailPage() {
   const { id } = useParams<{ id: string }>()
@@ -434,22 +435,10 @@ export function VehicleDetailPage() {
             </CardContent>
           </Card>
 
-          {/* Documentos — placeholder */}
+          {/* Documentos */}
           <Card>
-            <CardHeader>
-              <CardTitle className="text-base flex items-center gap-2 text-gray-500">
-                <FileText className="w-4 h-4" />
-                Documentos y Vencimientos
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="border border-dashed rounded-lg p-5 text-center text-gray-400">
-                <FileText className="w-7 h-7 text-gray-300 mx-auto mb-2" />
-                <p className="text-sm">Sin documentos registrados.</p>
-                <p className="text-xs mt-1 text-gray-400">
-                  SOAT, matrícula y más en el Módulo de Documentos (Fase 3.4).
-                </p>
-              </div>
+            <CardContent className="p-6">
+              <DocumentsList targetEntity="vehicle" entityId={currentVehicle.id} title="Documentos de la Unidad" />
             </CardContent>
           </Card>
 
