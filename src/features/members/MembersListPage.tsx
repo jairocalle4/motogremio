@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import { useMembers, type MemberInsert } from '@/hooks/useMembers'
@@ -35,6 +35,8 @@ export function MembersListPage() {
   // ── Modal Formulario ─────────────────────────────────────────────────────────
   const [isFormOpen, setIsFormOpen] = useState(false)
   const [selectedMember, setSelectedMember] = useState<Member | null>(null)
+  // Borrador en memoria para formulario de creación
+  const memberDraftRef = useRef<Partial<import('./MemberFormModal').MemberFormData> | null>(null)
 
   // ── Modal Confirmación ───────────────────────────────────────────────────────
   const [confirmState, setConfirmState] = useState<{
@@ -383,6 +385,8 @@ export function MembersListPage() {
         onClose={() => { setIsFormOpen(false); setSelectedMember(null) }}
         onSubmit={handleFormSubmit}
         member={selectedMember}
+        draft={!selectedMember ? memberDraftRef.current : null}
+        onDraftChange={(d) => { memberDraftRef.current = d }}
       />
 
       {/* ── Modal Confirmación Activar/Desactivar ────────────────────────────── */}

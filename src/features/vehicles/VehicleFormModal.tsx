@@ -93,6 +93,9 @@ interface VehicleFormModalProps {
   members: Pick<Member, 'id' | 'first_name' | 'last_name' | 'document_id'>[]
   drivers?: Pick<Driver, 'id' | 'first_name' | 'last_name' | 'document_id' | 'status'>[]
   loading?: boolean
+  /** Borrador en memoria */
+  draft?: Partial<VehicleFormData> | null
+  onDraftChange?: (draft: Partial<VehicleFormData> | null) => void
 }
 
 const defaultValues: VehicleFormData = {
@@ -118,6 +121,8 @@ export function VehicleFormModal({
   members,
   drivers = [],
   loading,
+  draft,
+  onDraftChange,
 }: VehicleFormModalProps) {
   const isEdit = !!vehicle
 
@@ -127,12 +132,15 @@ export function VehicleFormModal({
     pendingData: VehicleFormData | null
   }>({ open: false, pendingData: null })
 
+  // Confirmación de descarte de borrador
+  const [discardConfirm, setDiscardConfirm] = useState(false)
+
   const {
     register,
     handleSubmit,
     reset,
     watch,
-    formState: { errors, isSubmitting },
+    formState: { errors, isSubmitting, isDirty },
   } = useForm<VehicleFormData>({
     resolver: zodResolver(vehicleSchema),
     defaultValues,
@@ -156,11 +164,22 @@ export function VehicleFormModal({
           observations: vehicle.observations || '',
           driver_id: vehicle.driver_id || '',
         })
+      } else if (draft && Object.keys(draft).some((k) => draft[k as keyof typeof draft])) {
+        reset({ ...defaultValues, ...draft })
       } else {
         reset(defaultValues)
       }
     }
-  }, [vehicle, reset, isOpen])
+  }, [vehicle, reset, isOpen, draft])
+
+  // Persiste borrador
+  const currentValues = watch()
+  useEffect(() => {
+    if (!vehicle && isOpen && isDirty) {
+      onDraftChange?.(currentValues)
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [JSON.stringify(currentValues), vehicle, isOpen, isDirty])
 
   const watchDiskNumber = watch('disk_number')
 
@@ -175,6 +194,22 @@ export function VehicleFormModal({
 
   const submitData = async (data: VehicleFormData) => {
     await onSubmit(data)
+    onDraftChange?.(null)
+  }
+
+  const handleClose = () => {
+    if (!isBusy && isDirty && !isEdit) {
+      setDiscardConfirm(true)
+    } else {
+      onClose()
+    }
+  }
+
+  const handleConfirmDiscard = () => {
+    onDraftChange?.(null)
+    setDiscardConfirm(false)
+    reset(defaultValues)
+    onClose()
   }
 
   const handleDiskChangeConfirmed = async () => {
@@ -205,13 +240,13 @@ export function VehicleFormModal({
     <>
       <Modal
         isOpen={isOpen}
-        onClose={isBusy ? undefined : onClose}
+        onClose={isBusy ? undefined : handleClose}
         title={isEdit ? 'Editar Unidad / Mototaxi' : 'Registrar Nueva Unidad'}
         size="lg"
         closeOnOverlay={!isBusy}
         footer={
           <div className="flex justify-end space-x-3 w-full">
-            <Button variant="outline" type="button" onClick={onClose} disabled={isBusy}>
+            <Button variant="outline" type="button" onClick={handleClose} disabled={isBusy}>
               Cancelar
             </Button>
             <Button
@@ -452,6 +487,19 @@ export function VehicleFormModal({
         confirmLabel="Sí, cambiar disco"
         variant="warning"
         loading={isBusy}
+      />
+
+      {/* Confirmación de descarte de borrador */}
+      <ConfirmModal
+        isOpen={discardConfirm}
+        onClose={() => setDiscardConfirm(false)}
+        onConfirm={handleConfirmDiscard}
+        title="¿Descartar cambios?"
+        message="Hay información sin guardar en el formulario."
+        detail="Si descartas, los datos que escribiste se perderán. ¿Deseas continuar?"
+        confirmLabel="Sí, descartar"
+        cancelLabel="Volver al formulario"
+        variant="warning"
       />
     </>
   )

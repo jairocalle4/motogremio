@@ -25,9 +25,11 @@ export function Modal({
 }: ModalProps) {
   const overlayRef = useRef<HTMLDivElement>(null)
 
-  // Cerrar con Escape
+  // Cerrar con Escape — NUNCA con Ctrl/Meta/Alt+tecla
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
+      // Ignorar cualquier combinación con modificadores (Ctrl+C, Ctrl+V, etc.)
+      if (e.ctrlKey || e.metaKey || e.altKey) return
       if (e.key === 'Escape' && isOpen) onClose?.()
     }
     document.addEventListener('keydown', handleKey)

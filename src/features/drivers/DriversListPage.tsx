@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import {
@@ -37,6 +37,8 @@ export function DriversListPage() {
     open: boolean; driver: DriverWithRelations | null
   }>({ open: false, driver: null })
   const [toggling, setToggling] = useState(false)
+  // Borrador en memoria
+  const driverDraftRef = useRef<Partial<import('./DriverFormModal').DriverFormData> | null>(null)
 
   const load = useCallback(() => {
     fetchDrivers({ search: search || undefined, status: statusFilter || undefined })
@@ -371,6 +373,8 @@ export function DriversListPage() {
         onCreated={editDriver ? handleEdited : handleCreated}
         driver={editDriver}
         members={members}
+        draft={!editDriver ? driverDraftRef.current : null}
+        onDraftChange={(d) => { driverDraftRef.current = d }}
       />
 
       {/* ── Confirmar toggle de estado ────────────────────── */}

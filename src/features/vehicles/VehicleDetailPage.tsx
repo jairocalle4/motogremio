@@ -33,7 +33,7 @@ export function VehicleDetailPage() {
   const { canManageVehicles } = usePermissions()
   const { currentVehicle, loading, error, fetchVehicleById, updateVehicle } = useVehicles()
   const { members, fetchMembers } = useMembers()
-  const { fetchDriverById } = useDrivers()
+  const { fetchDriverById, fetchDrivers, createDriver, getDriverByMemberId, drivers } = useDrivers()
 
   // Driver cargado desde driver_id de la unidad
   const [vehicleDriver, setVehicleDriver] = useState<Awaited<ReturnType<typeof fetchDriverById>>>(null)
@@ -41,6 +41,11 @@ export function VehicleDetailPage() {
   // ── Modal edición ────────────────────────────────────────────────────────────
   const [isEditOpen, setIsEditOpen] = useState(false)
   const [editLoading, setEditLoading] = useState(false)
+
+  // Confirmación quitar conductor
+  const [removeDriverConfirm, setRemoveDriverConfirm] = useState<{
+    open: boolean; pendingData: VehicleFormData | null;
+  }>({ open: false, pendingData: null })
 
   // ── Modal cambio de estado ───────────────────────────────────────────────────
   const [confirmState, setConfirmState] = useState<{
@@ -53,6 +58,7 @@ export function VehicleDetailPage() {
     if (id) {
       fetchVehicleById(id)
       fetchMembers()
+      fetchDrivers()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id])
@@ -67,7 +73,7 @@ export function VehicleDetailPage() {
   }, [currentVehicle?.driver_id, fetchDriverById])
 
   // ── Editar ───────────────────────────────────────────────────────────────────
-  const handleEditSubmit = async (data: VehicleFormData) => {
+  const processEditSubmit = async (data: VehicleFormData) => {
     if (!id) return
     setEditLoading(true)
     const toastId = toast.loading('Guardando cambios...')
@@ -78,6 +84,33 @@ export function VehicleDetailPage() {
         else if (k === 'year' && typeof v === 'string') clean[k] = parseInt(v, 10)
         else clean[k] = v
       }
+
+      if (clean.driver_id === '_owner') {
+        const memberId = data.member_id
+        if (!memberId) throw new Error("No hay socio seleccionado")
+        
+        const existing = await getDriverByMemberId(memberId)
+        if (existing) {
+          clean.driver_id = existing.id
+        } else {
+          // Crear conductor
+          const member = members.find(m => m.id === memberId)
+          if (!member) throw new Error("No se encontró al socio")
+          const { data: newDriver, error: driverErr } = await createDriver({
+            document_id: member.document_id,
+            first_name:  member.first_name,
+            last_name:   member.last_name,
+            phone:       (member as { phone?: string | null }).phone || null,
+            address:     (member as { address?: string | null }).address || null,
+            status:      'activo',
+            notes:       null,
+            member_id:   member.id,
+          })
+          if (driverErr || !newDriver) throw new Error(driverErr || "Error creando conductor")
+          clean.driver_id = newDriver.id
+        }
+      }
+
       const { error: err } = await updateVehicle(id, clean)
       if (err) throw new Error(err)
       toast.success('Unidad actualizada.', { id: toastId })
@@ -87,6 +120,22 @@ export function VehicleDetailPage() {
       toast.error(err instanceof Error ? err.message : 'Error al actualizar.', { id: toastId })
     } finally {
       setEditLoading(false)
+    }
+  }
+
+  const handleEditSubmit = async (data: VehicleFormData) => {
+    if (currentVehicle && currentVehicle.driver_id && data.driver_id === '') {
+      setRemoveDriverConfirm({ open: true, pendingData: data })
+      return
+    }
+    await processEditSubmit(data)
+  }
+
+  const handleConfirmRemoveDriver = async () => {
+    if (removeDriverConfirm.pendingData) {
+      setRemoveDriverConfirm(prev => ({ ...prev, open: false }))
+      await processEditSubmit(removeDriverConfirm.pendingData)
+      setRemoveDriverConfirm({ open: false, pendingData: null })
     }
   }
 
@@ -449,6 +498,7 @@ export function VehicleDetailPage() {
         onSubmit={handleEditSubmit}
         vehicle={currentVehicle}
         members={members}
+        drivers={drivers}
         loading={editLoading}
       />
 
@@ -471,6 +521,17 @@ export function VehicleDetailPage() {
         confirmLabel={confirmState.nextStatus === 'inactiva' ? 'Sí, desactivar' : 'Sí, activar'}
         variant={confirmState.nextStatus === 'inactiva' ? 'warning' : 'success'}
         loading={confirmState.loading}
+      />
+
+      <ConfirmModal
+        isOpen={removeDriverConfirm.open}
+        onClose={() => setRemoveDriverConfirm({ open: false, pendingData: null })}
+        onConfirm={handleConfirmRemoveDriver}
+        title="Quitar Conductor Asignado"
+        message="Has seleccionado 'Sin conductor asignado por ahora'."
+        detail="¿Confirmas que deseas retirar al conductor actual de esta unidad? La unidad quedará sin chofer registrado."
+        confirmLabel="Sí, quitar conductor"
+        variant="warning"
       />
     </div>
   )

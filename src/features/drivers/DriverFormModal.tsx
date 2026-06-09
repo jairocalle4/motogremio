@@ -75,7 +75,10 @@ interface DriverFormModalProps {
   onClose: () => void
   onCreated: (driverId: string) => void
   driver?: DriverWithRelations | null
-  members: Pick<Member, 'id' | 'first_name' | 'last_name' | 'document_id'>[]
+  members: Pick<Member, 'id' | 'first_name' | 'last_name' | 'document_id' | 'phone' | 'address'>[]
+  /** Borrador en memoria del padre */
+  draft?: Partial<DriverFormData> | null
+  onDraftChange?: (draft: Partial<DriverFormData> | null) => void
 }
 
 const defaultValues: DriverFormData = {
@@ -101,6 +104,8 @@ export function DriverFormModal({
   onCreated,
   driver,
   members,
+  draft,
+  onDraftChange,
 }: DriverFormModalProps) {
   const isEdit = !!driver
   const { createDriver, updateDriver, createDriverLicense, getDriverByMemberId } = useDrivers()
@@ -111,6 +116,9 @@ export function DriverFormModal({
     existingDriver: DriverWithRelations | null
   }>({ open: false, existingDriver: null })
 
+  // Confirmación: descartar borrador
+  const [discardConfirm, setDiscardConfirm] = useState(false)
+
   const [submitting, setSubmitting] = useState(false)
 
   const {
@@ -119,7 +127,7 @@ export function DriverFormModal({
     reset,
     watch,
     setValue,
-    formState: { errors },
+    formState: { errors, isDirty },
   } = useForm<DriverFormData>({
     resolver: zodResolver(driverSchema),
     defaultValues,
@@ -149,21 +157,35 @@ export function DriverFormModal({
         issue_date:       '',
         expiry_date:      '',
       })
+    } else if (draft && Object.keys(draft).some((k) => draft[k as keyof typeof draft])) {
+      // Restaurar borrador en memoria
+      reset({ ...defaultValues, ...draft })
     } else {
       reset(defaultValues)
     }
-  }, [driver, reset, isOpen])
+  }, [driver, reset, isOpen, draft])
 
-  // Auto-rellenar datos del socio seleccionado
+  // Persiste borrador al padre mientras escribe (solo modo creación)
+  const currentValues = watch()
   useEffect(() => {
-    if (driverType !== 'socio' || !selectedMemberId || isEdit) return
+    if (!driver && isOpen && isDirty) {
+      onDraftChange?.(currentValues)
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [JSON.stringify(currentValues), driver, isOpen, isDirty])
+
+  // Auto-rellenar datos del socio seleccionado (incluye phone y address)
+  useEffect(() => {
+    if (driverType !== 'socio' || !selectedMemberId || driver) return
     const member = members.find((m) => m.id === selectedMemberId)
     if (member) {
       setValue('document_id', member.document_id || '')
       setValue('first_name',  member.first_name  || '')
       setValue('last_name',   member.last_name   || '')
+      setValue('phone',   (member as { phone?: string | null }).phone   || '')
+      setValue('address', (member as { address?: string | null }).address || '')
     }
-  }, [selectedMemberId, driverType, members, setValue, isEdit])
+  }, [selectedMemberId, driverType, members, setValue, driver])
 
   // Reset datos al cambiar de tipo
   const handleDriverTypeChange = (type: 'externo' | 'socio') => {
@@ -254,8 +276,6 @@ export function DriverFormModal({
 
         onCreated(newDriver.id)
       }
-    } catch (err: unknown) {
-      throw err  // re-lanzar para capturar en el caller
     } finally {
       setSubmitting(false)
       setExistingDriverConfirm({ open: false, existingDriver: null })
@@ -271,6 +291,22 @@ export function DriverFormModal({
     }
   }
 
+  // Manejar cierre: pedir confirmación si hay cambios sin guardar
+  const handleClose = () => {
+    if (!submitting && isDirty && !isEdit) {
+      setDiscardConfirm(true)
+    } else {
+      onClose()
+    }
+  }
+
+  const handleConfirmDiscard = () => {
+    onDraftChange?.(null)
+    setDiscardConfirm(false)
+    reset(defaultValues)
+    onClose()
+  }
+
   const memberOptions = [
     { value: '', label: 'Seleccionar socio...' },
     ...members.map((m) => ({
@@ -283,13 +319,13 @@ export function DriverFormModal({
     <>
       <Modal
         isOpen={isOpen}
-        onClose={submitting ? undefined : onClose}
+        onClose={submitting ? undefined : handleClose}
         title={isEdit ? 'Editar Conductor' : 'Registrar Conductor'}
         size="lg"
         closeOnOverlay={!submitting}
         footer={
           <div className="flex justify-end space-x-3 w-full">
-            <Button variant="outline" onClick={onClose} disabled={submitting}>
+            <Button variant="outline" onClick={handleClose} disabled={submitting}>
               Cancelar
             </Button>
             <Button
@@ -532,6 +568,18 @@ export function DriverFormModal({
         confirmLabel="Usar conductor existente"
         variant="warning"
         cancelLabel="Crear uno nuevo de todos modos"
+      />
+      {/* Confirmación: descartar borrador */}
+      <ConfirmModal
+        isOpen={discardConfirm}
+        onClose={() => setDiscardConfirm(false)}
+        onConfirm={handleConfirmDiscard}
+        title="¿Descartar cambios?"
+        message="Hay información sin guardar en el formulario."
+        detail="Si descartas, los datos que escribiste se perderán. ¿Deseas continuar?"
+        confirmLabel="Sí, descartar"
+        cancelLabel="Volver al formulario"
+        variant="warning"
       />
     </>
   )

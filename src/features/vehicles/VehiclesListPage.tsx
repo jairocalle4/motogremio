@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import { useVehicles, type VehicleInsert, type VehicleWithMember } from '@/hooks/useVehicles'
@@ -31,7 +31,15 @@ export function VehiclesListPage() {
   const { canManageVehicles } = usePermissions()
   const { vehicles, loading, error, fetchVehicles, createVehicle, updateVehicle } = useVehicles()
   const { members, fetchMembers } = useMembers()
-  const { drivers, fetchDrivers } = useDrivers()
+  const { drivers, fetchDrivers, getDriverByMemberId, createDriver } = useDrivers()
+
+  // Borrador en memoria
+  const vehicleDraftRef = useRef<Partial<import('./VehicleFormModal').VehicleFormData> | null>(null)
+
+  // Confirmación quitar conductor
+  const [removeDriverConfirm, setRemoveDriverConfirm] = useState<{
+    open: boolean; pendingData: VehicleFormData | null;
+  }>({ open: false, pendingData: null })
 
   // ── Filtros ──────────────────────────────────────────────────────────────────
   const [searchTerm, setSearchTerm] = useState('')
@@ -72,7 +80,7 @@ export function VehiclesListPage() {
   }
 
   // ── Crear / Editar ───────────────────────────────────────────────────────────
-  const handleFormSubmit = async (data: VehicleFormData) => {
+  const processFormSubmit = async (data: VehicleFormData) => {
     const toastId = toast.loading('Guardando unidad...')
     try {
       // Normalizar: strings vacíos → null, year → número
@@ -84,6 +92,33 @@ export function VehiclesListPage() {
           clean[k] = parseInt(v, 10)
         } else {
           clean[k] = v
+        }
+      }
+
+      // Resolver conductor si es "_owner"
+      if (clean.driver_id === '_owner') {
+        const memberId = data.member_id
+        if (!memberId) throw new Error("No hay socio seleccionado")
+        
+        const existing = await getDriverByMemberId(memberId)
+        if (existing) {
+          clean.driver_id = existing.id
+        } else {
+          // Crear conductor
+          const member = members.find(m => m.id === memberId)
+          if (!member) throw new Error("No se encontró al socio")
+          const { data: newDriver, error: driverErr } = await createDriver({
+            document_id: member.document_id,
+            first_name:  member.first_name,
+            last_name:   member.last_name,
+            phone:       (member as { phone?: string | null }).phone || null,
+            address:     (member as { address?: string | null }).address || null,
+            status:      'activo',
+            notes:       null,
+            member_id:   member.id,
+          })
+          if (driverErr || !newDriver) throw new Error(driverErr || "Error creando conductor")
+          clean.driver_id = newDriver.id
         }
       }
 
@@ -100,9 +135,27 @@ export function VehiclesListPage() {
       setIsFormOpen(false)
       setSelectedVehicle(null)
       refresh()
+      vehicleDraftRef.current = null
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Error al guardar la unidad.'
       toast.error(msg, { id: toastId })
+    }
+  }
+
+  const handleFormSubmit = async (data: VehicleFormData) => {
+    // Si editamos, tenía conductor, y ahora viene vacío (quitar conductor)
+    if (selectedVehicle && selectedVehicle.driver_id && data.driver_id === '') {
+      setRemoveDriverConfirm({ open: true, pendingData: data })
+      return
+    }
+    await processFormSubmit(data)
+  }
+
+  const handleConfirmRemoveDriver = async () => {
+    if (removeDriverConfirm.pendingData) {
+      setRemoveDriverConfirm(prev => ({ ...prev, open: false }))
+      await processFormSubmit(removeDriverConfirm.pendingData)
+      setRemoveDriverConfirm({ open: false, pendingData: null })
     }
   }
 
@@ -158,15 +211,6 @@ export function VehiclesListPage() {
   }
 
   // ── ConfirmModal labels ───────────────────────────────────────────────────────
-  const confirmV       = confirmState.vehicle
-  const confirmIsDeact = confirmState.nextStatus === 'inactiva'
-  const confirmTitle   = confirmIsDeact ? 'Desactivar unidad' : 'Activar unidad'
-  const confirmMsg     = confirmIsDeact
-    ? `¿Desactivar la unidad disco ${confirmV?.disk_number} — ${confirmV?.plate}?`
-    : `¿Activar la unidad disco ${confirmV?.disk_number} — ${confirmV?.plate}?`
-  const confirmDetail  = confirmIsDeact
-    ? 'La unidad pasará a estado inactivo. Su historial de documentos y cobros se conserva sin cambios.'
-    : 'La unidad volverá a estado activo y podrá operar dentro de la cooperativa.'
 
   return (
     <div className="space-y-6 pb-12">
@@ -424,6 +468,8 @@ export function VehiclesListPage() {
         vehicle={selectedVehicle}
         members={members}
         drivers={drivers}
+        draft={!selectedVehicle ? vehicleDraftRef.current : null}
+        onDraftChange={(d) => { vehicleDraftRef.current = d }}
       />
 
       {/* ── Modal Confirmación de Estado ─────────────────────────────────────── */}
@@ -431,12 +477,23 @@ export function VehiclesListPage() {
         isOpen={confirmState.open}
         onClose={() => setConfirmState({ open: false, vehicle: null, nextStatus: 'inactiva', loading: false })}
         onConfirm={handleConfirmStatusChange}
-        title={confirmTitle}
-        message={confirmMsg}
-        detail={confirmDetail}
-        confirmLabel={confirmIsDeact ? 'Sí, desactivar' : 'Sí, activar'}
-        variant={confirmIsDeact ? 'warning' : 'success'}
+        title={confirmState.nextStatus === 'inactiva' ? 'Desactivar Unidad' : 'Activar Unidad'}
+        message={confirmState.vehicle ? `¿Confirmas ${confirmState.nextStatus === 'inactiva' ? 'desactivar' : 'activar'} el disco #${confirmState.vehicle.disk_number}?` : ''}
+        detail={confirmState.nextStatus === 'inactiva' ? 'La unidad dejará de estar operativa.' : 'La unidad volverá a estar operativa.'}
+        confirmLabel={confirmState.nextStatus === 'inactiva' ? 'Sí, desactivar' : 'Sí, activar'}
+        variant={confirmState.nextStatus === 'inactiva' ? 'warning' : 'success'}
         loading={confirmState.loading}
+      />
+
+      <ConfirmModal
+        isOpen={removeDriverConfirm.open}
+        onClose={() => setRemoveDriverConfirm({ open: false, pendingData: null })}
+        onConfirm={handleConfirmRemoveDriver}
+        title="Quitar Conductor Asignado"
+        message="Has seleccionado 'Sin conductor asignado por ahora'."
+        detail="¿Confirmas que deseas retirar al conductor actual de esta unidad? La unidad quedará sin chofer registrado."
+        confirmLabel="Sí, quitar conductor"
+        variant="warning"
       />
     </div>
   )

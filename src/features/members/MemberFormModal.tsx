@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/Input'
 import { Select } from '@/components/ui/Select'
 import { Textarea } from '@/components/ui/Textarea'
 import { Button } from '@/components/ui/Button'
+import { ConfirmModal } from '@/components/ui/ConfirmModal'
 import type { Member } from '@/types'
 
 // ─── Validaciones Zod robustas ────────────────────────────────────────────────
@@ -122,6 +123,9 @@ interface MemberFormModalProps {
   onSubmit: (data: MemberFormData) => Promise<void>
   member?: Member | null
   loading?: boolean
+  /** Borrador del formulario (memoória del padre) */
+  draft?: Partial<MemberFormData> | null
+  onDraftChange?: (draft: Partial<MemberFormData> | null) => void
 }
 
 const defaultValues: MemberFormData = {
@@ -139,14 +143,21 @@ const defaultValues: MemberFormData = {
   notes: '',
 }
 
-export function MemberFormModal({ isOpen, onClose, onSubmit, member, loading }: MemberFormModalProps) {
+export function MemberFormModal({
+  isOpen, onClose, onSubmit, member, loading,
+  draft, onDraftChange,
+}: MemberFormModalProps) {
   const isEdit = !!member
+
+  // Modal de confirmación de descarte
+  const [discardConfirm, setDiscardConfirm] = useState(false)
 
   const {
     register,
     handleSubmit,
     reset,
-    formState: { errors, isSubmitting },
+    watch,
+    formState: { errors, isSubmitting, isDirty },
   } = useForm<MemberFormData>({
     resolver: zodResolver(memberSchema),
     defaultValues,
@@ -156,6 +167,7 @@ export function MemberFormModal({ isOpen, onClose, onSubmit, member, loading }: 
   useEffect(() => {
     if (isOpen) {
       if (member) {
+        // Modo edición: cargar datos del socio
         reset({
           document_id: member.document_id || '',
           first_name: member.first_name || '',
@@ -170,11 +182,23 @@ export function MemberFormModal({ isOpen, onClose, onSubmit, member, loading }: 
           emergency_contact_phone: member.emergency_contact_phone || '',
           notes: member.notes || '',
         })
+      } else if (draft && Object.keys(draft).some((k) => draft[k as keyof typeof draft])) {
+        // Modo creación con borrador en memoria
+        reset({ ...defaultValues, ...draft })
       } else {
         reset(defaultValues)
       }
     }
-  }, [member, reset, isOpen])
+  }, [member, reset, isOpen, draft])
+
+  // Persiste borrador al padre mientras escribe (solo modo creación)
+  const currentValues = watch()
+  useEffect(() => {
+    if (!isEdit && isOpen && isDirty) {
+      onDraftChange?.(currentValues)
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [JSON.stringify(currentValues), isEdit, isOpen, isDirty])
 
   const handleFormSubmit = async (data: MemberFormData) => {
     // Normalizar: strings vacíos → null, nombres con trim
@@ -190,6 +214,24 @@ export function MemberFormModal({ isOpen, onClose, onSubmit, member, loading }: 
       notes: data.notes?.trim() || '',
     }
     await onSubmit(cleaned)
+    // Guardar exitoso → limpiar borrador
+    onDraftChange?.(null)
+  }
+
+  // Manejar cierre: pedir confirmación si hay cambios sin guardar
+  const handleClose = () => {
+    if (!isBusy && isDirty && !isEdit) {
+      setDiscardConfirm(true)
+    } else {
+      onClose()
+    }
+  }
+
+  const handleConfirmDiscard = () => {
+    onDraftChange?.(null)
+    setDiscardConfirm(false)
+    reset(defaultValues)
+    onClose()
   }
 
   const bloodTypeOptions = [
@@ -213,27 +255,28 @@ export function MemberFormModal({ isOpen, onClose, onSubmit, member, loading }: 
   const isBusy = isSubmitting || !!loading
 
   return (
-    <Modal
-      isOpen={isOpen}
-      onClose={isBusy ? undefined : onClose}
-      title={isEdit ? 'Editar Datos del Socio' : 'Registrar Nuevo Socio'}
-      size="lg"
-      closeOnOverlay={!isBusy}
-      footer={
-        <div className="flex justify-end space-x-3 w-full">
-          <Button variant="outline" type="button" onClick={onClose} disabled={isBusy}>
-            Cancelar
-          </Button>
-          <Button
-            type="button"
-            onClick={handleSubmit(handleFormSubmit)}
-            disabled={isBusy}
-          >
-            {isBusy ? 'Guardando...' : isEdit ? 'Guardar Cambios' : 'Registrar Socio'}
-          </Button>
-        </div>
-      }
-    >
+    <>
+      <Modal
+        isOpen={isOpen}
+        onClose={isBusy ? undefined : handleClose}
+        title={isEdit ? 'Editar Datos del Socio' : 'Registrar Nuevo Socio'}
+        size="lg"
+        closeOnOverlay={!isBusy}
+        footer={
+          <div className="flex justify-end space-x-3 w-full">
+            <Button variant="outline" type="button" onClick={handleClose} disabled={isBusy}>
+              Cancelar
+            </Button>
+            <Button
+              type="button"
+              onClick={handleSubmit(handleFormSubmit)}
+              disabled={isBusy}
+            >
+              {isBusy ? 'Guardando...' : isEdit ? 'Guardar Cambios' : 'Registrar Socio'}
+            </Button>
+          </div>
+        }
+      >
       <form
         onSubmit={(e) => {
           e.preventDefault()
@@ -375,6 +418,20 @@ export function MemberFormModal({ isOpen, onClose, onSubmit, member, loading }: 
           />
         </div>
       </form>
-    </Modal>
+      </Modal>
+
+      {/* Confirmación de descarte de borrador */}
+      <ConfirmModal
+        isOpen={discardConfirm}
+        onClose={() => setDiscardConfirm(false)}
+        onConfirm={handleConfirmDiscard}
+        title="¿Descartar cambios?"
+        message="Hay información sin guardar en el formulario."
+        detail="Si descartás, los datos que escribiste se perderán. ¿Deseas continuar?"
+        confirmLabel="Sí, descartar"
+        cancelLabel="Volver al formulario"
+        variant="warning"
+      />
+    </>
   )
 }
