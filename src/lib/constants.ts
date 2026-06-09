@@ -43,18 +43,14 @@ export const MEMBER_STATUS_COLORS: Record<MemberStatus, string> = {
 // ─── Estados de unidad ────────────────────────────────
 export const VEHICLE_STATUS_LABELS: Record<VehicleStatus, string> = {
   activa:        'Activa',
-  suspendida:    'Suspendida',
   inactiva:      'Inactiva',
-  en_reparacion: 'En reparación',
-  retirada:      'Retirada',
+  mantenimiento: 'En mantenimiento',
 }
 
 export const VEHICLE_STATUS_COLORS: Record<VehicleStatus, string> = {
   activa:        'bg-success-50 text-success-700 border-success-200',
-  suspendida:    'bg-warning-50 text-warning-700 border-warning-200',
   inactiva:      'bg-gray-100 text-gray-600 border-gray-200',
-  en_reparacion: 'bg-orange-50 text-orange-700 border-orange-200',
-  retirada:      'bg-gray-100 text-gray-500 border-gray-200',
+  mantenimiento: 'bg-amber-50 text-amber-700 border-amber-200',
 }
 
 // ─── Estados de documento ─────────────────────────────

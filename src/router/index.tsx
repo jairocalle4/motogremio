@@ -8,6 +8,8 @@ import { ChangePasswordPage } from '@/features/account/ChangePasswordPage'
 import { CompanyConfigPage } from '@/features/company/CompanyConfigPage'
 import { MembersListPage } from '@/features/members/MembersListPage'
 import { MemberDetailPage } from '@/features/members/MemberDetailPage'
+import { VehiclesListPage } from '@/features/vehicles/VehiclesListPage'
+import { VehicleDetailPage } from '@/features/vehicles/VehicleDetailPage'
 
 // ─── Páginas placeholder (se crearán en Fase 3–5) ─────
 const Placeholder = ({ title }: { title: string }) => (
@@ -45,8 +47,8 @@ export function AppRouter() {
                 {/* Módulos — Fase 3 */}
                 <Route path="/socios"        element={<MembersListPage />} />
                 <Route path="/socios/:id"    element={<MemberDetailPage />} />
-                <Route path="/unidades"      element={<Placeholder title="Unidades / Mototaxis" />} />
-                <Route path="/unidades/:id"  element={<Placeholder title="Perfil de Unidad" />} />
+                <Route path="/unidades"      element={<VehiclesListPage />} />
+                <Route path="/unidades/:id"  element={<VehicleDetailPage />} />
                 <Route path="/pagos"         element={<Placeholder title="Pagos y Cuotas" />} />
                 <Route path="/documentos"    element={<Placeholder title="Documentos y Vencimientos" />} />
 

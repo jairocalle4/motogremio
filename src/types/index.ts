@@ -14,7 +14,7 @@ export type UserRole =
 
 export type CompanyStatus = 'activa' | 'suspendida' | 'inactiva'
 export type MemberStatus  = 'activo' | 'inactivo' | 'suspendido'
-export type VehicleStatus = 'activa' | 'suspendida' | 'inactiva' | 'en_reparacion' | 'retirada'
+export type VehicleStatus = 'activa' | 'inactiva' | 'mantenimiento'
 export type DocumentStatus  = 'vigente' | 'por_vencer' | 'vencido'
 export type PaymentStatus   = 'pagado'  | 'pendiente'  | 'moroso'  | 'anulado'
 export type SanctionStatus  = 'pendiente' | 'aplicada' | 'anulada' | 'cumplida'
@@ -131,22 +131,22 @@ export interface MemberLicense {
 export interface Vehicle {
   id: string
   company_id: string
+  member_id: string            // socio propietario — UNIQUE(company_id, disk_number)
+  driver_id: string | null     // conductor externo (tabla drivers) — NULL por ahora
   disk_number: string          // UNIQUE(company_id, disk_number)
-  plate: string
+  plate: string                // UNIQUE(company_id, plate)
   brand: string | null
   model: string | null
   year: number | null
   color: string | null
+  motor_number: string | null
   chassis_number: string | null
-  engine_number: string | null
-  owner_member_id: string | null
-  driver_member_id: string | null
+  observations: string | null  // campo adicional — migración 14
   status: VehicleStatus
-  observations: string | null
   created_at: string
   updated_at: string
-  owner?: Member
-  driver?: Member
+  // Relaciones cargadas con JOIN
+  member?: Member              // propietario
 }
 
 // ═══════════════════════════════════════════════════════

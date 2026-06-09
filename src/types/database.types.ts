@@ -1237,6 +1237,7 @@ export type Database = {
           member_id: string
           model: string | null
           motor_number: string | null
+          observations: string | null
           plate: string
           status: Database["public"]["Enums"]["vehicle_status"] | null
           updated_at: string | null
@@ -1254,6 +1255,7 @@ export type Database = {
           member_id: string
           model?: string | null
           motor_number?: string | null
+          observations?: string | null
           plate: string
           status?: Database["public"]["Enums"]["vehicle_status"] | null
           updated_at?: string | null
@@ -1271,6 +1273,7 @@ export type Database = {
           member_id?: string
           model?: string | null
           motor_number?: string | null
+          observations?: string | null
           plate?: string
           status?: Database["public"]["Enums"]["vehicle_status"] | null
           updated_at?: string | null
