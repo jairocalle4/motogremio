@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import { useVehicles } from '@/hooks/useVehicles'
@@ -26,19 +26,22 @@ import {
   Palette,
   Calendar,
 } from 'lucide-react'
-import type { VehicleStatus } from '@/types'
+import type { VehicleStatus, VehicleDriverAssignment } from '@/types'
 import { DocumentsList } from '@/features/documents/DocumentsList'
 
 export function VehicleDetailPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const { canManageVehicles } = usePermissions()
-  const { currentVehicle, loading, error, fetchVehicleById, updateVehicle } = useVehicles()
+  const { currentVehicle, loading, error, fetchVehicleById, updateVehicle, fetchVehicleDriverHistory } = useVehicles()
   const { members, fetchMembers } = useMembers()
   const { fetchDriverById, fetchDrivers, drivers } = useDrivers()
 
   // Driver cargado desde driver_id de la unidad
   const [vehicleDriver, setVehicleDriver] = useState<Awaited<ReturnType<typeof fetchDriverById>>>(null)
+
+  // Historial de conductores
+  const [driverHistory, setDriverHistory] = useState<VehicleDriverAssignment[]>([])
 
   // ── Modal edición ────────────────────────────────────────────────────────────
   const [isEditOpen, setIsEditOpen] = useState(false)
@@ -58,11 +61,19 @@ export function VehicleDetailPage() {
     loading: boolean
   }>({ open: false, nextStatus: 'inactiva', loading: false })
 
+  const loadDriverHistory = useCallback(async () => {
+    if (id) {
+      const history = await fetchVehicleDriverHistory(id)
+      setDriverHistory(history)
+    }
+  }, [id, fetchVehicleDriverHistory])
+
   useEffect(() => {
     if (id) {
       fetchVehicleById(id)
       fetchMembers()
       fetchDrivers()
+      loadDriverHistory()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id])
@@ -94,6 +105,7 @@ export function VehicleDetailPage() {
       toast.success('Unidad actualizada.', { id: toastId })
       setIsEditOpen(false)
       fetchVehicleById(id)
+      loadDriverHistory()
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : 'Error al actualizar.', { id: toastId })
     } finally {
@@ -111,11 +123,16 @@ export function VehicleDetailPage() {
     setAssignDriverLoading(true)
     const toastId = toast.loading('Asignando conductor...')
     try {
-      const { error: err } = await updateVehicle(id, { driver_id: driverId || null })
+      const { error: err } = await updateVehicle(
+        id, 
+        { driver_id: driverId || null },
+        { changeReason: 'Asignación rápida de conductor' }
+      )
       if (err) throw new Error(err)
       toast.success('Conductor asignado exitosamente.', { id: toastId })
       setIsAssignDriverOpen(false)
       fetchVehicleById(id)
+      loadDriverHistory()
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : 'Error al asignar conductor.', { id: toastId })
     } finally {
@@ -127,11 +144,16 @@ export function VehicleDetailPage() {
     if (!id) return
     const toastId = toast.loading('Quitando conductor...')
     try {
-      const { error: err } = await updateVehicle(id, { driver_id: null })
+      const { error: err } = await updateVehicle(
+        id, 
+        { driver_id: null },
+        { changeReason: 'Conductor desasignado por administración' }
+      )
       if (err) throw new Error(err)
       toast.success('Conductor retirado de la unidad.', { id: toastId })
       setIsRemoveDriverConfirmOpen(false)
       fetchVehicleById(id)
+      loadDriverHistory()
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : 'Error al retirar conductor.', { id: toastId })
     }
@@ -479,6 +501,115 @@ export function VehicleDetailPage() {
                       Añadir conductor
                     </Button>
                   )}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Historial de Conductores */}
+          <Card>
+            <CardHeader className="border-b border-gray-100">
+              <CardTitle className="text-base flex items-center gap-2">
+                <Calendar className="w-4 h-4 text-amber-500" />
+                Historial de Conductores
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-0">
+              {driverHistory.length === 0 ? (
+                <div className="p-6 text-center text-sm text-gray-400 italic">
+                  No hay registro de asignaciones previas.
+                </div>
+              ) : (
+                <div className="flow-root p-6">
+                  <ul className="-mb-8">
+                    {driverHistory.map((assignment, index) => {
+                      const isActive = !assignment.unassigned_at
+                      const driverName = assignment.driver 
+                        ? `${assignment.driver.first_name} ${assignment.driver.last_name}`
+                        : 'Socio Propietario / Conductor'
+                      const driverDId = assignment.driver?.document_id || '—'
+                      const assignedBy = assignment.assigned_by_profile
+                        ? `${assignment.assigned_by_profile.first_name} ${assignment.assigned_by_profile.last_name}`
+                        : null
+                      const unassignedBy = assignment.unassigned_by_profile
+                        ? `${assignment.unassigned_by_profile.first_name} ${assignment.unassigned_by_profile.last_name}`
+                        : null
+
+                      return (
+                        <li key={assignment.id}>
+                          <div className="relative pb-8">
+                            {index !== driverHistory.length - 1 ? (
+                              <span
+                                className="absolute top-4 left-4 -ml-px h-full w-0.5 bg-gray-200"
+                                aria-hidden="true"
+                              />
+                            ) : null}
+                            <div className="relative flex space-x-3">
+                              <div>
+                                <span className={`h-8 w-8 rounded-full flex items-center justify-center ring-8 ring-white ${
+                                  isActive ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'
+                                }`}>
+                                  <User className="w-4 h-4" />
+                                </span>
+                              </div>
+                              <div className="flex-1 min-w-0 pt-1.5">
+                                <div className="flex justify-between items-start gap-2">
+                                  <div>
+                                    <p className="text-sm font-semibold text-gray-800">
+                                      {driverName}
+                                    </p>
+                                    <p className="text-xs font-mono text-gray-500 mt-0.5">
+                                      C.I: {driverDId}
+                                    </p>
+                                  </div>
+                                  <div className="text-right">
+                                    <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
+                                      isActive 
+                                        ? 'bg-green-100 text-green-800' 
+                                        : 'bg-gray-100 text-gray-800'
+                                    }`}>
+                                      {isActive ? 'Actual' : 'Anterior'}
+                                    </span>
+                                  </div>
+                                </div>
+                                
+                                <div className="mt-2 text-xs text-gray-600 space-y-1 bg-gray-50 p-3 rounded-lg border border-gray-100">
+                                  <p>
+                                    <span className="font-semibold text-gray-500">Inicio:</span>{' '}
+                                    {new Date(assignment.assigned_at).toLocaleString('es-EC')}
+                                    {assignedBy && (
+                                      <span className="text-gray-400"> (por {assignedBy})</span>
+                                    )}
+                                  </p>
+                                  {!isActive && (
+                                    <p>
+                                      <span className="font-semibold text-gray-500">Fin:</span>{' '}
+                                      {new Date(assignment.unassigned_at!).toLocaleString('es-EC')}
+                                      {unassignedBy && (
+                                        <span className="text-gray-400"> (por {unassignedBy})</span>
+                                      )}
+                                    </p>
+                                  )}
+                                  {assignment.change_reason && (
+                                    <p>
+                                      <span className="font-semibold text-gray-500">Motivo:</span>{' '}
+                                      {assignment.change_reason}
+                                    </p>
+                                  )}
+                                  {assignment.notes && (
+                                    <p>
+                                      <span className="font-semibold text-gray-500">Notas:</span>{' '}
+                                      {assignment.notes}
+                                    </p>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </li>
+                      )
+                    })}
+                  </ul>
                 </div>
               )}
             </CardContent>

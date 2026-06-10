@@ -151,6 +151,33 @@ export interface Vehicle {
   driver?: Pick<Driver, 'id' | 'first_name' | 'last_name' | 'document_id' | 'status'> | null
 }
 
+export interface VehicleDriverAssignment {
+  id: string
+  company_id: string
+  vehicle_id: string
+  driver_id: string | null
+  assigned_at: string
+  unassigned_at: string | null
+  assigned_by: string | null
+  unassigned_by: string | null
+  change_reason: string | null
+  notes: string | null
+  created_at: string
+  updated_at: string
+  // Joins
+  driver?: Pick<Driver, 'id' | 'first_name' | 'last_name' | 'document_id'> | null
+  assigned_by_profile?: {
+    id: string
+    first_name: string
+    last_name: string
+  } | null
+  unassigned_by_profile?: {
+    id: string
+    first_name: string
+    last_name: string
+  } | null
+}
+
 // ═══════════════════════════════════════════════════════
 // CONDUCTORES
 // ═══════════════════════════════════════════════════════

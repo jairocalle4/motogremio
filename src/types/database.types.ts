@@ -1,4 +1,4 @@
-export type Json =
+﻿export type Json =
   | string
   | number
   | boolean
@@ -1223,6 +1223,87 @@ export type Database = {
             columns: ["plan_id"]
             isOneToOne: false
             referencedRelation: "plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      vehicle_driver_assignments: {
+        Row: {
+          assigned_at: string
+          assigned_by: string | null
+          change_reason: string | null
+          company_id: string
+          created_at: string | null
+          driver_id: string | null
+          id: string
+          notes: string | null
+          unassigned_at: string | null
+          unassigned_by: string | null
+          updated_at: string | null
+          vehicle_id: string
+        }
+        Insert: {
+          assigned_at?: string
+          assigned_by?: string | null
+          change_reason?: string | null
+          company_id: string
+          created_at?: string | null
+          driver_id?: string | null
+          id?: string
+          notes?: string | null
+          unassigned_at?: string | null
+          unassigned_by?: string | null
+          updated_at?: string | null
+          vehicle_id: string
+        }
+        Update: {
+          assigned_at?: string
+          assigned_by?: string | null
+          change_reason?: string | null
+          company_id?: string
+          created_at?: string | null
+          driver_id?: string | null
+          id?: string
+          notes?: string | null
+          unassigned_at?: string | null
+          unassigned_by?: string | null
+          updated_at?: string | null
+          vehicle_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vehicle_driver_assignments_assigned_by_fkey"
+            columns: ["assigned_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vehicle_driver_assignments_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vehicle_driver_assignments_driver_id_fkey"
+            columns: ["driver_id"]
+            isOneToOne: false
+            referencedRelation: "drivers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vehicle_driver_assignments_unassigned_by_fkey"
+            columns: ["unassigned_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vehicle_driver_assignments_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "vehicles"
             referencedColumns: ["id"]
           },
         ]
