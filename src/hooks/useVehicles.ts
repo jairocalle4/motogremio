@@ -102,6 +102,55 @@ export function useVehicles() {
     }
   }, [])
 
+  // Helper interno para resolver o crear conductor del socio
+  const resolveOwnerDriver = async (memberId: string, companyId: string): Promise<string> => {
+    if (!memberId) throw new Error("No hay socio seleccionado")
+
+    // 1. Buscar si ya existe conductor para este socio
+    const { data: existing, error: existErr } = await supabase
+      .from('drivers')
+      .select('id')
+      .eq('company_id', companyId)
+      .eq('member_id', memberId)
+      .maybeSingle()
+
+    if (existErr) throw existErr
+    if (existing) {
+      return existing.id
+    }
+
+    // 2. Si no existe, buscar datos del socio
+    const { data: member, error: memErr } = await supabase
+      .from('members')
+      .select('*')
+      .eq('id', memberId)
+      .single()
+
+    if (memErr || !member) throw new Error("No se encontró al socio propietario")
+
+    // 3. Crear conductor
+    const { data: newDriver, error: driverErr } = await supabase
+      .from('drivers')
+      .insert({
+        company_id: companyId,
+        document_id: member.document_id,
+        first_name: member.first_name,
+        last_name: member.last_name,
+        phone: member.phone || null,
+        address: member.address || null,
+        status: 'activo',
+        member_id: member.id,
+      })
+      .select('id')
+      .single()
+
+    if (driverErr || !newDriver) {
+      throw new Error(driverErr?.message || "Error al crear el conductor para el socio")
+    }
+
+    return newDriver.id
+  }
+
   // ── Crear ───────────────────────────────────────────────────────────────────
   const createVehicle = async (vehicleData: VehicleInsert) => {
     if (!profile?.company_id) return { data: null, error: 'Sin company_id' }
@@ -109,9 +158,15 @@ export function useVehicles() {
     setLoading(true)
     setError(null)
     try {
+      let driverId = vehicleData.driver_id
+      if (driverId === '_owner') {
+        if (!vehicleData.member_id) throw new Error("No hay socio seleccionado")
+        driverId = await resolveOwnerDriver(vehicleData.member_id, profile.company_id)
+      }
+
       const { data, error: insertError } = await supabase
         .from('vehicles')
-        .insert({ ...vehicleData, company_id: profile.company_id })
+        .insert({ ...vehicleData, driver_id: driverId, company_id: profile.company_id })
         .select()
         .single()
 
@@ -145,12 +200,20 @@ export function useVehicles() {
     id: string,
     updates: Omit<VehicleUpdate, 'id' | 'company_id'>
   ) => {
+    if (!profile?.company_id) return { data: null, error: 'Sin company_id' }
     setLoading(true)
     setError(null)
     try {
+      let driverId = updates.driver_id
+      if (driverId === '_owner') {
+        const memberId = updates.member_id
+        if (!memberId) throw new Error("No hay socio seleccionado")
+        driverId = await resolveOwnerDriver(memberId, profile.company_id)
+      }
+
       const { data, error: updateError } = await supabase
         .from('vehicles')
-        .update({ ...updates, updated_at: new Date().toISOString() })
+        .update({ ...updates, driver_id: driverId, updated_at: new Date().toISOString() })
         .eq('id', id)
         .select()
         .single()
@@ -184,6 +247,7 @@ export function useVehicles() {
       setLoading(false)
     }
   }
+
 
   return {
     vehicles,

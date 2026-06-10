@@ -90,8 +90,8 @@ interface VehicleFormModalProps {
   onClose: () => void
   onSubmit: (data: VehicleFormData) => Promise<void>
   vehicle?: VehicleWithMember | null
-  members: Pick<Member, 'id' | 'first_name' | 'last_name' | 'document_id'>[]
-  drivers?: Pick<Driver, 'id' | 'first_name' | 'last_name' | 'document_id' | 'status'>[]
+  members: Pick<Member, 'id' | 'first_name' | 'last_name' | 'document_id' | 'phone' | 'address'>[]
+  drivers?: Pick<Driver, 'id' | 'first_name' | 'last_name' | 'document_id' | 'status' | 'member_id'>[]
   loading?: boolean
   /** Borrador en memoria */
   draft?: Partial<VehicleFormData> | null
@@ -140,11 +140,15 @@ export function VehicleFormModal({
     handleSubmit,
     reset,
     watch,
+    setValue,
     formState: { errors, isSubmitting, isDirty },
   } = useForm<VehicleFormData>({
     resolver: zodResolver(vehicleSchema),
     defaultValues,
   })
+
+  // Estado local para el tipo de asignación de conductor
+  const [driverType, setDriverType] = useState<'none' | 'owner' | 'existing'>('none')
 
   // Sincronizar formulario al abrir
   useEffect(() => {
@@ -164,13 +168,34 @@ export function VehicleFormModal({
           observations: vehicle.observations || '',
           driver_id: vehicle.driver_id || '',
         })
+
+        // Determinar driverType inicial
+        const currentDriverId = vehicle.driver_id
+        if (!currentDriverId) {
+          setDriverType('none')
+        } else {
+          const isOwner = drivers.some(d => d.id === currentDriverId && d.member_id === vehicle.member_id)
+          if (isOwner || currentDriverId === '_owner') {
+            setDriverType('owner')
+          } else {
+            setDriverType('existing')
+          }
+        }
       } else if (draft && Object.keys(draft).some((k) => draft[k as keyof typeof draft])) {
         reset({ ...defaultValues, ...draft })
+        if (draft.driver_id === '_owner') {
+          setDriverType('owner')
+        } else if (draft.driver_id) {
+          setDriverType('existing')
+        } else {
+          setDriverType('none')
+        }
       } else {
         reset(defaultValues)
+        setDriverType('none')
       }
     }
-  }, [vehicle, reset, isOpen, draft])
+  }, [vehicle, reset, isOpen, draft, drivers])
 
   // Persiste borrador
   const currentValues = watch()
@@ -232,6 +257,10 @@ export function VehicleFormModal({
       label: `${m.last_name}, ${m.first_name} — C.I: ${m.document_id}`,
     })),
   ]
+
+  const selectedMemberId = watch('member_id')
+  const selectedMember = members.find((m) => m.id === selectedMemberId)
+  const existingDriver = drivers.find((d) => d.member_id === selectedMemberId)
 
   const isBusy = isSubmitting || !!loading
   const originalDisk = vehicle?.disk_number
@@ -314,20 +343,27 @@ export function VehicleFormModal({
             />
           </div>
 
+          {/* Campo oculto para registrar driver_id con react-hook-form */}
+          <input type="hidden" {...register('driver_id')} />
+
           {/* ── Sección: Conductor ────────────────────────────────── */}
           <div className="border-t border-gray-100 pt-5 mt-1 mb-2">
             <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-4">
               Conductor de la Unidad
             </p>
 
-            {/* Opción 1: Sin conductor */}
-            <div className="space-y-2">
+            <div className="space-y-4">
+              {/* Opción 1: Sin conductor */}
               <label className="flex items-start gap-3 p-3 rounded-lg border border-gray-200 cursor-pointer hover:border-primary-300 has-[:checked]:border-primary-500 has-[:checked]:bg-primary-50 transition-all">
                 <input
                   type="radio"
+                  name="driver_type_selection"
                   className="mt-0.5 h-4 w-4 text-primary-600 border-gray-300 focus:ring-primary-500"
-                  value=""
-                  {...register('driver_id')}
+                  checked={driverType === 'none'}
+                  onChange={() => {
+                    setDriverType('none')
+                    setValue('driver_id', '', { shouldDirty: true })
+                  }}
                 />
                 <div>
                   <p className="text-sm font-semibold text-gray-700">Sin conductor asignado por ahora</p>
@@ -336,41 +372,100 @@ export function VehicleFormModal({
               </label>
 
               {/* Opción 2: Socio propietario conduce */}
-              {watch('member_id') && (
-                <label className="flex items-start gap-3 p-3 rounded-lg border border-gray-200 cursor-pointer hover:border-primary-300 has-[:checked]:border-primary-500 has-[:checked]:bg-primary-50 transition-all">
-                  <input
-                    type="radio"
-                    className="mt-0.5 h-4 w-4 text-primary-600 border-gray-300 focus:ring-primary-500"
-                    value="_owner"
-                    {...register('driver_id')}
-                  />
-                  <div>
-                    <p className="text-sm font-semibold text-gray-700">El socio propietario también conduce</p>
-                    <p className="text-xs text-gray-500">
-                      Se vincula el conductor al socio seleccionado. Si aún no tiene conductor creado, hazlo desde el módulo de Conductores.
-                    </p>
-                  </div>
-                </label>
+              {selectedMemberId && (
+                <div className="space-y-3">
+                  <label className="flex items-start gap-3 p-3 rounded-lg border border-gray-200 cursor-pointer hover:border-primary-300 has-[:checked]:border-primary-500 has-[:checked]:bg-primary-50 transition-all">
+                    <input
+                      type="radio"
+                      name="driver_type_selection"
+                      className="mt-0.5 h-4 w-4 text-primary-600 border-gray-300 focus:ring-primary-500"
+                      checked={driverType === 'owner'}
+                      onChange={() => {
+                        setDriverType('owner')
+                        setValue('driver_id', '_owner', { shouldDirty: true })
+                      }}
+                    />
+                    <div>
+                      <p className="text-sm font-semibold text-gray-700">El socio propietario también conduce</p>
+                      <p className="text-xs text-gray-500">
+                        Vincular al socio {selectedMember ? `"${selectedMember.first_name} ${selectedMember.last_name}"` : ''} como el conductor de la unidad.
+                      </p>
+                    </div>
+                  </label>
+
+                  {driverType === 'owner' && selectedMember && (
+                    <div className="bg-primary-50 border border-primary-100 rounded-lg p-4 text-sm space-y-2">
+                      <p className="font-medium text-primary-950">
+                        ✨ Se creará o vinculará automáticamente un conductor usando los datos del socio propietario.
+                      </p>
+                      {existingDriver ? (
+                        <p className="text-xs text-primary-800">
+                          ℹ️ El socio ya tiene un perfil de conductor registrado (<strong>{existingDriver.first_name} {existingDriver.last_name}</strong>). Se usará su perfil existente sin duplicar datos.
+                        </p>
+                      ) : (
+                        <div className="space-y-1.5">
+                          <p className="text-xs text-primary-800">
+                            🆕 El socio no tiene un perfil de conductor aún. Se creará automáticamente un nuevo perfil con los siguientes datos:
+                          </p>
+                          <ul className="text-xs text-primary-700 list-disc list-inside space-y-0.5 bg-white bg-opacity-50 p-2 rounded border border-primary-100">
+                            <li><strong>Nombre completo:</strong> {selectedMember.first_name} {selectedMember.last_name}</li>
+                            <li><strong>Identificación (C.I.):</strong> {selectedMember.document_id}</li>
+                            <li>
+                              <strong>Teléfono:</strong> {selectedMember.phone || <span className="text-amber-600 font-semibold">⚠️ No registrado (se creará vacío)</span>}
+                            </li>
+                            <li>
+                              <strong>Dirección:</strong> {selectedMember.address || <span className="text-amber-600 font-semibold">⚠️ No registrada (se creará vacía)</span>}
+                            </li>
+                          </ul>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
               )}
 
               {/* Opción 3: Seleccionar conductor existente */}
               {drivers.length > 0 && (
-                <div className="border border-gray-200 rounded-lg p-3">
-                  <p className="text-sm font-semibold text-gray-700 mb-2">
-                    Seleccionar conductor existente
-                  </p>
-                  <Select
-                    options={[
-                      { value: '', label: 'Elegir conductor de la cooperativa...' },
-                      ...drivers
-                        .filter((d) => d.status === 'activo')
-                        .map((d) => ({
-                          value: d.id,
-                          label: `${d.last_name}, ${d.first_name} — C.I: ${d.document_id}`,
-                        })),
-                    ]}
-                    {...register('driver_id')}
-                  />
+                <div className="space-y-2">
+                  <label className="flex items-start gap-3 p-3 rounded-lg border border-gray-200 cursor-pointer hover:border-primary-300 has-[:checked]:border-primary-500 has-[:checked]:bg-primary-50 transition-all">
+                    <input
+                      type="radio"
+                      name="driver_type_selection"
+                      className="mt-0.5 h-4 w-4 text-primary-600 border-gray-300 focus:ring-primary-500"
+                      checked={driverType === 'existing'}
+                      onChange={() => {
+                        setDriverType('existing')
+                        const currentVal = watch('driver_id')
+                        if (currentVal === '_owner') {
+                          setValue('driver_id', '', { shouldDirty: true })
+                        }
+                      }}
+                    />
+                    <div>
+                      <p className="text-sm font-semibold text-gray-700">Seleccionar conductor existente</p>
+                      <p className="text-xs text-gray-500">Elegir un conductor que ya esté registrado en la cooperativa</p>
+                    </div>
+                  </label>
+
+                  {driverType === 'existing' && (
+                    <div className="pl-7 pt-1">
+                      <Select
+                        options={[
+                          { value: '', label: 'Elegir conductor de la cooperativa...' },
+                          ...drivers
+                            .filter((d) => d.status === 'activo')
+                            .map((d) => ({
+                              value: d.id,
+                              label: `${d.last_name}, ${d.first_name} — C.I: ${d.document_id}`,
+                            })),
+                        ]}
+                        value={watch('driver_id') !== '_owner' ? watch('driver_id') || '' : ''}
+                        onChange={(e) => {
+                          setValue('driver_id', e.target.value, { shouldDirty: true })
+                        }}
+                      />
+                    </div>
+                  )}
                 </div>
               )}
 

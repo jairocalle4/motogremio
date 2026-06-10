@@ -34,7 +34,7 @@ export function VehicleDetailPage() {
   const { canManageVehicles } = usePermissions()
   const { currentVehicle, loading, error, fetchVehicleById, updateVehicle } = useVehicles()
   const { members, fetchMembers } = useMembers()
-  const { fetchDriverById, fetchDrivers, createDriver, getDriverByMemberId, drivers } = useDrivers()
+  const { fetchDriverById, fetchDrivers, drivers } = useDrivers()
 
   // Driver cargado desde driver_id de la unidad
   const [vehicleDriver, setVehicleDriver] = useState<Awaited<ReturnType<typeof fetchDriverById>>>(null)
@@ -84,32 +84,6 @@ export function VehicleDetailPage() {
         if (v === '' || v === undefined) clean[k] = null
         else if (k === 'year' && typeof v === 'string') clean[k] = parseInt(v, 10)
         else clean[k] = v
-      }
-
-      if (clean.driver_id === '_owner') {
-        const memberId = data.member_id
-        if (!memberId) throw new Error("No hay socio seleccionado")
-        
-        const existing = await getDriverByMemberId(memberId)
-        if (existing) {
-          clean.driver_id = existing.id
-        } else {
-          // Crear conductor
-          const member = members.find(m => m.id === memberId)
-          if (!member) throw new Error("No se encontró al socio")
-          const { data: newDriver, error: driverErr } = await createDriver({
-            document_id: member.document_id,
-            first_name:  member.first_name,
-            last_name:   member.last_name,
-            phone:       (member as { phone?: string | null }).phone || null,
-            address:     (member as { address?: string | null }).address || null,
-            status:      'activo',
-            notes:       null,
-            member_id:   member.id,
-          })
-          if (driverErr || !newDriver) throw new Error(driverErr || "Error creando conductor")
-          clean.driver_id = newDriver.id
-        }
       }
 
       const { error: err } = await updateVehicle(id, clean)

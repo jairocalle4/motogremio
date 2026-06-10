@@ -31,7 +31,7 @@ export function VehiclesListPage() {
   const { canManageVehicles } = usePermissions()
   const { vehicles, loading, error, fetchVehicles, createVehicle, updateVehicle } = useVehicles()
   const { members, fetchMembers } = useMembers()
-  const { drivers, fetchDrivers, getDriverByMemberId, createDriver } = useDrivers()
+  const { drivers, fetchDrivers } = useDrivers()
 
   // Borrador en memoria
   const vehicleDraftRef = useRef<Partial<import('./VehicleFormModal').VehicleFormData> | null>(null)
@@ -92,33 +92,6 @@ export function VehiclesListPage() {
           clean[k] = parseInt(v, 10)
         } else {
           clean[k] = v
-        }
-      }
-
-      // Resolver conductor si es "_owner"
-      if (clean.driver_id === '_owner') {
-        const memberId = data.member_id
-        if (!memberId) throw new Error("No hay socio seleccionado")
-        
-        const existing = await getDriverByMemberId(memberId)
-        if (existing) {
-          clean.driver_id = existing.id
-        } else {
-          // Crear conductor
-          const member = members.find(m => m.id === memberId)
-          if (!member) throw new Error("No se encontró al socio")
-          const { data: newDriver, error: driverErr } = await createDriver({
-            document_id: member.document_id,
-            first_name:  member.first_name,
-            last_name:   member.last_name,
-            phone:       (member as { phone?: string | null }).phone || null,
-            address:     (member as { address?: string | null }).address || null,
-            status:      'activo',
-            notes:       null,
-            member_id:   member.id,
-          })
-          if (driverErr || !newDriver) throw new Error(driverErr || "Error creando conductor")
-          clean.driver_id = newDriver.id
         }
       }
 
