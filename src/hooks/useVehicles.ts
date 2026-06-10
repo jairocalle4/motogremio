@@ -12,9 +12,15 @@ export type VehicleInsert = Omit<
 
 export type VehicleUpdate = Database['public']['Tables']['vehicles']['Update']
 
-// ─── Tipo enriquecido con JOIN al propietario ────────────────────────────────
+// ─── Tipo enriquecido con JOIN al propietario y conductor ──────────────────
 export type VehicleWithMember = Vehicle & {
   member: {
+    id: string
+    first_name: string
+    last_name: string
+    document_id: string
+  } | null
+  driver: {
     id: string
     first_name: string
     last_name: string
@@ -43,6 +49,9 @@ export function useVehicles() {
           .select(`
             *,
             member:members!vehicles_member_id_fkey (
+              id, first_name, last_name, document_id
+            ),
+            driver:drivers!vehicles_driver_id_fkey (
               id, first_name, last_name, document_id
             )
           `)
@@ -85,6 +94,9 @@ export function useVehicles() {
           *,
           member:members!vehicles_member_id_fkey (
             id, first_name, last_name, document_id, phone, email, status
+          ),
+          driver:drivers!vehicles_driver_id_fkey (
+            id, first_name, last_name, document_id
           )
         `)
         .eq('id', id)

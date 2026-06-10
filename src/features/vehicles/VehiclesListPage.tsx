@@ -340,6 +340,7 @@ export function VehiclesListPage() {
                 <tr>
                   <th className="px-6 py-4">Disco / Placa</th>
                   <th className="px-6 py-4">Propietario</th>
+                  <th className="px-6 py-4">Conductor</th>
                   <th className="px-6 py-4">Vehículo</th>
                   <th className="px-6 py-4">Estado</th>
                   <th className="px-6 py-4 text-right">Acciones</th>
@@ -367,6 +368,23 @@ export function VehiclesListPage() {
                         </>
                       ) : (
                         <span className="text-gray-400 italic text-xs">Sin propietario</span>
+                      )}
+                    </td>
+
+                    <td className="px-6 py-4">
+                      {vehicle.driver ? (
+                        <>
+                          <div className="font-medium text-gray-800">
+                            {vehicle.driver.first_name} {vehicle.driver.last_name}
+                          </div>
+                          <div className="text-xs text-gray-400 mt-0.5">
+                            C.I: {vehicle.driver.document_id}
+                          </div>
+                        </>
+                      ) : (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-amber-50 text-amber-800 border border-amber-100">
+                          Sin conductor
+                        </span>
                       )}
                     </td>
 

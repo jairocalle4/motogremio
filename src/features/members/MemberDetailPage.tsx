@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useMembers } from '@/hooks/useMembers'
+import { useVehicles } from '@/hooks/useVehicles'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
@@ -24,12 +25,14 @@ export function MemberDetailPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const { currentMember, loading, error, fetchMemberById } = useMembers()
+  const { vehicles, fetchVehicles } = useVehicles()
 
   useEffect(() => {
     if (id) {
       fetchMemberById(id)
+      fetchVehicles()
     }
-  }, [id, fetchMemberById])
+  }, [id, fetchMemberById, fetchVehicles])
 
   if (loading) {
     return (
@@ -68,6 +71,8 @@ export function MemberDetailPage() {
         day: 'numeric',
       })
     : 'No registrada'
+
+  const memberVehicles = vehicles.filter((v) => v.member_id === id)
 
   return (
     <div className="space-y-6 pb-12">
@@ -227,22 +232,67 @@ export function MemberDetailPage() {
 
         {/* Right column - operational links/placeholders */}
         <div className="lg:col-span-2 space-y-6">
-          {/* Vehicles / Mototaxis tab placeholder */}
+          {/* Vehicles / Mototaxis tab */}
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle className="text-base flex items-center gap-2">
                 <Car className="w-4 h-4 text-primary-500" />
-                Unidades Vinculadas (Mototaxis)
+                Unidades del Socio (Mototaxis)
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="border border-dashed rounded-lg p-6 text-center text-gray-400">
-                <Car className="w-8 h-8 text-gray-300 mx-auto mb-2" />
-                <p className="text-sm">No hay unidades vinculadas a este socio todavía.</p>
-                <p className="text-xs mt-1 text-gray-400">
-                  Las relaciones se establecerán al configurar el Módulo de Unidades.
-                </p>
-              </div>
+              {memberVehicles.length > 0 ? (
+                <div className="space-y-3">
+                  {memberVehicles.map((v) => (
+                    <div
+                      key={v.id}
+                      className="flex items-center justify-between p-3.5 rounded-xl border border-gray-100 hover:border-gray-200 bg-gray-50/30 hover:bg-gray-50/70 transition-all gap-4"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-amber-50 border border-amber-100 flex items-center justify-center shrink-0">
+                          <Car className="w-5 h-5 text-amber-500" />
+                        </div>
+                        <div>
+                          <p className="font-semibold text-gray-900 leading-tight">
+                            Disco #{v.disk_number} <span className="font-mono text-xs text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded ml-1.5">{v.plate}</span>
+                          </p>
+                          <p className="text-xs text-gray-500 mt-1">
+                            {[v.brand, v.model].filter(Boolean).join(' ') || 'Modelo sin especificar'}
+                            {v.year ? ` (${v.year})` : ''}
+                          </p>
+                          <p className="text-xs text-gray-500 mt-0.5">
+                            Conductor: {v.driver ? (
+                              <span className="font-medium text-gray-700">{v.driver.first_name} {v.driver.last_name}</span>
+                            ) : (
+                              <span className="text-amber-600 font-medium italic">Sin conductor</span>
+                            )}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <Badge variant={v.status === 'activa' ? 'success' : v.status === 'mantenimiento' ? 'warning' : 'danger'}>
+                          {v.status === 'activa' ? 'Activa' : v.status === 'mantenimiento' ? 'Mantenimiento' : 'Inactiva'}
+                        </Badge>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => navigate(`/unidades/${v.id}`)}
+                        >
+                          Ver unidad
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="border border-dashed rounded-lg p-6 text-center text-gray-400">
+                  <Car className="w-8 h-8 text-gray-300 mx-auto mb-2" />
+                  <p className="text-sm">Este socio no tiene unidades registradas.</p>
+                  <p className="text-xs mt-1 text-gray-400">
+                    Puedes asociar a este socio como propietario al crear o editar una unidad en el listado de Unidades.
+                  </p>
+                </div>
+              )}
             </CardContent>
           </Card>
 

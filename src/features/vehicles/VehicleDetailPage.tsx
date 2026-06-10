@@ -11,6 +11,7 @@ import { Badge } from '@/components/ui/Badge'
 import { ConfirmModal } from '@/components/ui/ConfirmModal'
 import { LicenseBadge } from '@/components/ui/LicenseBadge'
 import { VehicleFormModal, type VehicleFormData } from './VehicleFormModal'
+import { AssignDriverModal } from './AssignDriverModal'
 import {
   ArrowLeft,
   Bike,
@@ -43,10 +44,12 @@ export function VehicleDetailPage() {
   const [isEditOpen, setIsEditOpen] = useState(false)
   const [editLoading, setEditLoading] = useState(false)
 
+  // ── Modal Asignación de Conductor ──────────────────────────────────────────────
+  const [isAssignDriverOpen, setIsAssignDriverOpen] = useState(false)
+  const [assignDriverLoading, setAssignDriverLoading] = useState(false)
+
   // Confirmación quitar conductor
-  const [removeDriverConfirm, setRemoveDriverConfirm] = useState<{
-    open: boolean; pendingData: VehicleFormData | null;
-  }>({ open: false, pendingData: null })
+  const [isRemoveDriverConfirmOpen, setIsRemoveDriverConfirmOpen] = useState(false)
 
   // ── Modal cambio de estado ───────────────────────────────────────────────────
   const [confirmState, setConfirmState] = useState<{
@@ -99,18 +102,38 @@ export function VehicleDetailPage() {
   }
 
   const handleEditSubmit = async (data: VehicleFormData) => {
-    if (currentVehicle && currentVehicle.driver_id && data.driver_id === '') {
-      setRemoveDriverConfirm({ open: true, pendingData: data })
-      return
-    }
     await processEditSubmit(data)
   }
 
-  const handleConfirmRemoveDriver = async () => {
-    if (removeDriverConfirm.pendingData) {
-      setRemoveDriverConfirm(prev => ({ ...prev, open: false }))
-      await processEditSubmit(removeDriverConfirm.pendingData)
-      setRemoveDriverConfirm({ open: false, pendingData: null })
+  // ── Asignar / Quitar Conductor Acción Rápida ───────────────────────────────
+  const handleAssignDriverSubmit = async (driverId: string) => {
+    if (!id) return
+    setAssignDriverLoading(true)
+    const toastId = toast.loading('Asignando conductor...')
+    try {
+      const { error: err } = await updateVehicle(id, { driver_id: driverId || null })
+      if (err) throw new Error(err)
+      toast.success('Conductor asignado exitosamente.', { id: toastId })
+      setIsAssignDriverOpen(false)
+      fetchVehicleById(id)
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : 'Error al asignar conductor.', { id: toastId })
+    } finally {
+      setAssignDriverLoading(false)
+    }
+  }
+
+  const handleRemoveDriver = async () => {
+    if (!id) return
+    const toastId = toast.loading('Quitando conductor...')
+    try {
+      const { error: err } = await updateVehicle(id, { driver_id: null })
+      if (err) throw new Error(err)
+      toast.success('Conductor retirado de la unidad.', { id: toastId })
+      setIsRemoveDriverConfirmOpen(false)
+      fetchVehicleById(id)
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : 'Error al retirar conductor.', { id: toastId })
     }
   }
 
@@ -368,42 +391,94 @@ export function VehicleDetailPage() {
             </CardHeader>
             <CardContent>
               {vehicleDriver ? (
-                <div className="flex items-center justify-between gap-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-primary-100 flex items-center justify-center shrink-0">
-                      <span className="text-sm font-bold text-primary-700">
-                        {vehicleDriver.first_name[0]}{vehicleDriver.last_name[0]}
-                      </span>
-                    </div>
-                    <div>
-                      <p className="font-semibold text-gray-900 leading-tight">
-                        {vehicleDriver.first_name} {vehicleDriver.last_name}
-                      </p>
-                      <p className="text-xs text-gray-500 font-mono">{vehicleDriver.document_id}</p>
-                      <div className="mt-1">
-                        <LicenseBadge
-                          expiryDate={getA1License(vehicleDriver.licenses || [])?.expiry_date}
-                          licenseNumber={getA1License(vehicleDriver.licenses || [])?.license_number}
-                          compact
-                        />
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between gap-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-primary-100 flex items-center justify-center shrink-0">
+                        <span className="text-sm font-bold text-primary-700">
+                          {vehicleDriver.first_name[0]}{vehicleDriver.last_name[0]}
+                        </span>
+                      </div>
+                      <div>
+                        <p className="font-semibold text-gray-900 leading-tight">
+                          {vehicleDriver.first_name} {vehicleDriver.last_name}
+                        </p>
+                        <p className="text-xs text-gray-500 font-mono">{vehicleDriver.document_id}</p>
+                        <div className="mt-1">
+                          <LicenseBadge
+                            expiryDate={getA1License(vehicleDriver.licenses || [])?.expiry_date}
+                            licenseNumber={getA1License(vehicleDriver.licenses || [])?.license_number}
+                            compact
+                          />
+                        </div>
                       </div>
                     </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => navigate(`/conductores/${vehicleDriver.id}`)}
+                    >
+                      Ver ficha
+                    </Button>
                   </div>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => navigate(`/conductores/${vehicleDriver.id}`)}
-                  >
-                    Ver ficha
-                  </Button>
+
+                  {/* Advertencia si falta licencia A1 */}
+                  {!getA1License(vehicleDriver.licenses || []) && (
+                    <div className="flex items-center justify-between gap-2 bg-amber-50 border border-amber-200 rounded-lg p-3 text-xs text-amber-800">
+                      <div className="flex-1">
+                        <p className="font-semibold">⚠️ Licencia A1 pendiente</p>
+                        <p className="text-amber-700 mt-0.5">El conductor no tiene una licencia A1 registrada en su ficha.</p>
+                      </div>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="bg-white hover:bg-amber-100 text-amber-800 border-amber-300 text-xs shrink-0 py-1 px-2.5 h-auto"
+                        onClick={() => navigate(`/conductores/${vehicleDriver.id}`)}
+                      >
+                        Completar licencia
+                      </Button>
+                    </div>
+                  )}
+
+                  {/* Acciones rápidas cuando hay conductor */}
+                  {canManageVehicles && (
+                    <div className="flex gap-2 pt-2 border-t border-gray-100">
+                      <Button
+                        variant="outline"
+                        size="xs"
+                        className="w-1/2 text-xs"
+                        onClick={() => setIsAssignDriverOpen(true)}
+                      >
+                        Cambiar conductor
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="xs"
+                        className="w-1/2 text-xs border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700"
+                        onClick={() => setIsRemoveDriverConfirmOpen(true)}
+                      >
+                        Quitar conductor
+                      </Button>
+                    </div>
+                  )}
                 </div>
               ) : (
                 <div className="border border-dashed rounded-lg p-5 text-center text-gray-400">
                   <User className="w-7 h-7 text-gray-300 mx-auto mb-2" />
                   <p className="text-sm">Sin conductor asignado.</p>
-                  <p className="text-xs mt-1 text-gray-400">
-                    Edita la unidad para asignar un conductor.
+                  <p className="text-xs mt-1 text-gray-400 mb-4">
+                    Asigna un conductor para habilitar el control y cobros.
                   </p>
+                  {canManageVehicles && (
+                    <Button
+                      size="sm"
+                      onClick={() => setIsAssignDriverOpen(true)}
+                      className="mx-auto flex items-center gap-1.5"
+                    >
+                      <UserCheck className="w-4 h-4" />
+                      Añadir conductor
+                    </Button>
+                  )}
                 </div>
               )}
             </CardContent>
@@ -465,6 +540,18 @@ export function VehicleDetailPage() {
         loading={editLoading}
       />
 
+      {/* ── Modal Asignación de Conductor Acción Rápida ────────────────────────── */}
+      <AssignDriverModal
+        isOpen={isAssignDriverOpen}
+        onClose={() => setIsAssignDriverOpen(false)}
+        onSubmit={handleAssignDriverSubmit}
+        currentDriverId={currentVehicle.driver_id}
+        memberId={currentVehicle.member_id}
+        members={members}
+        drivers={drivers}
+        loading={assignDriverLoading}
+      />
+
       {/* ── Modal Confirmación estado ────────────────────────────────────────── */}
       <ConfirmModal
         isOpen={confirmState.open}
@@ -486,13 +573,14 @@ export function VehicleDetailPage() {
         loading={confirmState.loading}
       />
 
+      {/* ── ConfirmModal Quitar Conductor ───────────────────────────────────── */}
       <ConfirmModal
-        isOpen={removeDriverConfirm.open}
-        onClose={() => setRemoveDriverConfirm({ open: false, pendingData: null })}
-        onConfirm={handleConfirmRemoveDriver}
+        isOpen={isRemoveDriverConfirmOpen}
+        onClose={() => setIsRemoveDriverConfirmOpen(false)}
+        onConfirm={handleRemoveDriver}
         title="Quitar Conductor Asignado"
-        message="Has seleccionado 'Sin conductor asignado por ahora'."
-        detail="¿Confirmas que deseas retirar al conductor actual de esta unidad? La unidad quedará sin chofer registrado."
+        message="¿Confirmas que deseas retirar al conductor actual de esta unidad?"
+        detail="La unidad quedará sin chofer registrado para los reportes y cobros diarios."
         confirmLabel="Sí, quitar conductor"
         variant="warning"
       />
