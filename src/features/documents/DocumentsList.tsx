@@ -5,6 +5,7 @@ import { Card } from '@/components/ui/Card'
 import { DocumentBadge } from '@/components/ui/DocumentBadge'
 import { DocumentFormModal } from './DocumentFormModal'
 import { useDocuments, type DocumentWithRelations } from '@/hooks/useDocuments'
+import { ConfirmModal } from '@/components/ui/ConfirmModal'
 import toast from 'react-hot-toast'
 
 interface DocumentsListProps {
@@ -18,6 +19,7 @@ export function DocumentsList({ targetEntity, entityId, title = 'Documentos' }: 
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [editingDoc, setEditingDoc] = useState<DocumentWithRelations | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null)
 
   useEffect(() => {
     fetchDocumentTypes()
@@ -55,14 +57,21 @@ export function DocumentsList({ targetEntity, entityId, title = 'Documentos' }: 
     }
   }
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('¿Estás seguro de que deseas eliminar este documento?')) return
-    const { error } = await deleteDocument(id)
-    if (error) {
-      toast.error(error)
-    } else {
-      toast.success('Documento eliminado')
+  const handleDelete = (id: string) => {
+    setDeleteTargetId(id)
+  }
+
+  const confirmDelete = async () => {
+    if (!deleteTargetId) return
+    const toastId = toast.loading('Eliminando documento...')
+    try {
+      const { error } = await deleteDocument(deleteTargetId)
+      if (error) throw new Error(error)
+      toast.success('Documento eliminado correctamente', { id: toastId })
+      setDeleteTargetId(null)
       fetchDocuments(targetEntity, entityId)
+    } catch (err: any) {
+      toast.error(err.message || 'Error al eliminar', { id: toastId })
     }
   }
 
@@ -142,6 +151,17 @@ export function DocumentsList({ targetEntity, entityId, title = 'Documentos' }: 
           loading={isSubmitting}
         />
       )}
+
+      <ConfirmModal
+        isOpen={deleteTargetId !== null}
+        onClose={() => setDeleteTargetId(null)}
+        onConfirm={confirmDelete}
+        title="Eliminar Documento"
+        message="¿Estás seguro de que deseas eliminar este documento permanentemente?"
+        detail="Esta acción no se puede deshacer. El archivo adjunto y los datos asociados al documento se borrarán de la base de datos."
+        confirmLabel="Sí, eliminar"
+        variant="danger"
+      />
     </div>
   )
 }

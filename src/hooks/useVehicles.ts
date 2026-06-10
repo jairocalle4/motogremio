@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react'
 import { supabase } from '@/lib/supabaseClient'
 import { useAuth } from '@/context/useAuth'
-import type { Vehicle, VehicleStatus, VehicleDriverAssignment } from '@/types'
+import type { Vehicle, VehicleStatus, VehicleDriverAssignment, DriverLicense } from '@/types'
 import type { Database } from '@/types/database.types'
 
 // ─── Tipos derivados de BD ───────────────────────────────────────────────────
@@ -19,12 +19,19 @@ export type VehicleWithMember = Vehicle & {
     first_name: string
     last_name: string
     document_id: string
+    phone?: string | null
+    email?: string | null
+    status?: string | null
   } | null
   driver: {
     id: string
     first_name: string
     last_name: string
     document_id: string
+    phone?: string | null
+    address?: string | null
+    status?: string | null
+    licenses?: DriverLicense[]
   } | null
 }
 
@@ -96,7 +103,10 @@ export function useVehicles() {
             id, first_name, last_name, document_id, phone, email, status
           ),
           driver:drivers!vehicles_driver_id_fkey (
-            id, first_name, last_name, document_id
+            id, first_name, last_name, document_id, phone, address, status,
+            licenses (
+              id, driver_id, company_id, license_type, license_number, issue_date, expiry_date, status, file_url, created_at, updated_at
+            )
           )
         `)
         .eq('id', id)

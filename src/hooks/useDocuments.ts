@@ -132,15 +132,81 @@ export function useDocuments() {
     }
   }
 
+  const fetchAllDocumentTypes = useCallback(async () => {
+    if (!profile?.company_id) return []
+    try {
+      const { data, error: fetchError } = await supabase
+        .from('document_types')
+        .select('*')
+        .eq('company_id', profile.company_id)
+        .order('name')
+      
+      if (fetchError) throw fetchError
+      return data || []
+    } catch (err: any) {
+      console.error('Error fetching all document types:', err)
+      return []
+    }
+  }, [profile?.company_id])
+
+  const createDocumentType = async (name: string, targetEntity: 'member' | 'driver' | 'vehicle', requiresExpiry: boolean) => {
+    if (!profile?.company_id) return { data: null, error: 'No company_id' }
+    try {
+      const { data, error: insertError } = await supabase
+        .from('document_types')
+        .insert({
+          company_id: profile.company_id,
+          name,
+          target_entity: targetEntity,
+          requires_expiry: requiresExpiry,
+          is_active: true
+        })
+        .select()
+        .single()
+      if (insertError) {
+        if (insertError.code === '23505') {
+          throw new Error('Ya existe un tipo de documento con este nombre y entidad destino en esta compañía.')
+        }
+        throw insertError
+      }
+      return { data, error: null }
+    } catch (err: any) {
+      return { data: null, error: err.message }
+    }
+  }
+
+  const updateDocumentType = async (id: string, updates: Partial<Omit<DocumentType, 'id' | 'company_id'>>) => {
+    try {
+      const { data, error: updateError } = await supabase
+        .from('document_types')
+        .update(updates)
+        .eq('id', id)
+        .select()
+        .single()
+      if (updateError) {
+        if (updateError.code === '23505') {
+          throw new Error('Ya existe un tipo de documento con este nombre y entidad destino en esta compañía.')
+        }
+        throw updateError
+      }
+      return { data, error: null }
+    } catch (err: any) {
+      return { data: null, error: err.message }
+    }
+  }
+
   return {
     documents,
     documentTypes,
     loading,
     error,
     fetchDocumentTypes,
+    fetchAllDocumentTypes,
     fetchDocuments,
     createDocument,
     updateDocument,
-    deleteDocument
+    deleteDocument,
+    createDocumentType,
+    updateDocumentType
   }
 }

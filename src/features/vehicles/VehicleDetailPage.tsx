@@ -35,10 +35,7 @@ export function VehicleDetailPage() {
   const { canManageVehicles } = usePermissions()
   const { currentVehicle, loading, error, fetchVehicleById, updateVehicle, fetchVehicleDriverHistory } = useVehicles()
   const { members, fetchMembers } = useMembers()
-  const { fetchDriverById, fetchDrivers, drivers } = useDrivers()
-
-  // Driver cargado desde driver_id de la unidad
-  const [vehicleDriver, setVehicleDriver] = useState<Awaited<ReturnType<typeof fetchDriverById>>>(null)
+  const { fetchDrivers, drivers } = useDrivers()
 
   // Historial de conductores
   const [driverHistory, setDriverHistory] = useState<VehicleDriverAssignment[]>([])
@@ -77,15 +74,6 @@ export function VehicleDetailPage() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id])
-
-  // Cargar conductor si la unidad tiene driver_id
-  useEffect(() => {
-    if (currentVehicle?.driver_id) {
-      fetchDriverById(currentVehicle.driver_id).then(setVehicleDriver)
-    } else {
-      setVehicleDriver(null)
-    }
-  }, [currentVehicle?.driver_id, fetchDriverById])
 
   // ── Editar ───────────────────────────────────────────────────────────────────
   const processEditSubmit = async (data: VehicleFormData) => {
@@ -412,24 +400,38 @@ export function VehicleDetailPage() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              {vehicleDriver ? (
+              {loading ? (
+                <div className="space-y-4 animate-pulse">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-gray-200 shrink-0" />
+                    <div className="flex-1 space-y-2">
+                      <div className="h-4 bg-gray-200 rounded w-3/4" />
+                      <div className="h-3 bg-gray-200 rounded w-1/2" />
+                    </div>
+                  </div>
+                  <div className="h-8 bg-gray-150 rounded w-full" />
+                </div>
+              ) : currentVehicle.driver ? (
                 <div className="space-y-4">
                   <div className="flex items-center justify-between gap-4">
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 rounded-xl bg-primary-100 flex items-center justify-center shrink-0">
                         <span className="text-sm font-bold text-primary-700">
-                          {vehicleDriver.first_name[0]}{vehicleDriver.last_name[0]}
+                          {currentVehicle.driver.first_name[0]}{currentVehicle.driver.last_name[0]}
                         </span>
                       </div>
                       <div>
                         <p className="font-semibold text-gray-900 leading-tight">
-                          {vehicleDriver.first_name} {vehicleDriver.last_name}
+                          {currentVehicle.driver.first_name} {currentVehicle.driver.last_name}
                         </p>
-                        <p className="text-xs text-gray-500 font-mono">{vehicleDriver.document_id}</p>
-                        <div className="mt-1">
+                        <p className="text-xs text-gray-500 font-mono">{currentVehicle.driver.document_id}</p>
+                        {currentVehicle.driver.phone && (
+                          <p className="text-xs text-gray-500 mt-0.5">Tel: {currentVehicle.driver.phone}</p>
+                        )}
+                        <div className="mt-1.5">
                           <LicenseBadge
-                            expiryDate={getA1License(vehicleDriver.licenses || [])?.expiry_date}
-                            licenseNumber={getA1License(vehicleDriver.licenses || [])?.license_number}
+                            expiryDate={getA1License(currentVehicle.driver.licenses || [])?.expiry_date}
+                            licenseNumber={getA1License(currentVehicle.driver.licenses || [])?.license_number}
                             compact
                           />
                         </div>
@@ -438,14 +440,14 @@ export function VehicleDetailPage() {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => navigate(`/conductores/${vehicleDriver.id}`)}
+                      onClick={() => navigate(`/conductores/${currentVehicle.driver!.id}`)}
                     >
                       Ver ficha
                     </Button>
                   </div>
 
                   {/* Advertencia si falta licencia A1 */}
-                  {!getA1License(vehicleDriver.licenses || []) && (
+                  {!getA1License(currentVehicle.driver.licenses || []) && (
                     <div className="flex items-center justify-between gap-2 bg-amber-50 border border-amber-200 rounded-lg p-3 text-xs text-amber-800">
                       <div className="flex-1">
                         <p className="font-semibold">⚠️ Licencia A1 pendiente</p>
@@ -455,7 +457,7 @@ export function VehicleDetailPage() {
                         size="sm"
                         variant="outline"
                         className="bg-white hover:bg-amber-100 text-amber-800 border-amber-300 text-xs shrink-0 py-1 px-2.5 h-auto"
-                        onClick={() => navigate(`/conductores/${vehicleDriver.id}`)}
+                        onClick={() => navigate(`/conductores/${currentVehicle.driver!.id}`)}
                       >
                         Completar licencia
                       </Button>
