@@ -18,6 +18,8 @@ export type VehicleStatus = 'activa' | 'inactiva' | 'mantenimiento'
 export type DriverStatus  = 'activo' | 'inactivo'
 export type DocumentStatus  = 'vigente' | 'por_vencer' | 'vencido'
 export type PaymentStatus   = 'pagado'  | 'pendiente'  | 'moroso'  | 'anulado'
+export type ChargeStatus    = 'pendiente' | 'parcial' | 'pagada' | 'anulada'
+export type PaymentMethod   = 'efectivo' | 'transferencia' | 'deposito' | 'cheque' | 'otro'
 export type SanctionStatus  = 'pendiente' | 'aplicada' | 'anulada' | 'cumplida'
 export type MeetingType     = 'ordinaria' | 'extraordinaria' | 'urgente'
 export type MeetingStatus   = 'programada' | 'realizada' | 'cancelada'
@@ -244,36 +246,77 @@ export interface Document {
 }
 
 // ═══════════════════════════════════════════════════════
-// PAGOS
+// PAGOS — Tipos financieros (Fase 3.6)
 // ═══════════════════════════════════════════════════════
 
-export interface PaymentType {
+/** Tipo de cobro configurable por compañía (ej: Cuota administrativa mensual) */
+export interface ChargeType {
   id: string
   company_id: string
   name: string
-  amount_default: number | null
+  description: string | null
+  default_amount: number | null
   is_recurring: boolean
   created_at: string
+  updated_at: string
 }
 
+/** Cuota / deuda generada para un socio (opcionalmente vinculada a una unidad) */
+export interface Charge {
+  id: string
+  company_id: string
+  member_id: string
+  vehicle_id: string | null
+  charge_type_id: string
+  description: string
+  amount: number
+  balance: number
+  due_date: string
+  status: ChargeStatus
+  period_month: number | null
+  period_year: number | null
+  created_at: string
+  updated_at: string
+  // Joins
+  member?: Pick<Member, 'id' | 'first_name' | 'last_name' | 'document_id'>
+  vehicle?: Pick<Vehicle, 'id' | 'disk_number' | 'plate'> | null
+  charge_type?: Pick<ChargeType, 'id' | 'name'>
+}
+
+/** Registro de transacción de pago */
 export interface Payment {
   id: string
   company_id: string
   member_id: string
-  payment_type_id: string | null
-  concept: string
   amount: number
-  payment_date: string | null
-  due_date: string | null
-  status: PaymentStatus
+  payment_date: string
+  payment_method: PaymentMethod
+  reference_number: string | null
   receipt_url: string | null
   notes: string | null
   created_by: string | null
   created_at: string
   updated_at: string
-  deleted_at: string | null
-  member?: Member
-  payment_type?: PaymentType
+  // Joins
+  member?: Pick<Member, 'id' | 'first_name' | 'last_name' | 'document_id'>
+  allocations?: PaymentAllocation[]
+}
+
+/** Distribución de un pago a una o más cuotas */
+export interface PaymentAllocation {
+  id: string
+  payment_id: string
+  charge_id: string
+  amount_allocated: number
+  created_at: string
+  charge?: Pick<Charge, 'id' | 'description' | 'period_month' | 'period_year' | 'amount'>
+}
+
+/** KPIs financieros del módulo */
+export interface PaymentKpis {
+  totalPendingBalance: number
+  collectedThisMonth: number
+  delinquentMembersCount: number
 }
 
 // ═══════════════════════════════════════════════════════
