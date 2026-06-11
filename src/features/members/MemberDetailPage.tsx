@@ -23,10 +23,13 @@ import {
 } from 'lucide-react'
 import type { MemberStatus } from '@/types'
 import { DocumentsList } from '@/features/documents/DocumentsList'
+import { usePermissions } from '@/hooks/usePermissions'
+import { MemberSanctionsSection } from '@/features/sanctions/components/MemberSanctionsSection'
 
 export function MemberDetailPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
+  const { canManageSanctions } = usePermissions()
   const { currentMember, loading, error, fetchMemberById } = useMembers()
   const { vehicles, fetchVehicles } = useVehicles()
   const { fetchCharges, charges: memberCharges } = usePayments()
@@ -397,6 +400,13 @@ export function MemberDetailPage() {
                   </div>
                 </div>
               )}
+            </CardContent>
+          </Card>
+
+          {/* Sanciones y Multas */}
+          <Card>
+            <CardContent className="p-6">
+              <MemberSanctionsSection memberId={currentMember.id} canManage={canManageSanctions} />
             </CardContent>
           </Card>
 

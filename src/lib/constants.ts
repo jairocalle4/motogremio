@@ -95,9 +95,9 @@ export const PAYMENT_STATUS_COLORS: Record<PaymentStatus, string> = {
 // ─── Estados de sanción ───────────────────────────────
 export const SANCTION_STATUS_LABELS: Record<SanctionStatus, string> = {
   pendiente: 'Pendiente',
-  aplicada:  'Aplicada',
+  apelacion: 'Apelación',
+  resuelta:  'Resuelta',
   anulada:   'Anulada',
-  cumplida:  'Cumplida',
 }
 
 // ─── Tipos de reunión ─────────────────────────────────
