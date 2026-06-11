@@ -1,4 +1,4 @@
-import type { UserRole, MemberStatus, VehicleStatus, DriverStatus, DocumentStatus, PaymentStatus, SanctionStatus, MeetingType, PlanName } from '@/types'
+import type { UserRole, MemberStatus, VehicleStatus, DriverStatus, DocumentStatus, PaymentStatus, SanctionStatus, MeetingType, MeetingStatus, AttendanceStatus, PlanName } from '@/types'
 
 // ─── Aplicación ───────────────────────────────────────
 export const APP_NAME = 'MotoGremio'
@@ -102,9 +102,49 @@ export const SANCTION_STATUS_LABELS: Record<SanctionStatus, string> = {
 
 // ─── Tipos de reunión ─────────────────────────────────
 export const MEETING_TYPE_LABELS: Record<MeetingType, string> = {
-  ordinaria:     'Ordinaria',
+  ordinaria:      'Ordinaria',
   extraordinaria: 'Extraordinaria',
-  urgente:       'Urgente',
+  asamblea:       'Asamblea General',
+  capacitacion:   'Capacitación',
+  otra:           'Otra',
+}
+
+export const MEETING_TYPE_COLORS: Record<MeetingType, string> = {
+  ordinaria:      'bg-blue-100 text-blue-800',
+  extraordinaria: 'bg-amber-100 text-amber-800',
+  asamblea:       'bg-purple-100 text-purple-800',
+  capacitacion:   'bg-teal-100 text-teal-800',
+  otra:           'bg-gray-100 text-gray-800',
+}
+
+// ─── Estados de reunión ───────────────────────────────
+export const MEETING_STATUS_LABELS: Record<MeetingStatus, string> = {
+  programada: 'Programada',
+  en_curso:   'En curso',
+  finalizada: 'Finalizada',
+  cancelada:  'Cancelada',
+}
+
+export const MEETING_STATUS_COLORS: Record<MeetingStatus, string> = {
+  programada: 'bg-primary-50 text-primary-700 border-primary-200',
+  en_curso:   'bg-blue-50 text-blue-700 border-blue-200',
+  finalizada: 'bg-success-50 text-success-700 border-success-200',
+  cancelada:  'bg-danger-50 text-danger-700 border-danger-200',
+}
+
+// ─── Estados de asistencia ────────────────────────────
+export const ATTENDANCE_STATUS_LABELS: Record<AttendanceStatus, string> = {
+  asistio:     'Asistió',
+  ausente:     'Faltó',
+  tarde:       'Llegó Tarde',
+  justificado: 'Justificado',
+}
+
+export const ATTENDANCE_STATUS_COLORS: Record<AttendanceStatus, 'success' | 'danger' | 'warning' | 'info'> = {
+  asistio:     'success',
+  ausente:     'danger',
+  tarde:       'warning',
+  justificado: 'info',
 }
 
 // ─── Planes ───────────────────────────────────────────

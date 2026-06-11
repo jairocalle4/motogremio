@@ -13,6 +13,8 @@ import { VehicleDetailPage } from '@/features/vehicles/VehicleDetailPage'
 import { DriversListPage } from '@/features/drivers/DriversListPage'
 import { DriverDetailPage } from '@/features/drivers/DriverDetailPage'
 import { PaymentsPage } from '@/features/payments/PaymentsPage'
+import { MeetingsPage } from '@/features/meetings/pages/MeetingsPage'
+import { MeetingDetailPage } from '@/features/meetings/pages/MeetingDetailPage'
 import { SanctionsPage } from '@/features/sanctions/pages/SanctionsPage'
 
 // ─── Páginas placeholder (se crearán en Fase 3–5) ─────
@@ -60,8 +62,10 @@ export function AppRouter() {
 
                 {/* Módulos — Fase 4 */}
                 <Route path="/sanciones"     element={<SanctionsPage />} />
-                <Route path="/convocatorias" element={<Placeholder title="Convocatorias y Reuniones" />} />
-                <Route path="/asistencia"    element={<Placeholder title="Asistencia a Reuniones" />} />
+                <Route path="/reuniones"      element={<MeetingsPage />} />
+                <Route path="/reuniones/:id"  element={<MeetingDetailPage />} />
+                <Route path="/convocatorias" element={<Navigate to="/reuniones" replace />} />
+                <Route path="/asistencia"    element={<Navigate to="/reuniones" replace />} />
 
                 {/* Reportes — Fase 6 */}
                 <Route path="/reportes"      element={<Placeholder title="Reportes" />} />

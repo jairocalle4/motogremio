@@ -1,4 +1,4 @@
-﻿export type Json =
+export type Json =
   | string
   | number
   | boolean
@@ -558,6 +558,7 @@ export type Database = {
       }
       meeting_attendances: {
         Row: {
+          check_in_time: string | null
           created_at: string | null
           id: string
           meeting_id: string
@@ -567,6 +568,7 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
+          check_in_time?: string | null
           created_at?: string | null
           id?: string
           meeting_id: string
@@ -576,6 +578,7 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
+          check_in_time?: string | null
           created_at?: string | null
           id?: string
           meeting_id?: string
@@ -689,6 +692,7 @@ export type Database = {
           id: string
           is_mandatory: boolean | null
           location: string | null
+          meeting_type: string
           status: Database["public"]["Enums"]["meeting_status"] | null
           time: string
           title: string
@@ -705,6 +709,7 @@ export type Database = {
           id?: string
           is_mandatory?: boolean | null
           location?: string | null
+          meeting_type?: string
           status?: Database["public"]["Enums"]["meeting_status"] | null
           time: string
           title: string
@@ -721,6 +726,7 @@ export type Database = {
           id?: string
           is_mandatory?: boolean | null
           location?: string | null
+          meeting_type?: string
           status?: Database["public"]["Enums"]["meeting_status"] | null
           time?: string
           title?: string
@@ -1408,7 +1414,7 @@ export type Database = {
       is_super_admin: { Args: never; Returns: boolean }
     }
     Enums: {
-      attendance_status: "asistio" | "ausente" | "justificado"
+      attendance_status: "asistio" | "ausente" | "justificado" | "tarde"
       charge_status: "pendiente" | "parcial" | "pagada" | "anulada"
       communication_status: "pendiente" | "preparado" | "enviado" | "fallido"
       document_status: "vigente" | "por_vencer" | "vencido"
@@ -1562,7 +1568,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      attendance_status: ["asistio", "ausente", "justificado"],
+      attendance_status: ["asistio", "ausente", "justificado", "tarde"],
       charge_status: ["pendiente", "parcial", "pagada", "anulada"],
       communication_status: ["pendiente", "preparado", "enviado", "fallido"],
       document_status: ["vigente", "por_vencer", "vencido"],

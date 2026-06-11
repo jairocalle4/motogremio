@@ -2,10 +2,10 @@ import { useState } from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
 import {
   LayoutDashboard, Users, UserCheck, Bike, Wallet,
-  ShieldAlert, Bell, ClipboardCheck, BarChart3,
+  ShieldAlert, BarChart3,
   Settings, UserCog, Activity, Building2, Package,
   CreditCard, TrendingUp, LogOut, ShieldCheck,
-  X, Menu,
+  X, Menu, Calendar,
 } from 'lucide-react'
 
 import { useAuth } from '@/context/useAuth'
@@ -38,8 +38,7 @@ const companyNav: NavSection[] = [
       // Ocultado temporalmente por la fase 3.5 en desarrollo integrado
       // { to: '/documentos',   label: 'Documentos',     icon: FileText },
       { to: '/sanciones',    label: 'Sanciones',      icon: ShieldAlert },
-      { to: '/convocatorias',label: 'Convocatorias',  icon: Bell },
-      { to: '/asistencia',   label: 'Asistencia',     icon: ClipboardCheck },
+      { to: '/reuniones',    label: 'Reuniones',      icon: Calendar },
       { to: '/reportes',     label: 'Reportes',       icon: BarChart3 },
     ],
   },

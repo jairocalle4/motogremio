@@ -21,9 +21,9 @@ export type PaymentStatus   = 'pagado'  | 'pendiente'  | 'moroso'  | 'anulado'
 export type ChargeStatus    = 'pendiente' | 'parcial' | 'pagada' | 'anulada'
 export type PaymentMethod   = 'efectivo' | 'transferencia' | 'deposito' | 'cheque' | 'otro'
 export type SanctionStatus  = 'pendiente' | 'apelacion' | 'resuelta' | 'anulada'
-export type MeetingType     = 'ordinaria' | 'extraordinaria' | 'urgente'
-export type MeetingStatus   = 'programada' | 'realizada' | 'cancelada'
-export type AttendanceStatus = 'asistio' | 'ausente' | 'justificado'
+export type MeetingType     = 'ordinaria' | 'extraordinaria' | 'asamblea' | 'capacitacion' | 'otra'
+export type MeetingStatus   = 'programada' | 'en_curso' | 'finalizada' | 'cancelada'
+export type AttendanceStatus = 'asistio' | 'ausente' | 'justificado' | 'tarde'
 export type PlanName        = 'basico' | 'estandar' | 'premium'
 export type SubscriptionStatus = 'activa' | 'suspendida' | 'cancelada' | 'vencida'
 
@@ -377,9 +377,11 @@ export interface Meeting {
   date: string
   time: string
   location: string | null
-  documents_url: string | null
+  is_mandatory: boolean | null
+  fine_amount: number | null
+  acta_url: string | null
+  communications_sent_at: string | null
   status: MeetingStatus
-  created_by: string | null
   created_at: string
   updated_at: string
   invites?: MeetingInvite[]
@@ -391,8 +393,11 @@ export interface MeetingInvite {
   meeting_id: string
   member_id: string
   company_id: string
-  notified_email: boolean
-  notified_whatsapp: boolean
+  invitation_status: string | null
+  email_status: string | null
+  email_sent_at: string | null
+  whatsapp_status: string | null
+  whatsapp_sent_at: string | null
   created_at: string
   member?: Member
 }
@@ -401,11 +406,11 @@ export interface MeetingAttendance {
   id: string
   meeting_id: string
   member_id: string
-  company_id: string
-  status: AttendanceStatus
-  justification: string | null
-  registered_by: string | null
+  status: AttendanceStatus | null
+  notes: string | null
+  check_in_time: string | null
   created_at: string
+  updated_at: string | null
   member?: Member
 }
 
