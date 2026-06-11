@@ -13,6 +13,7 @@ import { VehicleDetailPage } from '@/features/vehicles/VehicleDetailPage'
 import { DriversListPage } from '@/features/drivers/DriversListPage'
 import { DriverDetailPage } from '@/features/drivers/DriverDetailPage'
 import { PaymentsPage } from '@/features/payments/PaymentsPage'
+import { SanctionsPage } from '@/features/sanctions/pages/SanctionsPage'
 
 // ─── Páginas placeholder (se crearán en Fase 3–5) ─────
 const Placeholder = ({ title }: { title: string }) => (
@@ -58,7 +59,7 @@ export function AppRouter() {
                 <Route path="/documentos"    element={<Placeholder title="Documentos y Vencimientos" />} />
 
                 {/* Módulos — Fase 4 */}
-                <Route path="/sanciones"     element={<Placeholder title="Sanciones" />} />
+                <Route path="/sanciones"     element={<SanctionsPage />} />
                 <Route path="/convocatorias" element={<Placeholder title="Convocatorias y Reuniones" />} />
                 <Route path="/asistencia"    element={<Placeholder title="Asistencia a Reuniones" />} />
 

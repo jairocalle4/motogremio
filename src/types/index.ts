@@ -20,7 +20,7 @@ export type DocumentStatus  = 'vigente' | 'por_vencer' | 'vencido'
 export type PaymentStatus   = 'pagado'  | 'pendiente'  | 'moroso'  | 'anulado'
 export type ChargeStatus    = 'pendiente' | 'parcial' | 'pagada' | 'anulada'
 export type PaymentMethod   = 'efectivo' | 'transferencia' | 'deposito' | 'cheque' | 'otro'
-export type SanctionStatus  = 'pendiente' | 'aplicada' | 'anulada' | 'cumplida'
+export type SanctionStatus  = 'pendiente' | 'apelacion' | 'resuelta' | 'anulada'
 export type MeetingType     = 'ordinaria' | 'extraordinaria' | 'urgente'
 export type MeetingStatus   = 'programada' | 'realizada' | 'cancelada'
 export type AttendanceStatus = 'asistio' | 'ausente' | 'justificado'
@@ -339,27 +339,29 @@ export interface SanctionType {
   company_id: string
   name: string
   description: string | null
+  default_fine_amount: number | null
   created_at: string
+  updated_at: string
 }
 
 export interface Sanction {
   id: string
   company_id: string
   member_id: string
-  sanction_type_id: string | null
-  reason: string
+  vehicle_id: string | null
+  sanction_type_id: string
+  charge_id: string | null
   date: string
-  observations: string | null
-  evidence_url: string | null
-  generates_fine: boolean
-  fine_amount: number | null
+  reason: string
+  severity: string | null
   status: SanctionStatus
-  created_by: string | null
+  resolution_notes: string | null
   created_at: string
   updated_at: string
-  deleted_at: string | null
-  member?: Member
-  sanction_type?: SanctionType
+  member?: Pick<Member, 'id' | 'first_name' | 'last_name' | 'document_id'>
+  vehicle?: Pick<Vehicle, 'id' | 'disk_number' | 'plate'> | null
+  sanction_type?: Pick<SanctionType, 'id' | 'name' | 'default_fine_amount'>
+  charge?: Pick<Charge, 'id' | 'amount' | 'balance' | 'status'> | null
 }
 
 // ═══════════════════════════════════════════════════════
