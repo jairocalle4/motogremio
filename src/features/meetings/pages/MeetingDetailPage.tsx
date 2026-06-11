@@ -3,11 +3,13 @@ import { useParams, useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import { useMeetings } from '../hooks/useMeetings'
 import { usePermissions } from '@/hooks/usePermissions'
+import { useSanctions } from '../../sanctions/hooks/useSanctions'
 import { Card, CardContent } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
 import { Input } from '@/components/ui/Input'
 import { InviteMembersModal } from '../components/InviteMembersModal'
+import { GenerateSanctionFromAttendanceModal } from '../components/GenerateSanctionFromAttendanceModal'
 import {
   Calendar,
   Clock,
@@ -17,6 +19,7 @@ import {
   UserPlus,
   AlertCircle,
   Hourglass,
+  Scale,
 } from 'lucide-react'
 import type { AttendanceStatus, MeetingStatus } from '@/types'
 import {
@@ -31,7 +34,7 @@ import {
 export function MeetingDetailPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
-  const { canManageMeetings } = usePermissions()
+  const { canManageMeetings, canManageSanctions } = usePermissions()
 
   const {
     currentMeeting,
@@ -46,16 +49,30 @@ export function MeetingDetailPage() {
     updateMeeting,
   } = useMeetings()
 
+  const { sanctions, fetchSanctions } = useSanctions()
+
   const [isInviteOpen, setIsInviteOpen] = useState(false)
   const [attendanceNotes, setAttendanceNotes] = useState<Record<string, string>>({})
   const [savingAttendanceId, setSavingAttendanceId] = useState<string | null>(null)
   const [searchTerm, setSearchTerm] = useState('')
 
+  // Estado para el modal de sanción
+  const [sanctionModalOpen, setSanctionModalOpen] = useState(false)
+  const [activeAttendanceData, setActiveAttendanceData] = useState<{
+    memberId: string
+    memberFirstName: string
+    memberLastName: string
+    memberDocumentId: string
+    attendanceId: string
+    attendanceStatus: 'ausente' | 'tarde'
+  } | null>(null)
+
   const loadData = useCallback(() => {
     if (id) {
       fetchMeetingById(id)
+      fetchSanctions({ meetingId: id })
     }
-  }, [id, fetchMeetingById])
+  }, [id, fetchMeetingById, fetchSanctions])
 
   useEffect(() => {
     loadData()
@@ -103,6 +120,7 @@ export function MeetingDetailPage() {
     try {
       await saveAttendance(id, memberId, status, notes)
       toast.success(`Asistencia registrada: ${ATTENDANCE_STATUS_LABELS[status]}`)
+      fetchSanctions({ meetingId: id })
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Error al guardar la asistencia.'
       toast.error(msg)
@@ -373,116 +391,181 @@ export function MeetingDetailPage() {
                     <th className="px-6 py-4">Socio / Cédula</th>
                     <th className="px-6 py-4">Contacto</th>
                     <th className="px-6 py-4">Estado de Asistencia</th>
+                    <th className="px-6 py-4">Sanción</th>
                     <th className="px-6 py-4">Observación / Nota</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
                   {filteredInvites.map((invite) => {
                     const member = invite.member
-                    if (!member) return null
+                     if (!member) return null
 
-                    const currentAtt = attendances.find((a) => a.member_id === member.id)
-                    const status = currentAtt?.status || null
-                    const isSaving = savingAttendanceId === member.id
+                     const currentAtt = attendances.find((a) => a.member_id === member.id)
+                     const status = currentAtt?.status || null
+                     const isSaving = savingAttendanceId === member.id
 
-                    // La toma de asistencia solo está habilitada si la reunión está "en_curso" o "finalizada",
-                    // y el usuario tiene permisos.
-                    const isEditable =
-                      canManageMeetings &&
-                      (currentMeeting.status === 'en_curso' || currentMeeting.status === 'finalizada')
+                     // La toma de asistencia solo está habilitada si la reunión está "en_curso" o "finalizada",
+                     // y el usuario tiene permisos.
+                     const isEditable =
+                       canManageMeetings &&
+                       (currentMeeting.status === 'en_curso' || currentMeeting.status === 'finalizada')
 
-                    return (
-                      <tr key={invite.id} className="hover:bg-gray-50/50 transition-colors">
-                        <td className="px-6 py-4">
-                          <div className="font-semibold text-gray-900">
-                            {member.last_name}, {member.first_name}
-                          </div>
-                          <div className="text-xs text-gray-400 mt-0.5">C.I: {member.document_id}</div>
-                        </td>
+                     // Buscar sanción activa para este socio y esta asistencia
+                     const activeSanction = sanctions.find(
+                       (s) => s.member_id === member.id && s.meeting_attendance_id === currentAtt?.id && s.status !== 'anulada'
+                     )
 
-                        <td className="px-6 py-4">
-                          <div className="text-sm">{member.phone || '—'}</div>
-                          <div className="text-xs text-gray-400 mt-0.5">{member.email || 'Sin correo'}</div>
-                        </td>
+                     return (
+                       <tr key={invite.id} className="hover:bg-gray-50/50 transition-colors">
+                         <td className="px-6 py-4">
+                           <div className="font-semibold text-gray-900">
+                             {member.last_name}, {member.first_name}
+                           </div>
+                           <div className="text-xs text-gray-400 mt-0.5">C.I: {member.document_id}</div>
+                         </td>
 
-                        <td className="px-6 py-4">
-                          {isEditable ? (
-                            <div className="flex flex-wrap items-center gap-1.5">
-                              {(['asistio', 'ausente', 'tarde', 'justificado'] as AttendanceStatus[]).map((st) => {
-                                const active = status === st
-                                let buttonClass = 'px-3 py-1 text-xs border rounded-lg font-medium transition-colors '
-                                if (active) {
-                                  if (st === 'asistio') buttonClass += 'bg-green-600 text-white border-green-600'
-                                  if (st === 'ausente') buttonClass += 'bg-red-600 text-white border-red-600'
-                                  if (st === 'tarde') buttonClass += 'bg-warning-500 text-white border-warning-500'
-                                  if (st === 'justificado') buttonClass += 'bg-blue-600 text-white border-blue-600'
-                                } else {
-                                  buttonClass += 'bg-white hover:bg-gray-50 text-gray-700 border-gray-200'
-                                }
+                         <td className="px-6 py-4">
+                           <div className="text-sm">{member.phone || '—'}</div>
+                           <div className="text-xs text-gray-400 mt-0.5">{member.email || 'Sin correo'}</div>
+                         </td>
 
-                                return (
-                                  <button
-                                    key={st}
-                                    type="button"
-                                    onClick={() => handleStatusChange(member.id, st)}
-                                    disabled={isSaving}
-                                    className={buttonClass}
-                                  >
-                                    {ATTENDANCE_STATUS_LABELS[st]}
-                                  </button>
-                                )
-                              })}
-                              {isSaving && <Hourglass className="w-4 h-4 text-gray-400 animate-spin ml-2" />}
-                            </div>
-                          ) : (
-                            <div>
-                              {status ? (
-                                <Badge variant={ATTENDANCE_STATUS_COLORS[status as AttendanceStatus]}>
-                                  {ATTENDANCE_STATUS_LABELS[status as AttendanceStatus]}
-                                </Badge>
-                              ) : (
-                                <Badge variant="warning">Pendiente</Badge>
-                              )}
-                              {!isEditable && currentMeeting.status === 'programada' && (
-                                <p className="text-[10px] text-gray-400 mt-1 italic">
-                                  Inicia la reunión para registrar asistencia
-                                </p>
-                              )}
-                            </div>
-                          )}
-                        </td>
+                         <td className="px-6 py-4">
+                           {isEditable ? (
+                             <div className="flex flex-wrap items-center gap-1.5">
+                               {(['asistio', 'ausente', 'tarde', 'justificado'] as AttendanceStatus[]).map((st) => {
+                                 const active = status === st
+                                 let buttonClass = 'px-3 py-1 text-xs border rounded-lg font-medium transition-colors '
+                                 if (active) {
+                                   if (st === 'asistio') buttonClass += 'bg-green-600 text-white border-green-600'
+                                   if (st === 'ausente') buttonClass += 'bg-red-600 text-white border-red-600'
+                                   if (st === 'tarde') buttonClass += 'bg-warning-500 text-white border-warning-500'
+                                   if (st === 'justificado') buttonClass += 'bg-blue-600 text-white border-blue-600'
+                                 } else {
+                                   buttonClass += 'bg-white hover:bg-gray-50 text-gray-700 border-gray-200'
+                                 }
 
-                        <td className="px-6 py-4">
-                          <input
-                            type="text"
-                            value={attendanceNotes[member.id] || ''}
-                            onChange={(e) =>
-                              setAttendanceNotes((prev) => ({ ...prev, [member.id]: e.target.value }))
-                            }
-                            onBlur={() => handleNotesBlur(member.id)}
-                            disabled={!isEditable}
-                            placeholder={isEditable ? "Agregar motivo/justificación..." : "Sin observaciones"}
-                            className="w-full text-sm border-0 border-b border-transparent focus:border-primary-500 focus:ring-0 bg-transparent hover:bg-gray-50/50 p-1.5 rounded transition-all disabled:hover:bg-transparent"
-                          />
-                        </td>
-                      </tr>
-                    )
-                  })}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+                                 return (
+                                   <button
+                                     key={st}
+                                     type="button"
+                                     onClick={() => handleStatusChange(member.id, st)}
+                                     disabled={isSaving}
+                                     className={buttonClass}
+                                   >
+                                     {ATTENDANCE_STATUS_LABELS[st]}
+                                   </button>
+                                 )
+                               })}
+                               {isSaving && <Hourglass className="w-4 h-4 text-gray-400 animate-spin ml-2" />}
+                             </div>
+                           ) : (
+                             <div>
+                               {status ? (
+                                 <Badge variant={ATTENDANCE_STATUS_COLORS[status as AttendanceStatus]}>
+                                   {ATTENDANCE_STATUS_LABELS[status as AttendanceStatus]}
+                                 </Badge>
+                               ) : (
+                                 <Badge variant="warning">Pendiente</Badge>
+                               )}
+                               {!isEditable && currentMeeting.status === 'programada' && (
+                                 <p className="text-[10px] text-gray-400 mt-1 italic">
+                                   Inicia la reunión para registrar asistencia
+                                 </p>
+                               )}
+                             </div>
+                           )}
+                         </td>
 
-      {/* ── Modal Convocatoria ───────────────────────────────────────────────── */}
-      <InviteMembersModal
-        isOpen={isInviteOpen}
-        onClose={() => setIsInviteOpen(false)}
-        onConvokeAll={handleConvokeAll}
-        onConvokeSelected={handleConvokeSelected}
-        alreadyInvokedMemberIds={alreadyInvokedMemberIds}
-      />
-    </div>
-  )
-}
+                         <td className="px-6 py-4">
+                           {activeSanction ? (
+                             <div className="flex flex-col gap-1 items-start">
+                               <Badge variant="danger" className="flex items-center gap-1">
+                                 Sanción aplicada
+                               </Badge>
+                               {activeSanction.charge && activeSanction.charge.status !== 'anulada' && (
+                                 <span className="text-[11px] font-medium text-red-500">
+                                   Multa pendiente: ${activeSanction.charge.amount}
+                                 </span>
+                               )}
+                             </div>
+                           ) : (
+                             (status === 'ausente' || status === 'tarde') && currentAtt && canManageSanctions && (
+                               <Button
+                                 variant="outline"
+                                 size="sm"
+                                 className="text-xs py-1 px-2.5 h-auto flex items-center gap-1 hover:bg-red-50 hover:text-red-600 hover:border-red-200"
+                                 onClick={() => {
+                                   setActiveAttendanceData({
+                                     memberId: member.id,
+                                     memberFirstName: member.first_name,
+                                     memberLastName: member.last_name,
+                                     memberDocumentId: member.document_id,
+                                     attendanceId: currentAtt.id,
+                                     attendanceStatus: status,
+                                   })
+                                   setSanctionModalOpen(true)
+                                 }}
+                               >
+                                 <Scale className="w-3.5 h-3.5" />
+                                 Aplicar sanción
+                               </Button>
+                             )
+                           )}
+                         </td>
+
+                         <td className="px-6 py-4">
+                           <input
+                             type="text"
+                             value={attendanceNotes[member.id] || ''}
+                             onChange={(e) =>
+                               setAttendanceNotes((prev) => ({ ...prev, [member.id]: e.target.value }))
+                             }
+                             onBlur={() => handleNotesBlur(member.id)}
+                             disabled={!isEditable}
+                             placeholder={isEditable ? "Agregar motivo/justificación..." : "Sin observaciones"}
+                             className="w-full text-sm border-0 border-b border-transparent focus:border-primary-500 focus:ring-0 bg-transparent hover:bg-gray-50/50 p-1.5 rounded transition-all disabled:hover:bg-transparent"
+                           />
+                         </td>
+                       </tr>
+                     )
+                   })}
+                 </tbody>
+               </table>
+             </div>
+           )}
+         </CardContent>
+       </Card>
+
+       {/* ── Modal Convocatoria ───────────────────────────────────────────────── */}
+       <InviteMembersModal
+         isOpen={isInviteOpen}
+         onClose={() => setIsInviteOpen(false)}
+         onConvokeAll={handleConvokeAll}
+         onConvokeSelected={handleConvokeSelected}
+         alreadyInvokedMemberIds={alreadyInvokedMemberIds}
+       />
+
+       {/* ── Modal Generar Sanción ────────────────────────────────────────────── */}
+       {activeAttendanceData && (
+         <GenerateSanctionFromAttendanceModal
+           isOpen={sanctionModalOpen}
+           onClose={() => {
+             setSanctionModalOpen(false)
+             setActiveAttendanceData(null)
+           }}
+           meetingId={currentMeeting.id}
+           meetingTitle={currentMeeting.title}
+           meetingDate={currentMeeting.date}
+           memberId={activeAttendanceData.memberId}
+           memberFirstName={activeAttendanceData.memberFirstName}
+           memberLastName={activeAttendanceData.memberLastName}
+           memberDocumentId={activeAttendanceData.memberDocumentId}
+           attendanceId={activeAttendanceData.attendanceId}
+           attendanceStatus={activeAttendanceData.attendanceStatus}
+           onSuccess={loadData}
+         />
+       )}
+     </div>
+   )
+ }
+

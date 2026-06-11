@@ -257,9 +257,16 @@ export function SanctionsList({ canManage, memberId }: SanctionsListProps) {
                       </td>
                       <td className="px-6 py-4">
                         <div className="max-w-xs sm:max-w-sm md:max-w-md">
-                          <p className="font-semibold text-gray-900 truncate">
-                            {sanction.sanction_type?.name || 'Sanción'}
-                          </p>
+                          <div className="flex items-center gap-1.5">
+                            <span className="font-semibold text-gray-900 truncate">
+                              {sanction.sanction_type?.name || 'Sanción'}
+                            </span>
+                            {sanction.meeting_id && (
+                              <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-gray-100 text-gray-800 border border-gray-200">
+                                Origen: Reunión / Asamblea
+                              </span>
+                            )}
+                          </div>
                           <p className="text-xs text-gray-500 truncate mt-0.5" title={sanction.reason}>
                             {sanction.reason}
                           </p>

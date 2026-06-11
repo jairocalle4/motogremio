@@ -1105,6 +1105,8 @@ export type Database = {
           created_at: string | null
           date: string
           id: string
+          meeting_attendance_id: string | null
+          meeting_id: string | null
           member_id: string
           reason: string
           resolution_notes: string | null
@@ -1120,6 +1122,8 @@ export type Database = {
           created_at?: string | null
           date: string
           id?: string
+          meeting_attendance_id?: string | null
+          meeting_id?: string | null
           member_id: string
           reason: string
           resolution_notes?: string | null
@@ -1135,6 +1139,8 @@ export type Database = {
           created_at?: string | null
           date?: string
           id?: string
+          meeting_attendance_id?: string | null
+          meeting_id?: string | null
           member_id?: string
           reason?: string
           resolution_notes?: string | null
@@ -1157,6 +1163,20 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sanctions_meeting_attendance_id_fkey"
+            columns: ["meeting_attendance_id"]
+            isOneToOne: false
+            referencedRelation: "meeting_attendances"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sanctions_meeting_id_fkey"
+            columns: ["meeting_id"]
+            isOneToOne: false
+            referencedRelation: "meetings"
             referencedColumns: ["id"]
           },
           {

@@ -144,6 +144,15 @@ export function SanctionDetailModal({
             <span>Fecha del Suceso: {new Date(sanction.date + 'T00:00:00').toLocaleDateString('es-EC')}</span>
           </div>
 
+          {sanction.meeting_id && (
+            <div className="text-xs text-gray-500 bg-gray-50 border border-gray-100 rounded-lg p-2.5">
+              <span className="font-semibold text-gray-700">Origen:</span> Reunión / Asamblea
+              {sanction.reason.includes('asamblea') || sanction.reason.includes('reunión') ? (
+                <p className="mt-0.5 font-medium text-primary-700">Sanción generada automáticamente desde asistencia.</p>
+              ) : null}
+            </div>
+          )}
+
           <div className="bg-red-50/50 border border-red-100 rounded-xl p-4 mt-2">
             <p className="text-xs font-semibold text-red-800 mb-1">Motivo / Descripción</p>
             <p className="text-sm text-gray-800 whitespace-pre-wrap">{sanction.reason}</p>

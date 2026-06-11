@@ -20,6 +20,8 @@ export interface CreateSanctionParams {
   fineAmount: number
   dueDate?: string | null // Required if fineAmount > 0
   resolutionNotes?: string | null
+  meetingId?: string | null
+  meetingAttendanceId?: string | null
 }
 
 export interface SanctionsFilterParams {
@@ -28,7 +30,10 @@ export interface SanctionsFilterParams {
   status?: SanctionStatus
   pendingOnly?: boolean
   monthYear?: string // 'YYYY-MM'
+  meetingId?: string
+  meetingAttendanceId?: string
 }
+
 
 export interface SanctionKpis {
   totalCount: number
@@ -161,9 +166,9 @@ export function useSanctions() {
         .from('sanctions')
         .select(`
           *,
-          member:members!sanctions_member_id_fkey(id, first_name, last_name, document_id),
+          member:members!sanctions_member_id_fkey(id, first_name, last_name, document_id, company_id),
           vehicle:vehicles!sanctions_vehicle_id_fkey(id, disk_number, plate),
-          sanction_type:sanction_types!sanctions_sanction_type_id_fkey(id, name, default_fine_amount),
+          sanction_type:sanction_types!sanctions_sanction_type_id_fkey(id, name, default_fine_amount, company_id),
           charge:charges!sanctions_charge_id_fkey(id, amount, balance, status)
         `)
         .eq('company_id', companyId)
@@ -179,6 +184,12 @@ export function useSanctions() {
       }
       if (filters.pendingOnly) {
         query = query.in('status', ['pendiente', 'apelacion'])
+      }
+      if (filters.meetingId) {
+        query = query.eq('meeting_id', filters.meetingId)
+      }
+      if (filters.meetingAttendanceId) {
+        query = query.eq('meeting_attendance_id', filters.meetingAttendanceId)
       }
       if (filters.monthYear) {
         // Formato 'YYYY-MM'
@@ -216,6 +227,55 @@ export function useSanctions() {
     if (!companyId) return null
     setLoading(true)
     try {
+      // VALIDACIONES DE COMPAÑÍA EN EL FRONTEND
+      // 1. Validar que el socio pertenezca a la misma compañía
+      const { data: memberData, error: mErr } = await supabase
+        .from('members')
+        .select('company_id')
+        .eq('id', params.memberId)
+        .single()
+      if (mErr) throw new Error(`Error al validar socio: ${mErr.message}`)
+      if (memberData.company_id !== companyId) {
+        throw new Error('El socio no pertenece a la misma compañía.')
+      }
+
+      // 2. Validar que el tipo de sanción pertenezca a la misma compañía
+      const { data: stData, error: stErr } = await supabase
+        .from('sanction_types')
+        .select('company_id')
+        .eq('id', params.sanctionTypeId)
+        .single()
+      if (stErr) throw new Error(`Error al validar tipo de sanción: ${stErr.message}`)
+      if (stData.company_id !== companyId) {
+        throw new Error('El tipo de sanción no pertenece a la misma compañía.')
+      }
+
+      // 3. Si viene de reunión, validar que la reunión pertenezca a la misma compañía
+      if (params.meetingId) {
+        const { data: meetData, error: meetErr } = await supabase
+          .from('meetings')
+          .select('company_id')
+          .eq('id', params.meetingId)
+          .single()
+        if (meetErr) throw new Error(`Error al validar reunión: ${meetErr.message}`)
+        if (meetData.company_id !== companyId) {
+          throw new Error('La reunión no pertenece a la misma compañía.')
+        }
+      }
+
+      // 4. Si viene de asistencia, verificar que corresponda al mismo socio y reunión
+      if (params.meetingAttendanceId) {
+        const { data: attData, error: attErr } = await supabase
+          .from('meeting_attendances')
+          .select('meeting_id, member_id')
+          .eq('id', params.meetingAttendanceId)
+          .single()
+        if (attErr) throw new Error(`Error al validar asistencia: ${attErr.message}`)
+        if (attData.member_id !== params.memberId || (params.meetingId && attData.meeting_id !== params.meetingId)) {
+          throw new Error('Los datos de asistencia no corresponden al socio o reunión especificados.')
+        }
+      }
+
       let createdChargeId: string | null = null
 
       if (params.fineAmount > 0) {
@@ -296,6 +356,8 @@ export function useSanctions() {
           severity: params.severity ?? null,
           status: 'pendiente',
           resolution_notes: params.resolutionNotes ?? null,
+          meeting_id: params.meetingId ?? null,
+          meeting_attendance_id: params.meetingAttendanceId ?? null,
         })
         .select()
         .single()
