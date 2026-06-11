@@ -1,4 +1,4 @@
-export type Json =
+﻿export type Json =
   | string
   | number
   | boolean
@@ -1412,6 +1412,10 @@ export type Database = {
       }
       get_my_company_id: { Args: never; Returns: string }
       is_super_admin: { Args: never; Returns: boolean }
+      seed_default_charge_type_for_company: {
+        Args: { p_company_id: string }
+        Returns: undefined
+      }
     }
     Enums: {
       attendance_status: "asistio" | "ausente" | "justificado" | "tarde"
