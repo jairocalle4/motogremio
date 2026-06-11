@@ -6,6 +6,7 @@ import type {
   Charge,
   Payment,
   PaymentKpis,
+  DebtorSummary,
   PaymentMethod,
   ChargeStatus,
 } from '@/types'
@@ -59,6 +60,8 @@ export function usePayments() {
     totalPendingBalance: 0,
     collectedThisMonth: 0,
     delinquentMembersCount: 0,
+    overdueChargesCount: 0,
+    topDebtors: [],
   })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -417,10 +420,50 @@ export function usePayments() {
 
       const uniqueDelinquents = new Set((delinquentData ?? []).map((c: { member_id: string }) => c.member_id))
 
+      // Cuotas vencidas (count)
+      const overdueChargesCount = (delinquentData ?? []).length
+
+      // Top deudores — cargar cuotas activas con datos del socio
+      const { data: chargesWithMembers } = await supabase
+        .from('charges')
+        .select(`
+          member_id, balance,
+          member:members!charges_member_id_fkey(id, first_name, last_name, document_id)
+        `)
+        .eq('company_id', companyId)
+        .in('status', ['pendiente', 'parcial'])
+        .gt('balance', 0)
+
+      // Agregar por socio
+      const debtorMap = new Map<string, DebtorSummary>()
+      for (const c of (chargesWithMembers ?? [])) {
+        const m = c.member as { id: string; first_name: string; last_name: string; document_id: string } | null
+        if (!m) continue
+        const existing = debtorMap.get(m.id)
+        if (existing) {
+          existing.totalBalance += Number(c.balance)
+          existing.chargesCount += 1
+        } else {
+          debtorMap.set(m.id, {
+            member_id: m.id,
+            first_name: m.first_name,
+            last_name: m.last_name,
+            document_id: m.document_id,
+            totalBalance: Number(c.balance),
+            chargesCount: 1,
+          })
+        }
+      }
+      const topDebtors = Array.from(debtorMap.values())
+        .sort((a, b) => b.totalBalance - a.totalBalance)
+        .slice(0, 10)
+
       setKpis({
         totalPendingBalance,
         collectedThisMonth,
         delinquentMembersCount: uniqueDelinquents.size,
+        overdueChargesCount,
+        topDebtors,
       })
     } catch (e) {
       console.error('Error al calcular KPIs:', e)

@@ -313,10 +313,21 @@ export interface PaymentAllocation {
 }
 
 /** KPIs financieros del módulo */
+export interface DebtorSummary {
+  member_id: string
+  first_name: string
+  last_name: string
+  document_id: string
+  totalBalance: number
+  chargesCount: number
+}
+
 export interface PaymentKpis {
   totalPendingBalance: number
   collectedThisMonth: number
   delinquentMembersCount: number
+  overdueChargesCount: number
+  topDebtors: DebtorSummary[]
 }
 
 // ═══════════════════════════════════════════════════════

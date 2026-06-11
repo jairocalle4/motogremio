@@ -1,7 +1,8 @@
-import { useEffect } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useEffect, useState, useCallback } from 'react'
+import { useParams, useNavigate, Link } from 'react-router-dom'
 import { useMembers } from '@/hooks/useMembers'
 import { useVehicles } from '@/hooks/useVehicles'
+import { usePayments } from '@/hooks/usePayments'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
@@ -17,6 +18,8 @@ import {
   Car,
   DollarSign,
   FilePenLine,
+  CheckCircle2,
+  ArrowRight,
 } from 'lucide-react'
 import type { MemberStatus } from '@/types'
 import { DocumentsList } from '@/features/documents/DocumentsList'
@@ -26,13 +29,26 @@ export function MemberDetailPage() {
   const navigate = useNavigate()
   const { currentMember, loading, error, fetchMemberById } = useMembers()
   const { vehicles, fetchVehicles } = useVehicles()
+  const { fetchCharges, charges: memberCharges } = usePayments()
+  const [chargesLoading, setChargesLoading] = useState(false)
+
+  const loadMemberCharges = useCallback(async () => {
+    if (!id) return
+    setChargesLoading(true)
+    try {
+      await fetchCharges({ memberId: id })
+    } finally {
+      setChargesLoading(false)
+    }
+  }, [id, fetchCharges])
 
   useEffect(() => {
     if (id) {
       fetchMemberById(id)
       fetchVehicles()
+      loadMemberCharges()
     }
-  }, [id, fetchMemberById, fetchVehicles])
+  }, [id, fetchMemberById, fetchVehicles, loadMemberCharges])
 
   if (loading) {
     return (
@@ -303,22 +319,84 @@ export function MemberDetailPage() {
             </CardContent>
           </Card>
 
-          {/* Payments summary placeholder */}
+          {/* Estado de Cuenta — cuotas reales */}
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle className="text-base flex items-center gap-2">
                 <DollarSign className="w-4 h-4 text-primary-500" />
-                Estado Financiero y Cuotas
+                Estado de Cuenta
               </CardTitle>
+              <Link to="/pagos">
+                <Button variant="ghost" size="sm" rightIcon={<ArrowRight className="h-3.5 w-3.5" />}>
+                  Ver en Pagos
+                </Button>
+              </Link>
             </CardHeader>
             <CardContent>
-              <div className="border border-dashed rounded-lg p-6 text-center text-gray-400">
-                <DollarSign className="w-8 h-8 text-gray-300 mx-auto mb-2" />
-                <p className="text-sm">No se registran cuotas pendientes o pagos en este periodo.</p>
-                <p className="text-xs mt-1 text-gray-400">
-                  El estado de deudas se cargará de forma automática en el Módulo de Pagos.
-                </p>
-              </div>
+              {chargesLoading ? (
+                <div className="space-y-2">
+                  {[1,2].map(i => <div key={i} className="h-12 bg-gray-100 rounded-xl animate-pulse" />)}
+                </div>
+              ) : memberCharges.length === 0 ? (
+                <div className="flex items-center gap-3 py-5 px-4 bg-green-50 rounded-xl">
+                  <CheckCircle2 className="h-5 w-5 text-green-600 shrink-0" />
+                  <div>
+                    <p className="text-sm font-medium text-green-700">Sin deudas pendientes</p>
+                    <p className="text-xs text-green-600">Este socio está al día con todas sus cuotas.</p>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {memberCharges.slice(0, 10).map(charge => (
+                    <div key={charge.id} className="flex items-center justify-between p-3 rounded-xl border border-gray-100 bg-gray-50">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-gray-900 truncate">{charge.description}</p>
+                        <p className="text-xs text-gray-500 mt-0.5">
+                          {charge.period_month && charge.period_year
+                            ? `Periodo: ${charge.period_month}/${charge.period_year}`
+                            : `Vence: ${new Date(charge.due_date + 'T00:00:00').toLocaleDateString('es-EC')}`}
+                        </p>
+                      </div>
+                      <div className="text-right ml-3 shrink-0">
+                        <p className={`text-sm font-bold ${
+                          charge.status === 'pagada' ? 'text-green-600'
+                          : charge.status === 'anulada' ? 'text-gray-400'
+                          : 'text-red-600'
+                        }`}>
+                          ${Number(charge.balance).toFixed(2)}
+                        </p>
+                        <Badge variant={
+                          charge.status === 'pagada' ? 'success'
+                          : charge.status === 'parcial' ? 'warning'
+                          : charge.status === 'anulada' ? 'default'
+                          : 'danger'
+                        } size="sm">
+                          {charge.status === 'pagada' ? 'Pagada'
+                          : charge.status === 'parcial' ? 'Parcial'
+                          : charge.status === 'anulada' ? 'Anulada'
+                          : 'Pendiente'}
+                        </Badge>
+                      </div>
+                    </div>
+                  ))}
+                  {memberCharges.length > 10 && (
+                    <Link to="/pagos" className="block text-center text-xs text-primary-600 hover:underline font-medium pt-1">
+                      Ver todas las cuotas en Pagos →
+                    </Link>
+                  )}
+                  <div className="pt-2 border-t border-gray-100">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-600">Saldo total pendiente</span>
+                      <span className="font-bold text-red-600">
+                        ${memberCharges
+                          .filter(c => c.status === 'pendiente' || c.status === 'parcial')
+                          .reduce((s, c) => s + Number(c.balance), 0)
+                          .toFixed(2)}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
 

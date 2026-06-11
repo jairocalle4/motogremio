@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import {
   Users, Bike, Wallet,
   ShieldAlert, Calendar, AlertTriangle, CheckCircle,
-  ArrowRight,
+  ArrowRight, DollarSign,
 } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { StatCard } from './components/StatCard'
@@ -14,6 +14,7 @@ import { usePermissions } from '@/hooks/usePermissions'
 import { supabase } from '@/lib/supabaseClient'
 import { formatDate } from '@/lib/utils'
 import { APP_NAME } from '@/lib/constants'
+import type { DebtorSummary } from '@/types'
 
 // ─── Tipos de métricas ────────────────────────────────
 interface DashboardMetrics {
@@ -21,7 +22,7 @@ interface DashboardMetrics {
   activeMembers:    number
   totalVehicles:    number
   activeVehicles:   number
-  pendingPayments:  number
+  pendingCharges:   number
   docsExpiringSoon: number
   docsExpired:      number
   pendingSanctions: number
@@ -33,7 +34,7 @@ const EMPTY_METRICS: DashboardMetrics = {
   activeMembers:    0,
   totalVehicles:    0,
   activeVehicles:   0,
-  pendingPayments:  0,
+  pendingCharges:   0,
   docsExpiringSoon: 0,
   docsExpired:      0,
   pendingSanctions: 0,
@@ -43,8 +44,9 @@ const EMPTY_METRICS: DashboardMetrics = {
 // ─── Componente ───────────────────────────────────────
 export function DashboardPage() {
   const { profile } = useAuth()
-  const { isSuperAdmin } = usePermissions()
+  const { isSuperAdmin, canViewPayments } = usePermissions()
   const [metrics, setMetrics] = useState<DashboardMetrics>(EMPTY_METRICS)
+  const [topDebtors, setTopDebtors] = useState<DebtorSummary[]>([])
   const [loading, setLoading] = useState(true)
 
   const companyId   = profile?.company_id
@@ -61,12 +63,12 @@ export function DashboardPage() {
   const loadMetrics = async (cid: string) => {
     setLoading(true)
     try {
-      const [membersRes, vehiclesRes, paymentsRes, docsRes, sanctionsRes, meetingsRes] =
+      const [membersRes, vehiclesRes, chargesRes, docsRes, sanctionsRes, meetingsRes] =
         await Promise.allSettled([
           supabase.from('members').select('id,status', { count: 'exact' }).eq('company_id', cid),
           supabase.from('vehicles').select('id,status', { count: 'exact' }).eq('company_id', cid),
-          supabase.from('payments').select('id', { count: 'exact' })
-            .eq('company_id', cid).in('status', ['pendiente', 'moroso']).is('deleted_at', null),
+          supabase.from('charges').select('id,member_id,balance,member:members!charges_member_id_fkey(id,first_name,last_name,document_id)', { count: 'exact' })
+            .eq('company_id', cid).in('status', ['pendiente', 'parcial']),
           supabase.from('documents').select('id,status', { count: 'exact' }).eq('company_id', cid),
           supabase.from('sanctions').select('id', { count: 'exact' })
             .eq('company_id', cid).eq('status', 'pendiente').is('deleted_at', null),
@@ -78,15 +80,41 @@ export function DashboardPage() {
 
       const membersData   = membersRes.status   === 'fulfilled' ? membersRes.value.data   ?? [] : []
       const vehiclesData  = vehiclesRes.status  === 'fulfilled' ? vehiclesRes.value.data  ?? [] : []
+      const chargesData   = chargesRes.status   === 'fulfilled' ? chargesRes.value.data   ?? [] : []
       const docsData      = docsRes.status      === 'fulfilled' ? docsRes.value.data      ?? [] : []
       const nextMeetingData = meetingsRes.status === 'fulfilled' ? meetingsRes.value.data?.[0] : null
+
+      // Calcular top deudores
+      const debtorMap = new Map<string, DebtorSummary>()
+      for (const c of chargesData) {
+        const m = c.member as { id: string; first_name: string; last_name: string; document_id: string } | null
+        if (!m || Number(c.balance) <= 0) continue
+        const existing = debtorMap.get(m.id)
+        if (existing) {
+          existing.totalBalance += Number(c.balance)
+          existing.chargesCount += 1
+        } else {
+          debtorMap.set(m.id, {
+            member_id: m.id,
+            first_name: m.first_name,
+            last_name: m.last_name,
+            document_id: m.document_id,
+            totalBalance: Number(c.balance),
+            chargesCount: 1,
+          })
+        }
+      }
+      const sorted = Array.from(debtorMap.values())
+        .sort((a, b) => b.totalBalance - a.totalBalance)
+        .slice(0, 10)
+      setTopDebtors(sorted)
 
       setMetrics({
         totalMembers:    membersData.length,
         activeMembers:   membersData.filter(m => m.status === 'activo').length,
         totalVehicles:   vehiclesData.length,
         activeVehicles:  vehiclesData.filter(v => v.status === 'activa').length,
-        pendingPayments: paymentsRes.status === 'fulfilled' ? (paymentsRes.value.count ?? 0) : 0,
+        pendingCharges:  chargesRes.status === 'fulfilled' ? (chargesRes.value.count ?? 0) : 0,
         docsExpiringSoon: docsData.filter(d => d.status === 'por_vencer').length,
         docsExpired:     docsData.filter(d => d.status === 'vencido').length,
         pendingSanctions: sanctionsRes.status === 'fulfilled' ? (sanctionsRes.value.count ?? 0) : 0,
@@ -156,12 +184,12 @@ export function DashboardPage() {
           loading={loading}
         />
         <StatCard
-          title="Pagos pendientes"
-          value={loading ? '—' : metrics.pendingPayments}
-          subtitle="cuotas y deudas"
+          title="Cuotas pendientes"
+          value={loading ? '—' : metrics.pendingCharges}
+          subtitle="cuotas sin pagar"
           icon={<Wallet className="h-5 w-5 text-warning-600" />}
           iconBg="bg-warning-50"
-          alert={metrics.pendingPayments > 0}
+          alert={metrics.pendingCharges > 0}
           loading={loading}
         />
         <StatCard
@@ -174,6 +202,82 @@ export function DashboardPage() {
           loading={loading}
         />
       </div>
+
+      {/* ── Widget: Lista de deudores ── */}
+      {canViewPayments && (
+        <Card padding="md" className="mt-5">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <DollarSign className="h-4 w-4 text-red-500" />
+              Socios con deuda pendiente
+            </CardTitle>
+            <Link to="/pagos">
+              <Button variant="ghost" size="sm" rightIcon={<ArrowRight className="h-3.5 w-3.5" />}>
+                Ver en Pagos
+              </Button>
+            </Link>
+          </CardHeader>
+
+          {loading ? (
+            <div className="space-y-2">
+              {[1,2,3].map(i => (
+                <div key={i} className="h-12 rounded-lg animate-skeleton bg-gray-100" />
+              ))}
+            </div>
+          ) : topDebtors.length === 0 ? (
+            <div className="flex items-center gap-3 py-5 px-4 bg-green-50 rounded-xl">
+              <CheckCircle className="h-5 w-5 text-green-600 shrink-0" />
+              <div>
+                <p className="text-sm font-medium text-green-700">Sin deudas pendientes</p>
+                <p className="text-xs text-green-600">Todos los socios están al día con sus cuotas.</p>
+              </div>
+            </div>
+          ) : (
+            <div className="overflow-hidden rounded-xl border border-gray-200">
+              <table className="w-full text-sm">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="text-left px-4 py-2.5 font-medium text-gray-500 text-xs uppercase tracking-wider">Socio</th>
+                    <th className="text-left px-4 py-2.5 font-medium text-gray-500 text-xs uppercase tracking-wider hidden sm:table-cell">Cédula</th>
+                    <th className="text-center px-4 py-2.5 font-medium text-gray-500 text-xs uppercase tracking-wider hidden md:table-cell">Cuotas</th>
+                    <th className="text-right px-4 py-2.5 font-medium text-gray-500 text-xs uppercase tracking-wider">Total</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {topDebtors.map(debtor => (
+                    <tr key={debtor.member_id} className="hover:bg-gray-50 transition-colors">
+                      <td className="px-4 py-3">
+                        <Link
+                          to={`/socios/${debtor.member_id}`}
+                          className="font-medium text-gray-900 hover:text-primary-600 transition-colors"
+                        >
+                          {debtor.first_name} {debtor.last_name}
+                        </Link>
+                      </td>
+                      <td className="px-4 py-3 hidden sm:table-cell">
+                        <span className="text-gray-500 text-xs font-mono">{debtor.document_id}</span>
+                      </td>
+                      <td className="px-4 py-3 text-center hidden md:table-cell">
+                        <Badge variant="warning">{debtor.chargesCount} cuota{debtor.chargesCount !== 1 ? 's' : ''}</Badge>
+                      </td>
+                      <td className="px-4 py-3 text-right">
+                        <span className="font-bold text-red-600">${debtor.totalBalance.toFixed(2)}</span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              {topDebtors.length === 10 && (
+                <div className="px-4 py-2.5 bg-gray-50 border-t border-gray-100 text-center">
+                  <Link to="/pagos" className="text-xs text-primary-600 hover:underline font-medium">
+                    Ver todos los deudores →
+                  </Link>
+                </div>
+              )}
+            </div>
+          )}
+        </Card>
+      )}
 
       {/* Fila secundaria */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">

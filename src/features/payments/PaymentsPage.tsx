@@ -1,7 +1,7 @@
 import { useEffect, useCallback } from 'react'
 import {
   Wallet, TrendingDown, TrendingUp, AlertTriangle,
-  Calendar, RefreshCw,
+  Calendar, RefreshCw, Clock,
 } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { Card, CardContent } from '@/components/ui/Card'
@@ -16,7 +16,7 @@ import { useState } from 'react'
 type TabId = 'deudores' | 'historial' | 'tipos'
 
 const TABS: { id: TabId; label: string }[] = [
-  { id: 'deudores',  label: 'Cuotas y Deudas' },
+  { id: 'deudores',  label: 'Lista de Deudores' },
   { id: 'historial', label: 'Historial de Pagos' },
   { id: 'tipos',     label: 'Tipos de Cobro' },
 ]
@@ -90,7 +90,7 @@ export function PaymentsPage() {
       </div>
 
       {/* KPIs */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         {/* Total por cobrar */}
         <Card>
           <CardContent className="p-5">
@@ -137,15 +137,35 @@ export function PaymentsPage() {
             <div className="flex items-start justify-between">
               <div>
                 <p className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">
-                  Socios Morosos
+                  Socios con Deuda
                 </p>
                 <p className="text-2xl font-bold text-amber-600">
                   {kpis.delinquentMembersCount}
                 </p>
-                <p className="text-xs text-gray-400 mt-1">Con cuotas vencidas</p>
+                <p className="text-xs text-gray-400 mt-1">Con cuotas pendientes</p>
               </div>
               <div className="w-10 h-10 rounded-xl bg-amber-100 flex items-center justify-center shrink-0">
                 <AlertTriangle className="h-5 w-5 text-amber-500" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Cuotas vencidas */}
+        <Card>
+          <CardContent className="p-5">
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">
+                  Cuotas Vencidas
+                </p>
+                <p className={`text-2xl font-bold ${kpis.overdueChargesCount > 0 ? 'text-red-700' : 'text-gray-400'}`}>
+                  {kpis.overdueChargesCount}
+                </p>
+                <p className="text-xs text-gray-400 mt-1">Fecha de vencimiento pasada</p>
+              </div>
+              <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${kpis.overdueChargesCount > 0 ? 'bg-red-100' : 'bg-gray-100'}`}>
+                <Clock className={`h-5 w-5 ${kpis.overdueChargesCount > 0 ? 'text-red-600' : 'text-gray-400'}`} />
               </div>
             </div>
           </CardContent>

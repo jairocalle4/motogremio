@@ -1,10 +1,11 @@
 import { useEffect, useState, useCallback } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams, useNavigate, Link } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import { useVehicles } from '@/hooks/useVehicles'
 import { useMembers } from '@/hooks/useMembers'
 import { useDrivers, getA1License } from '@/hooks/useDrivers'
 import { usePermissions } from '@/hooks/usePermissions'
+import { usePayments } from '@/hooks/usePayments'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
@@ -25,9 +26,96 @@ import {
   Hash,
   Palette,
   Calendar,
+  CheckCircle2,
 } from 'lucide-react'
 import type { VehicleStatus, VehicleDriverAssignment } from '@/types'
 import { DocumentsList } from '@/features/documents/DocumentsList'
+
+// ─── Subcomponente: cuotas de la unidad ───────────────────────────
+function VehicleChargesSection({ vehicleId }: { vehicleId: string }) {
+  const { fetchCharges, charges } = usePayments()
+  const [loading, setLoading] = useState(false)
+
+  useEffect(() => {
+    setLoading(true)
+    fetchCharges({ vehicleId }).finally(() => setLoading(false))
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [vehicleId])
+
+  const MONTHS = ['', 'Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic']
+
+  if (loading) {
+    return (
+      <div className="space-y-2">
+        {[1,2].map(i => <div key={i} className="h-12 bg-gray-100 rounded-xl animate-pulse" />)}
+      </div>
+    )
+  }
+
+  if (charges.length === 0) {
+    return (
+      <div className="flex items-center gap-3 py-5 px-4 bg-green-50 rounded-xl">
+        <CheckCircle2 className="h-5 w-5 text-green-600 shrink-0" />
+        <div>
+          <p className="text-sm font-medium text-green-700">Sin cuotas registradas</p>
+          <p className="text-xs text-green-600">No hay cuotas generadas para esta unidad.</p>
+        </div>
+      </div>
+    )
+  }
+
+  const pendingBalance = charges
+    .filter(c => c.status === 'pendiente' || c.status === 'parcial')
+    .reduce((s, c) => s + Number(c.balance), 0)
+
+  return (
+    <div className="space-y-2">
+      {charges.slice(0, 8).map(charge => (
+        <div key={charge.id} className="flex items-center justify-between p-3 rounded-xl border border-gray-100 bg-gray-50">
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium text-gray-900 truncate">{charge.description}</p>
+            <p className="text-xs text-gray-500 mt-0.5">
+              {charge.period_month && charge.period_year
+                ? `${MONTHS[charge.period_month]} ${charge.period_year}`
+                : `Vence: ${new Date(charge.due_date + 'T00:00:00').toLocaleDateString('es-EC')}`}
+            </p>
+          </div>
+          <div className="text-right ml-3 shrink-0">
+            <p className={`text-sm font-bold ${
+              charge.status === 'pagada' ? 'text-green-600'
+              : charge.status === 'anulada' ? 'text-gray-400'
+              : 'text-red-600'
+            }`}>
+              ${Number(charge.balance).toFixed(2)}
+            </p>
+            <Badge variant={
+              charge.status === 'pagada' ? 'success'
+              : charge.status === 'parcial' ? 'warning'
+              : charge.status === 'anulada' ? 'default'
+              : 'danger'
+            } size="sm">
+              {charge.status === 'pagada' ? 'Pagada'
+              : charge.status === 'parcial' ? 'Parcial'
+              : charge.status === 'anulada' ? 'Anulada'
+              : 'Pendiente'}
+            </Badge>
+          </div>
+        </div>
+      ))}
+      {pendingBalance > 0 && (
+        <div className="flex items-center justify-between pt-2 border-t border-gray-100">
+          <span className="text-sm text-gray-600">Saldo pendiente</span>
+          <span className="text-sm font-bold text-red-600">${pendingBalance.toFixed(2)}</span>
+        </div>
+      )}
+      <div className="text-center pt-1">
+        <Link to="/pagos" className="text-xs text-primary-600 hover:underline font-medium">
+          Ver en módulo de Pagos →
+        </Link>
+      </div>
+    </div>
+  )
+}
 
 export function VehicleDetailPage() {
   const { id } = useParams<{ id: string }>()
@@ -624,22 +712,16 @@ export function VehicleDetailPage() {
             </CardContent>
           </Card>
 
-          {/* Cobros — placeholder */}
+          {/* Cuotas de la Unidad */}
           <Card>
             <CardHeader>
-              <CardTitle className="text-base flex items-center gap-2 text-gray-500">
-                <DollarSign className="w-4 h-4" />
-                Historial de Cobros
+              <CardTitle className="text-base flex items-center gap-2">
+                <DollarSign className="w-4 h-4 text-primary-500" />
+                Cuotas de la Unidad
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="border border-dashed rounded-lg p-5 text-center text-gray-400">
-                <DollarSign className="w-7 h-7 text-gray-300 mx-auto mb-2" />
-                <p className="text-sm">Sin cobros registrados para esta unidad.</p>
-                <p className="text-xs mt-1 text-gray-400">
-                  El historial de pagos estará disponible en el Módulo de Pagos (Fase 3.5).
-                </p>
-              </div>
+              <VehicleChargesSection vehicleId={currentVehicle.id} />
             </CardContent>
           </Card>
 
