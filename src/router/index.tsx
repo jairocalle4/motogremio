@@ -2,6 +2,12 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider } from '@/context/AuthContext'
 import { ProtectedRoute } from './ProtectedRoute'
 import { AppLayout } from '@/components/layout/AppLayout'
+import { SuperAdminGuard } from '@/components/auth/SuperAdminGuard'
+import { SuperAdminLayout } from '@/layouts/SuperAdminLayout'
+import { SuperAdminDashboard } from '@/features/super-admin/SuperAdminDashboard'
+import { SuperAdminCompanies } from '@/features/super-admin/SuperAdminCompanies'
+import { SuperAdminCompanyDetail } from '@/features/super-admin/SuperAdminCompanyDetail'
+import { SuperAdminPlans } from '@/features/super-admin/SuperAdminPlans'
 import { LoginPage } from '@/features/auth/LoginPage'
 import { DashboardPage } from '@/features/dashboard/DashboardPage'
 import { ChangePasswordPage } from '@/features/account/ChangePasswordPage'
@@ -80,16 +86,18 @@ export function AppRouter() {
                 <Route path="/auditoria"     element={<Placeholder title="Auditoría" />} />
                 <Route path="/configuracion" element={<CompanyConfigPage />} />
               </Route>
+            </Route>
 
-              {/* Super admin — Fase 5 */}
-              <Route element={<ProtectedRoute allowedRoles={['super_admin']} />}>
-                <Route path="/admin/companias"     element={<Placeholder title="Compañías (SaaS Admin)" />} />
-                <Route path="/admin/planes"        element={<Placeholder title="Planes" />} />
-                <Route path="/admin/suscripciones" element={<Placeholder title="Suscripciones" />} />
-                <Route path="/admin/metricas"      element={<Placeholder title="Métricas Globales" />} />
-                <Route path="/admin/configuracion" element={<Placeholder title="Configuración Global" />} />
+            {/* Panel Super Admin SaaS */}
+            <Route path="/super-admin" element={<SuperAdminGuard />}>
+              <Route element={<SuperAdminLayout />}>
+                <Route index element={<SuperAdminDashboard />} />
+                <Route path="companies" element={<SuperAdminCompanies />} />
+                <Route path="companies/:id" element={<SuperAdminCompanyDetail />} />
+                <Route path="plans" element={<SuperAdminPlans />} />
               </Route>
             </Route>
+
           </Route>
 
           {/* Ruta 404 */}

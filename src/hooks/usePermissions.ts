@@ -63,7 +63,7 @@ export function usePermissions() {
   const canManageCoopeSettings = hasRole('super_admin', 'admin')
 
   /** Panel de super administrador del SaaS */
-  const canAccessSaasAdmin = isSuperAdmin
+  const canAccessSuperAdmin = isSuperAdmin
 
   return {
     role,
@@ -94,6 +94,6 @@ export function usePermissions() {
     canViewNotifications,
     canManageUsers,
     canManageCoopeSettings,
-    canAccessSaasAdmin,
+    canAccessSuperAdmin,
   }
 }
