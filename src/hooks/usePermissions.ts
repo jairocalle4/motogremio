@@ -55,6 +55,9 @@ export function usePermissions() {
   /** Gestión de reportes */
   const canViewReports = hasRole('super_admin', 'admin', 'gerente', 'presidente', 'secretaria', 'tesorero', 'operador')
 
+  /** Centro de Alertas y Notificaciones */
+  const canViewNotifications = hasRole('super_admin', 'admin', 'gerente', 'presidente', 'secretaria', 'tesorero', 'operador')
+
   /** Gestión de configuraciones y usuarios */
   const canManageUsers = hasRole('super_admin', 'admin')
   const canManageCoopeSettings = hasRole('super_admin', 'admin')
@@ -88,6 +91,7 @@ export function usePermissions() {
     canManageMeetings,
     canViewMeetings,
     canViewReports,
+    canViewNotifications,
     canManageUsers,
     canManageCoopeSettings,
     canAccessSaasAdmin,

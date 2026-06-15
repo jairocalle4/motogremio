@@ -5,7 +5,7 @@ import {
   ShieldAlert, BarChart3,
   Settings, UserCog, Activity, Building2, Package,
   CreditCard, TrendingUp, LogOut, ShieldCheck,
-  X, Menu, Calendar,
+  X, Menu, Calendar, Bell,
 } from 'lucide-react'
 
 import { useAuth } from '@/context/useAuth'
@@ -40,6 +40,7 @@ const companyNav: NavSection[] = [
       { to: '/sanciones',    label: 'Sanciones',      icon: ShieldAlert },
       { to: '/reuniones',    label: 'Reuniones',      icon: Calendar },
       { to: '/reportes',     label: 'Reportes',       icon: BarChart3 },
+      { to: '/notificaciones', label: 'Alertas',      icon: Bell },
     ],
   },
   {
@@ -95,6 +96,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
       if (item.to === '/sanciones') return permissions.canViewSanctions
       if (item.to === '/reuniones') return permissions.canViewMeetings
       if (item.to === '/reportes') return permissions.canViewReports
+      if (item.to === '/notificaciones') return permissions.canViewNotifications
       if (item.to === '/configuracion') return permissions.canManageCoopeSettings
       if (item.to === '/usuarios') return permissions.canManageUsers
       if (item.to === '/auditoria') return permissions.canManageUsers
