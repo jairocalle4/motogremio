@@ -68,8 +68,10 @@ export function AppRouter() {
                 <Route path="/convocatorias" element={<Navigate to="/reuniones" replace />} />
                 <Route path="/asistencia"    element={<Navigate to="/reuniones" replace />} />
 
-                {/* Reportes — Fase 6 */}
-                <Route path="/reportes"      element={<ReportsPage />} />
+                {/* Reportes — Fase 3.9 */}
+                <Route element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'gerente', 'presidente', 'secretaria', 'tesorero', 'operador']} />}>
+                  <Route path="/reportes"      element={<ReportsPage />} />
+                </Route>
 
                 {/* Administración interna */}
                 <Route path="/usuarios"      element={<Placeholder title="Usuarios y Roles" />} />

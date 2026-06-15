@@ -79,11 +79,30 @@ interface SidebarProps {
 
 export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const { profile, signOut } = useAuth()
-  const { isSuperAdmin } = usePermissions()
+  const permissions = usePermissions()
+  const { isSuperAdmin } = permissions
   const navigate = useNavigate()
   const [signingOut, setSigningOut] = useState(false)
 
-  const nav = isSuperAdmin ? adminNav : companyNav
+  const filteredCompanyNav = companyNav.map(section => ({
+    ...section,
+    items: section.items.filter(item => {
+      if (item.to === '/dashboard') return true
+      if (item.to === '/socios') return permissions.canViewMembers
+      if (item.to === '/conductores') return permissions.canViewDrivers
+      if (item.to === '/unidades') return permissions.canViewVehicles
+      if (item.to === '/pagos') return permissions.canViewPayments
+      if (item.to === '/sanciones') return permissions.canViewSanctions
+      if (item.to === '/reuniones') return permissions.canViewMeetings
+      if (item.to === '/reportes') return permissions.canViewReports
+      if (item.to === '/configuracion') return permissions.canManageCoopeSettings
+      if (item.to === '/usuarios') return permissions.canManageUsers
+      if (item.to === '/auditoria') return permissions.canManageUsers
+      return true
+    })
+  })).filter(section => section.items.length > 0)
+
+  const nav = isSuperAdmin ? adminNav : filteredCompanyNav
   const fullName = profile ? `${profile.first_name} ${profile.last_name}` : 'Usuario'
   const role     = profile?.role ? ROLE_LABELS[profile.role] : '—'
   const initials = profile ? getInitials(profile.first_name, profile.last_name) : 'U'

@@ -455,11 +455,15 @@ export function useReports() {
         }
 
         const isFine = c.charge_type?.name?.toLowerCase().includes('multa') || c.description?.toLowerCase().includes('multa')
+        const isOverdue = (c.status === 'pendiente' || c.status === 'parcial') && c.due_date && new Date(c.due_date) < new Date()
 
         if (c.status === 'pagada') {
           paidSum += Number(c.amount)
         } else if (c.status === 'pendiente' || c.status === 'parcial') {
           pendingSum += Number(c.balance)
+          if (isOverdue) {
+            overdueSum += Number(c.balance)
+          }
         }
 
         if (isFine) {
