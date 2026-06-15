@@ -16,6 +16,7 @@ import { PaymentsPage } from '@/features/payments/PaymentsPage'
 import { MeetingsPage } from '@/features/meetings/pages/MeetingsPage'
 import { MeetingDetailPage } from '@/features/meetings/pages/MeetingDetailPage'
 import { SanctionsPage } from '@/features/sanctions/pages/SanctionsPage'
+import { ReportsPage } from '@/features/reports/pages/ReportsPage'
 
 // ─── Páginas placeholder (se crearán en Fase 3–5) ─────
 const Placeholder = ({ title }: { title: string }) => (
@@ -68,7 +69,7 @@ export function AppRouter() {
                 <Route path="/asistencia"    element={<Navigate to="/reuniones" replace />} />
 
                 {/* Reportes — Fase 6 */}
-                <Route path="/reportes"      element={<Placeholder title="Reportes" />} />
+                <Route path="/reportes"      element={<ReportsPage />} />
 
                 {/* Administración interna */}
                 <Route path="/usuarios"      element={<Placeholder title="Usuarios y Roles" />} />
