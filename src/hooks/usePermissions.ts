@@ -53,7 +53,7 @@ export function usePermissions() {
   const canViewMeetings   = hasRole('super_admin', 'admin', 'gerente', 'presidente', 'secretaria', 'operador')
 
   /** Gestión de reportes */
-  const canViewReports = hasRole('super_admin', 'admin', 'gerente', 'presidente', 'tesorero', 'operador')
+  const canViewReports = hasRole('super_admin', 'admin', 'gerente', 'presidente', 'secretaria', 'tesorero', 'operador')
 
   /** Gestión de configuraciones y usuarios */
   const canManageUsers = hasRole('super_admin', 'admin')

@@ -97,3 +97,61 @@
   0%   { background-position: 200% 0; }
   100% { background-position: -200% 0; }
 }
+
+/* ─── Media Print ────────────────────────────────────── */
+@media print {
+  body {
+    background: white !important;
+    color: black !important;
+  }
+  
+  /* Ocultar elementos de navegación/UI */
+  header,
+  aside,
+  .print\:hidden {
+    display: none !important;
+  }
+  
+  /* Ajustar los contenedores para imprimir correctamente */
+  .flex,
+  .h-screen,
+  .overflow-hidden,
+  main,
+  .page-container,
+  .flex-1 {
+    height: auto !important;
+    overflow: visible !important;
+    display: block !important;
+    max-width: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  /* Tarjetas y tablas */
+  .section-card {
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    margin-bottom: 2rem !important;
+    page-break-inside: avoid;
+  }
+
+  table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+  }
+
+  tr {
+    page-break-inside: avoid !important;
+  }
+
+  th, td {
+    border-bottom: 1px solid #e2e8f0 !important;
+    padding: 8px 4px !important;
+  }
+
+  /* Evitar saltos de página dentro de elementos clave */
+  h1, h2, h3, .grid {
+    page-break-after: avoid;
+  }
+}
