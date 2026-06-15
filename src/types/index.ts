@@ -358,6 +358,8 @@ export interface Sanction {
   resolution_notes: string | null
   created_at: string
   updated_at: string
+  meeting_id: string | null
+  meeting_attendance_id: string | null
   member?: Pick<Member, 'id' | 'first_name' | 'last_name' | 'document_id'>
   vehicle?: Pick<Vehicle, 'id' | 'disk_number' | 'plate'> | null
   sanction_type?: Pick<SanctionType, 'id' | 'name' | 'default_fine_amount'>
