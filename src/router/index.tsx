@@ -17,6 +17,7 @@ import { MeetingsPage } from '@/features/meetings/pages/MeetingsPage'
 import { MeetingDetailPage } from '@/features/meetings/pages/MeetingDetailPage'
 import { SanctionsPage } from '@/features/sanctions/pages/SanctionsPage'
 import { ReportsPage } from '@/features/reports/pages/ReportsPage'
+import { NotificationsPage } from '@/features/notifications/pages/NotificationsPage'
 
 // ─── Páginas placeholder (se crearán en Fase 3–5) ─────
 const Placeholder = ({ title }: { title: string }) => (
@@ -67,6 +68,7 @@ export function AppRouter() {
                 <Route path="/reuniones/:id"  element={<MeetingDetailPage />} />
                 <Route path="/convocatorias" element={<Navigate to="/reuniones" replace />} />
                 <Route path="/asistencia"    element={<Navigate to="/reuniones" replace />} />
+                <Route path="/notificaciones" element={<NotificationsPage />} />
 
                 {/* Reportes — Fase 3.9 */}
                 <Route element={<ProtectedRoute allowedRoles={['super_admin', 'admin', 'gerente', 'presidente', 'secretaria', 'tesorero', 'operador']} />}>
