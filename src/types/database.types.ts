@@ -1532,13 +1532,16 @@ export type Database = {
       }
       get_companies_with_stats: { Args: never; Returns: Json }
       get_company_invitations: { Args: { p_company_id: string }; Returns: Json }
+      get_company_plan_usage: { Args: { p_company_id: string }; Returns: Json }
       get_company_users: { Args: { p_company_id: string }; Returns: Json }
       get_my_company_id: { Args: never; Returns: string }
+      get_my_company_plan_usage: { Args: never; Returns: Json }
       get_super_admin_company_detail: {
         Args: { p_company_id: string }
         Returns: Json
       }
       get_super_admin_dashboard_stats: { Args: never; Returns: Json }
+      get_super_admin_plan_usage_overview: { Args: never; Returns: Json }
       is_super_admin: { Args: never; Returns: boolean }
       seed_default_charge_type_for_company: {
         Args: { p_company_id: string }
