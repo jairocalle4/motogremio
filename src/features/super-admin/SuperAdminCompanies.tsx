@@ -3,8 +3,16 @@ import { Link } from 'react-router-dom'
 import { supabase } from '@/lib/supabaseClient'
 import { Card } from '@/components/ui/Card'
 import { Badge } from '@/components/ui/Badge'
-import { Search, Eye, ShieldAlert } from 'lucide-react'
+import { Button } from '@/components/ui/Button'
+import { Input } from '@/components/ui/Input'
+import { Select } from '@/components/ui/Select'
+import { Modal } from '@/components/ui/Modal'
+import { Search, Eye, ShieldAlert, Plus, Copy, Check } from 'lucide-react'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { z } from 'zod'
 import toast from 'react-hot-toast'
+import type { Database } from '@/types/database.types'
 
 interface CompanyStats {
   id: string
@@ -20,13 +28,50 @@ interface CompanyStats {
   total_debt: number
 }
 
+type Plan = Database['public']['Tables']['plans']['Row']
+
+// ─── Validación del formulario ────────────────────────
+const companySchema = z.object({
+  legal_name: z.string().min(3, 'El nombre legal debe tener al menos 3 caracteres.'),
+  trade_name: z.string().default(''),
+  ruc: z.string().length(13, 'El RUC debe tener exactamente 13 caracteres.'),
+  plan_id: z.string().min(1, 'Selecciona un plan.'),
+  status: z.enum(['activa', 'inactiva']),
+  admin_first_name: z.string().min(2, 'El nombre debe tener al menos 2 caracteres.'),
+  admin_last_name: z.string().min(2, 'El apellido debe tener al menos 2 caracteres.'),
+  admin_email: z.string().email('Ingresa un correo de administrador válido.'),
+})
+
+type CompanyForm = z.infer<typeof companySchema>
+
 export function SuperAdminCompanies() {
   const [companies, setCompanies] = useState<CompanyStats[]>([])
+  const [plans, setPlans] = useState<Plan[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
 
+  // Control de Modales
+  const [isCreateOpen, setIsCreateOpen] = useState(false)
+  const [isSuccessOpen, setIsSuccessOpen] = useState(false)
+  const [inviteLink, setInviteLink] = useState('')
+  const [copied, setCopied] = useState(false)
+
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors, isSubmitting },
+  } = useForm<CompanyForm>({
+    resolver: zodResolver(companySchema),
+    defaultValues: {
+      status: 'activa',
+      trade_name: '',
+    },
+  })
+
   useEffect(() => {
     fetchCompanies()
+    fetchPlans()
   }, [])
 
   async function fetchCompanies() {
@@ -38,6 +83,19 @@ export function SuperAdminCompanies() {
       toast.error('Error al cargar compañías: ' + err.message)
     } finally {
       setLoading(false)
+    }
+  }
+
+  async function fetchPlans() {
+    try {
+      const { data, error } = await supabase
+        .from('plans')
+        .select('*')
+        .order('price_monthly', { ascending: true })
+      if (error) throw error
+      setPlans(data || [])
+    } catch (err: any) {
+      console.error('Error al cargar planes:', err.message)
     }
   }
 
@@ -62,6 +120,51 @@ export function SuperAdminCompanies() {
     }
   }
 
+  const onSubmit = async (data: CompanyForm) => {
+    try {
+      const { data: res, error } = await supabase.rpc('create_super_admin_company', {
+        p_legal_name: data.legal_name,
+        p_trade_name: data.trade_name,
+        p_ruc: data.ruc,
+        p_plan_id: data.plan_id,
+        p_status: data.status,
+        p_admin_first_name: data.admin_first_name,
+        p_admin_last_name: data.admin_last_name,
+        p_admin_email: data.admin_email,
+      })
+
+      if (error) throw error
+
+      const resJson = res as any
+      if (resJson && resJson.invite_token) {
+        const link = `${window.location.origin}/register?invite=${resJson.invite_token}`
+        setInviteLink(link)
+        setIsCreateOpen(false)
+        setIsSuccessOpen(true)
+        reset()
+        fetchCompanies()
+      } else {
+        toast.success('Compañía creada con éxito')
+        setIsCreateOpen(false)
+        reset()
+        fetchCompanies()
+      }
+    } catch (err: any) {
+      toast.error(err.message || 'Error al crear la compañía')
+    }
+  }
+
+  const copyToClipboard = async () => {
+    try {
+      await navigator.clipboard.writeText(inviteLink)
+      setCopied(true)
+      toast.success('¡Enlace copiado al portapapeles!')
+      setTimeout(() => setCopied(false), 2000)
+    } catch (err) {
+      toast.error('No se pudo copiar el enlace')
+    }
+  }
+
   if (loading) {
     return (
       <div className="flex justify-center py-12">
@@ -77,6 +180,14 @@ export function SuperAdminCompanies() {
           <h1 className="text-2xl font-bold text-slate-900">Compañías SaaS</h1>
           <p className="text-slate-500">Gestión global de clientes de MotoGremio</p>
         </div>
+        <Button 
+          variant="primary" 
+          onClick={() => setIsCreateOpen(true)}
+          className="flex items-center gap-2"
+        >
+          <Plus className="h-4 w-4" />
+          Nueva compañía
+        </Button>
       </div>
 
       <Card className="p-4">
@@ -157,6 +268,158 @@ export function SuperAdminCompanies() {
           </table>
         </div>
       </Card>
+
+      {/* ── Modal Creación de Compañía ── */}
+      <Modal
+        isOpen={isCreateOpen}
+        onClose={() => { if (!isSubmitting) setIsCreateOpen(false) }}
+        title="Crear Nueva Compañía SaaS"
+        size="lg"
+      >
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+          <div className="border-b border-slate-100 pb-4">
+            <h3 className="text-sm font-semibold text-slate-700 mb-3">Datos de la Compañía</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <Input
+                label="Nombre Legal"
+                type="text"
+                placeholder="Compañía S.A."
+                required
+                error={errors.legal_name?.message}
+                {...register('legal_name')}
+              />
+              <Input
+                label="Nombre Comercial"
+                type="text"
+                placeholder="MotoExpress"
+                error={errors.trade_name?.message}
+                {...register('trade_name')}
+              />
+              <Input
+                label="RUC"
+                type="text"
+                placeholder="0999999999001"
+                required
+                error={errors.ruc?.message}
+                {...register('ruc')}
+              />
+              <Select
+                label="Plan Contratado"
+                required
+                error={errors.plan_id?.message}
+                options={[
+                  { value: '', label: 'Selecciona un plan...' },
+                  ...plans.map(p => ({ value: p.id, label: `${p.name.toUpperCase()} - $${p.price_monthly}/mes` }))
+                ]}
+                {...register('plan_id')}
+              />
+              <Select
+                label="Estado Inicial"
+                required
+                error={errors.status?.message}
+                options={[
+                  { value: 'activa', label: 'Activa' },
+                  { value: 'inactiva', label: 'Inactiva' }
+                ]}
+                {...register('status')}
+              />
+            </div>
+          </div>
+
+          <div>
+            <h3 className="text-sm font-semibold text-slate-700 mb-3">Administrador Inicial</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <Input
+                label="Nombre"
+                type="text"
+                placeholder="Juan"
+                required
+                error={errors.admin_first_name?.message}
+                {...register('admin_first_name')}
+              />
+              <Input
+                label="Apellido"
+                type="text"
+                placeholder="Pérez"
+                required
+                error={errors.admin_last_name?.message}
+                {...register('admin_last_name')}
+              />
+              <div className="md:col-span-2">
+                <Input
+                  label="Correo Electrónico"
+                  type="email"
+                  placeholder="admin@coop.com"
+                  required
+                  error={errors.admin_email?.message}
+                  {...register('admin_email')}
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-3 border-t border-slate-100 pt-4">
+            <Button
+              type="button"
+              variant="outline"
+              disabled={isSubmitting}
+              onClick={() => setIsCreateOpen(false)}
+            >
+              Cancelar
+            </Button>
+            <Button
+              type="submit"
+              variant="primary"
+              isLoading={isSubmitting}
+            >
+              Crear Compañía y Generar Invitación
+            </Button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* ── Modal de Éxito (Link de Invitación) ── */}
+      <Modal
+        isOpen={isSuccessOpen}
+        onClose={() => setIsSuccessOpen(false)}
+        title="Compañía creada con éxito"
+        size="md"
+      >
+        <div className="space-y-6 py-2">
+          <p className="text-sm text-slate-600 leading-relaxed">
+            La compañía ha sido registrada en el sistema. Comparte el siguiente enlace con el administrador inicial para que complete su registro:
+          </p>
+
+          <div className="flex gap-2 items-center bg-slate-50 border border-slate-200 rounded-lg p-3">
+            <input
+              type="text"
+              readOnly
+              value={inviteLink}
+              className="flex-1 bg-transparent border-none text-xs font-mono text-slate-700 focus:outline-none"
+            />
+            <button
+              onClick={copyToClipboard}
+              className="p-2 bg-white border border-slate-200 rounded-md text-slate-600 hover:bg-slate-50 transition-colors"
+              title="Copiar enlace"
+            >
+              {copied ? <Check className="h-4 w-4 text-green-600" /> : <Copy className="h-4 w-4" />}
+            </button>
+          </div>
+
+          <p className="text-xs text-red-600 font-semibold leading-relaxed">
+            Importante: Por razones de seguridad, este enlace contiene un token de un solo uso que expira en 24 horas y no podrá visualizarse nuevamente.
+          </p>
+
+          <div className="flex justify-end pt-2">
+            <Button
+              variant="primary"
+              onClick={() => setIsSuccessOpen(false)}
+            >
+              Cerrar y Continuar
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </div>
   )
 }

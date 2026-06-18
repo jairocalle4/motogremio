@@ -9,6 +9,7 @@ import { SuperAdminCompanies } from '@/features/super-admin/SuperAdminCompanies'
 import { SuperAdminCompanyDetail } from '@/features/super-admin/SuperAdminCompanyDetail'
 import { SuperAdminPlans } from '@/features/super-admin/SuperAdminPlans'
 import { LoginPage } from '@/features/auth/LoginPage'
+import { RegisterPage } from '@/features/auth/RegisterPage'
 import { DashboardPage } from '@/features/dashboard/DashboardPage'
 import { ChangePasswordPage } from '@/features/account/ChangePasswordPage'
 import { CompanyConfigPage } from '@/features/company/CompanyConfigPage'
@@ -45,6 +46,7 @@ export function AppRouter() {
         <Routes>
           {/* Rutas públicas */}
           <Route path="/login" element={<LoginPage />} />
+          <Route path="/register" element={<RegisterPage />} />
 
           {/* Rutas protegidas */}
           <Route element={<ProtectedRoute />}>
