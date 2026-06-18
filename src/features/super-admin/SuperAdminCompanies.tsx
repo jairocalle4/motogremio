@@ -31,7 +31,7 @@ export function SuperAdminCompanies() {
 
   async function fetchCompanies() {
     try {
-      const { data, error } = await supabase.rpc('get_companies_with_stats' as any)
+      const { data, error } = await supabase.rpc('get_companies_with_stats')
       if (error) throw error
       setCompanies((data as unknown as CompanyStats[]) || [])
     } catch (err: any) {

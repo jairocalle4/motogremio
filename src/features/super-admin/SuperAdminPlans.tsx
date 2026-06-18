@@ -91,10 +91,10 @@ export function SuperAdminPlans() {
             <Button 
               variant="outline" 
               className="w-full flex items-center justify-center gap-2"
-              onClick={() => toast('La edición de planes se habilitará próximamente', { icon: '🚧' })}
+              disabled
             >
               <Edit2 className="h-4 w-4" />
-              Editar Plan
+              Editar Plan (Próximamente)
             </Button>
           </Card>
         ))}

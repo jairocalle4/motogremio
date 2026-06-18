@@ -25,7 +25,7 @@ export function SuperAdminDashboard() {
   useEffect(() => {
     async function loadStats() {
       try {
-        const { data, error } = await supabase.rpc('get_super_admin_dashboard_stats' as any)
+        const { data, error } = await supabase.rpc('get_super_admin_dashboard_stats')
         if (error) throw error
         setStats(data as unknown as GlobalStats)
       } catch (err: any) {
