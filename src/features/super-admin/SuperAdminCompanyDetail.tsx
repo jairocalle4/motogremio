@@ -14,6 +14,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import toast from 'react-hot-toast'
 import type { Database } from '@/types/database.types'
+import { getCompanyPlanUsage, type CompanyPlanUsage } from '../subscription/hooks/usePlanUsage'
 
 type Company = Database['public']['Tables']['companies']['Row']
 type UserRole = Database['public']['Enums']['user_role']
@@ -63,6 +64,7 @@ export function SuperAdminCompanyDetail() {
   const [company, setCompany] = useState<Company | null>(null)
   const [users, setUsers] = useState<CompanyUser[]>([])
   const [invitations, setInvitations] = useState<CompanyInvitation[]>([])
+  const [planUsage, setPlanUsage] = useState<CompanyPlanUsage | null>(null)
   const [loading, setLoading] = useState(true)
   const [loadingDetails, setLoadingDetails] = useState(true)
 
@@ -91,9 +93,10 @@ export function SuperAdminCompanyDetail() {
     if (!companyId) return
     setLoadingDetails(true)
     try {
-      const [usersRes, invitesRes] = await Promise.all([
+      const [usersRes, invitesRes, planUsageRes] = await Promise.all([
         supabase.rpc('get_company_users', { p_company_id: companyId }),
         supabase.rpc('get_company_invitations', { p_company_id: companyId }),
+        getCompanyPlanUsage(companyId),
       ])
 
       if (usersRes.error) throw usersRes.error
@@ -101,8 +104,9 @@ export function SuperAdminCompanyDetail() {
 
       setUsers((usersRes.data as unknown as CompanyUser[]) || [])
       setInvitations((invitesRes.data as unknown as CompanyInvitation[]) || [])
+      setPlanUsage(planUsageRes)
     } catch (err: any) {
-      toast.error('Error al cargar usuarios/invitaciones: ' + err.message)
+      toast.error('Error al cargar detalles: ' + err.message)
     } finally {
       setLoadingDetails(false)
     }
@@ -278,6 +282,85 @@ export function SuperAdminCompanyDetail() {
               <dd className="mt-1 text-sm text-slate-900">{company.address || 'No registrado'}</dd>
             </div>
           </dl>
+        </Card>
+
+        {/* Tarjeta de Uso de Plan */}
+        <Card className="p-6">
+          <h2 className="text-lg font-semibold text-slate-900 mb-4 flex items-center gap-2">
+            <Building2 className="h-5 w-5 text-slate-400" />
+            Uso del Plan
+          </h2>
+          {planUsage ? (
+            <div className="space-y-4">
+              <div>
+                <span className="text-sm font-medium text-slate-500">Plan Actual:</span>
+                <span className="ml-2 font-bold text-slate-800 capitalize">{planUsage.plan_name}</span>
+                <span className="ml-2">
+                  <Badge variant={planUsage.plan_is_active ? 'success' : 'danger'}>
+                    {planUsage.plan_is_active ? 'Activo' : 'Inactivo'}
+                  </Badge>
+                </span>
+              </div>
+
+              {/* Barra de progreso de socios */}
+              <div className="space-y-1">
+                <div className="flex justify-between text-xs">
+                  <span className="font-medium text-slate-600">Socios Activos</span>
+                  <span className="font-semibold text-slate-700">
+                    {planUsage.current_members} / {planUsage.max_members || '∞'}
+                  </span>
+                </div>
+                <div className="w-full bg-slate-100 rounded-full h-2">
+                  <div 
+                    className={`h-2 rounded-full transition-all ${
+                      planUsage.is_members_limit_reached ? 'bg-red-500' : planUsage.is_near_members_limit ? 'bg-amber-500' : 'bg-green-500'
+                    }`}
+                    style={{ width: `${Math.min(100, planUsage.members_usage_percent)}%` }}
+                  />
+                </div>
+                <div className="flex justify-between text-[10px] text-slate-400">
+                  <span>{planUsage.members_usage_percent}% usado</span>
+                  {planUsage.is_members_limit_reached && <span className="text-red-500 font-semibold">Límite alcanzado</span>}
+                </div>
+              </div>
+
+              {/* Barra de progreso de unidades */}
+              <div className="space-y-1">
+                <div className="flex justify-between text-xs">
+                  <span className="font-medium text-slate-600">Unidades Activas / Mantenimiento</span>
+                  <span className="font-semibold text-slate-700">
+                    {planUsage.current_vehicles} / {planUsage.max_vehicles || '∞'}
+                  </span>
+                </div>
+                <div className="w-full bg-slate-100 rounded-full h-2">
+                  <div 
+                    className={`h-2 rounded-full transition-all ${
+                      planUsage.is_vehicles_limit_reached ? 'bg-red-500' : planUsage.is_near_vehicles_limit ? 'bg-amber-500' : 'bg-green-500'
+                    }`}
+                    style={{ width: `${Math.min(100, planUsage.vehicles_usage_percent)}%` }}
+                  />
+                </div>
+                <div className="flex justify-between text-[10px] text-slate-400">
+                  <span>{planUsage.vehicles_usage_percent}% usado</span>
+                  {planUsage.is_vehicles_limit_reached && <span className="text-red-500 font-semibold">Límite alcanzado</span>}
+                </div>
+              </div>
+
+              {/* Alert de límites */}
+              {(planUsage.is_members_limit_reached || planUsage.is_vehicles_limit_reached) && (
+                <div className="p-3 bg-red-50 border border-red-200 rounded-md text-xs text-red-700 space-y-1">
+                  {planUsage.is_members_limit_reached && (
+                    <p className="font-medium">⚠️ El límite de socios activos ha sido alcanzado.</p>
+                  )}
+                  {planUsage.is_vehicles_limit_reached && (
+                    <p className="font-medium">⚠️ El límite de unidades activas/mantenimiento ha sido alcanzado.</p>
+                  )}
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="text-sm text-slate-400">Cargando información del plan...</div>
+          )}
         </Card>
 
         <Card className="p-6">
