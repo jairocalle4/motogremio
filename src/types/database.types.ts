@@ -974,6 +974,79 @@ export type Database = {
           },
         ]
       }
+      pending_invitations: {
+        Row: {
+          accepted_at: string | null
+          accepted_user_id: string | null
+          company_id: string
+          created_at: string
+          created_by: string | null
+          email: string
+          expires_at: string
+          first_name: string
+          id: string
+          last_name: string
+          role: Database["public"]["Enums"]["user_role"]
+          status: string
+          token: string
+          updated_at: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          accepted_user_id?: string | null
+          company_id: string
+          created_at?: string
+          created_by?: string | null
+          email: string
+          expires_at: string
+          first_name: string
+          id?: string
+          last_name: string
+          role: Database["public"]["Enums"]["user_role"]
+          status?: string
+          token: string
+          updated_at?: string
+        }
+        Update: {
+          accepted_at?: string | null
+          accepted_user_id?: string | null
+          company_id?: string
+          created_at?: string
+          created_by?: string | null
+          email?: string
+          expires_at?: string
+          first_name?: string
+          id?: string
+          last_name?: string
+          role?: Database["public"]["Enums"]["user_role"]
+          status?: string
+          token?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pending_invitations_accepted_user_id_fkey"
+            columns: ["accepted_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pending_invitations_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pending_invitations_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       plans: {
         Row: {
           created_at: string | null
@@ -1430,7 +1503,36 @@ export type Database = {
         Args: { target_user: string }
         Returns: undefined
       }
+      cancel_pending_invitation: {
+        Args: { p_invitation_id: string }
+        Returns: boolean
+      }
+      create_pending_invitation: {
+        Args: {
+          p_company_id: string
+          p_email: string
+          p_first_name: string
+          p_last_name: string
+          p_role: Database["public"]["Enums"]["user_role"]
+        }
+        Returns: string
+      }
+      create_super_admin_company: {
+        Args: {
+          p_admin_email: string
+          p_admin_first_name: string
+          p_admin_last_name: string
+          p_legal_name: string
+          p_plan_id: string
+          p_ruc: string
+          p_status: string
+          p_trade_name: string
+        }
+        Returns: Json
+      }
       get_companies_with_stats: { Args: never; Returns: Json }
+      get_company_invitations: { Args: { p_company_id: string }; Returns: Json }
+      get_company_users: { Args: { p_company_id: string }; Returns: Json }
       get_my_company_id: { Args: never; Returns: string }
       get_super_admin_company_detail: {
         Args: { p_company_id: string }
@@ -1441,6 +1543,17 @@ export type Database = {
       seed_default_charge_type_for_company: {
         Args: { p_company_id: string }
         Returns: undefined
+      }
+      update_company_user_role: {
+        Args: {
+          p_role: Database["public"]["Enums"]["user_role"]
+          p_user_id: string
+        }
+        Returns: boolean
+      }
+      update_company_user_status: {
+        Args: { p_is_active: boolean; p_user_id: string }
+        Returns: boolean
       }
       update_super_admin_company_status: {
         Args: { p_company_id: string; p_status: string }
