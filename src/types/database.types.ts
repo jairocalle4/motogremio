@@ -257,6 +257,62 @@ export type Database = {
           },
         ]
       }
+      company_branding: {
+        Row: {
+          commercial_name: string | null
+          company_id: string
+          contact_email: string | null
+          contact_phone: string | null
+          created_at: string | null
+          id: string
+          logo_url: string | null
+          primary_color: string | null
+          public_address: string | null
+          report_header_text: string | null
+          secondary_color: string | null
+          slogan: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          commercial_name?: string | null
+          company_id: string
+          contact_email?: string | null
+          contact_phone?: string | null
+          created_at?: string | null
+          id?: string
+          logo_url?: string | null
+          primary_color?: string | null
+          public_address?: string | null
+          report_header_text?: string | null
+          secondary_color?: string | null
+          slogan?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          commercial_name?: string | null
+          company_id?: string
+          contact_email?: string | null
+          contact_phone?: string | null
+          created_at?: string | null
+          id?: string
+          logo_url?: string | null
+          primary_color?: string | null
+          public_address?: string | null
+          report_header_text?: string | null
+          secondary_color?: string | null
+          slogan?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "company_branding_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: true
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       company_settings: {
         Row: {
           alert_days_before_expiry: number | null
@@ -1546,6 +1602,7 @@ export type Database = {
       get_company_invitations: { Args: { p_company_id: string }; Returns: Json }
       get_company_plan_usage: { Args: { p_company_id: string }; Returns: Json }
       get_company_users: { Args: { p_company_id: string }; Returns: Json }
+      get_my_company_branding: { Args: never; Returns: Json }
       get_my_company_id: { Args: never; Returns: string }
       get_my_company_plan_usage: { Args: never; Returns: Json }
       get_super_admin_audit_filters: { Args: never; Returns: Json }
@@ -1564,6 +1621,10 @@ export type Database = {
           p_table_name?: string
           p_user_id?: string
         }
+        Returns: Json
+      }
+      get_super_admin_company_branding: {
+        Args: { p_company_id: string }
         Returns: Json
       }
       get_super_admin_company_detail: {
@@ -1604,6 +1665,35 @@ export type Database = {
       update_company_user_status: {
         Args: { p_is_active: boolean; p_user_id: string }
         Returns: boolean
+      }
+      update_my_company_branding: {
+        Args: {
+          p_commercial_name?: string
+          p_contact_email?: string
+          p_contact_phone?: string
+          p_logo_url?: string
+          p_primary_color?: string
+          p_public_address?: string
+          p_report_header_text?: string
+          p_secondary_color?: string
+          p_slogan?: string
+        }
+        Returns: Json
+      }
+      update_super_admin_company_branding: {
+        Args: {
+          p_commercial_name?: string
+          p_company_id: string
+          p_contact_email?: string
+          p_contact_phone?: string
+          p_logo_url?: string
+          p_primary_color?: string
+          p_public_address?: string
+          p_report_header_text?: string
+          p_secondary_color?: string
+          p_slogan?: string
+        }
+        Returns: Json
       }
       update_super_admin_company_status: {
         Args: { p_company_id: string; p_status: string }
