@@ -156,7 +156,7 @@ export function SuperAdminCompanies() {
 
       if (error) throw error
 
-      const resJson = res as any
+      const resJson = res as { invite_token?: string }
       if (resJson && resJson.invite_token) {
         const link = `${window.location.origin}/register?invite=${resJson.invite_token}`
         setInviteLink(link)
