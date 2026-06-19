@@ -1530,6 +1530,18 @@ export type Database = {
         }
         Returns: Json
       }
+      create_super_admin_plan: {
+        Args: {
+          p_description: string
+          p_features: Json
+          p_is_active: boolean
+          p_max_members: number
+          p_max_vehicles: number
+          p_name: Database["public"]["Enums"]["plan_name"]
+          p_price_monthly: number
+        }
+        Returns: Json
+      }
       get_companies_with_stats: { Args: never; Returns: Json }
       get_company_invitations: { Args: { p_company_id: string }; Returns: Json }
       get_company_plan_usage: { Args: { p_company_id: string }; Returns: Json }
@@ -1542,10 +1554,27 @@ export type Database = {
       }
       get_super_admin_dashboard_stats: { Args: never; Returns: Json }
       get_super_admin_plan_usage_overview: { Args: never; Returns: Json }
+      get_super_admin_plans: { Args: never; Returns: Json }
       is_super_admin: { Args: never; Returns: boolean }
+      preview_company_plan_change: {
+        Args: { p_company_id: string; p_new_plan_id: string }
+        Returns: Json
+      }
+      preview_super_admin_plan_update: {
+        Args: {
+          p_max_members: number
+          p_max_vehicles: number
+          p_plan_id: string
+        }
+        Returns: Json
+      }
       seed_default_charge_type_for_company: {
         Args: { p_company_id: string }
         Returns: undefined
+      }
+      update_company_plan: {
+        Args: { p_company_id: string; p_force?: boolean; p_new_plan_id: string }
+        Returns: Json
       }
       update_company_user_role: {
         Args: {
@@ -1561,6 +1590,19 @@ export type Database = {
       update_super_admin_company_status: {
         Args: { p_company_id: string; p_status: string }
         Returns: boolean
+      }
+      update_super_admin_plan: {
+        Args: {
+          p_description: string
+          p_features: Json
+          p_force?: boolean
+          p_is_active: boolean
+          p_max_members: number
+          p_max_vehicles: number
+          p_plan_id: string
+          p_price_monthly: number
+        }
+        Returns: Json
       }
     }
     Enums: {
