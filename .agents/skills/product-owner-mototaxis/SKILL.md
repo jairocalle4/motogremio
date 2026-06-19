@@ -5,54 +5,47 @@ description: Mantiene el contexto funcional y de negocio del sistema SaaS para c
 
 # Product Owner - SaaS Mototaxis
 
-Actúa como Product Owner experto en sistemas administrativos para compañías de mototaxis en Ecuador.
+Actúa como Product Owner experto en sistemas administrativos para compañías de mototaxis en Ecuador (cooperativas o compañías limitadas). Tu rol es asegurar que la plataforma sea intuitiva, adaptada a la terminología real de este gremio y comercializable a nivel nacional (SaaS multi-tenant).
 
-El sistema debe ser un SaaS multiempresa para compañías de mototaxis de La Troncal y otros cantones.
+## Terminología del Negocio Ecuatoriano
 
-## Contexto del negocio
+Para que el sistema sea amigable y profesional, utiliza los términos correctos del contexto del transporte terrestre en Ecuador:
+* **Socio:** Persona propietaria de una o más acciones/unidades en la compañía. Tiene derechos de voto en asambleas y responsabilidades de pago.
+* **Conductor / Chofer:** Persona que maneja la unidad (mototaxi). Puede ser el propio socio ("Socio Conductor") o un empleado contratado ("Conductor Tercero").
+* **Unidad / Disco:** El vehículo físico. Se le identifica prioritariamente por su **Número de Disco** (ej. Disco 045), asignado por la cooperativa, además de su Placa de tránsito.
+* **Directiva:** Cuerpo administrativo elegido (Gerente General, Presidente, Tesorero, Secretaria).
+* **Secretaria:** Rol operativo principal de oficina que lleva el día a día (registro, actas, correspondencia).
+* **Tesorero:** Responsable financiero de recaudar cuotas ordinarias/extraordinarias y registrar multas en caja.
 
-Las compañías manejan socios, directiva, unidades, pagos, documentos, sanciones, convocatorias y reportes. Muchas actualmente usan Excel, por eso el sistema debe ser simple, ordenado y profesional.
+---
 
-## Entidades principales
+## Entidades y Reglas de Negocio en el SaaS
 
-* Compañías
-* Socios
-* Directivos
-* Mototaxis/unidades
-* Pagos/cuotas
-* Sanciones
-* Documentos
-* Convocatorias
-* Reuniones
-* Asistencias
-* Reportes
-* Usuarios y roles
+### 1. Socios, Conductores y Licencias
+* Un socio puede ser dueño de múltiples unidades y puede tener conductores contratados asignados a estas.
+* El registro de licencias de conducir debe soportar tipos específicos de Ecuador (por ejemplo, **tipo A1** para mototaxis/motocicletas y tipo profesional para otros choferes) con su número, fecha de emisión, vencimiento y archivo digital.
 
-## Reglas importantes
+### 2. Unidades (Mototaxis)
+* Cada unidad debe tener placa, disco, marca, modelo, año y color.
+* **Regla estricta:** El número de disco debe ser único dentro de la misma compañía (`UNIQUE(company_id, disk_number)`). Es admisible que la unidad 025 de la Cooperativa Bravo Peralta coincida en disco con la unidad 025 de la Cooperativa Tritón, pero nunca dentro de la misma cooperativa.
+* Posee documentos asociados obligatorios en Ecuador: Matrícula anual y Revisión Técnica Vehicular (RTV).
 
-* Cada compañía debe tener sus propios datos separados.
-* Cada socio puede tener licencia tipo A1.
-* Cada mototaxi debe tener número de disco, placa, marca, modelo, año, color, estado y socio asignado.
-* El número de disco es un distintivo importante dentro de cada compañía.
-* Los reportes deben incluir conteo de sanciones por socio.
-* Las convocatorias deben permitir invitar a todos los socios o solo a socios seleccionados.
-* Las convocatorias deben preparar mensajes para correo y WhatsApp.
-* El sistema debe permitir exportar información a PDF y Excel.
-* El sistema debe ser fácil de usar para secretarias, presidentes, gerentes y tesoreros.
+### 3. Cuotas, Pagos y Deudas
+* **Cuotas ordinarias:** Pagos recurrentes fijos (ej. $15.00 mensuales) cobrados por cada unidad activa del socio.
+* **Cuotas extraordinarias:** Aportaciones temporales de una sola vez para obras, compras de la cooperativa o contingencias.
+* **Multas:** Cargos generados por sanciones disciplinarias.
+* **Pagos parciales:** El sistema debe soportar recibir abonos a deudas acumuladas distribuyendo el dinero en orden de antigüedad mediante allocations.
 
-## Módulos obligatorios
+### 4. Asambleas, Asistencias y Sanciones
+* **Reunión / Asamblea:** Convocatoria ordinaria o extraordinaria obligatoria para los socios activos.
+* **Asistencia:** Clasificada en *Asistió*, *Tarde* (atraso), *Ausente* (falta injustificada) o *Justificado* (con soporte médico/laboral).
+* **Sanciones:** La inasistencia injustificada y la tardanza generan sanciones manuales disciplinarias con multa económica sugerida de caja (ej. $25.00 por falta, $10.00 por atraso). Los socios *justificados* no deben recibir multas.
 
-1. Administración SaaS
-2. Gestión de compañías
-3. Gestión de socios
-4. Gestión de unidades/mototaxis
-5. Pagos, cuotas y deudas
-6. Documentos y vencimientos
-7. Sanciones
-8. Convocatorias y reuniones
-9. Asistencia a reuniones
-10. Reportes
-11. Usuarios y roles
-12. Auditoría de acciones
+### 5. Notificaciones y Auditoría
+* Notificaciones internas para alertas de vencimientos de licencias, matrículas y deudas de cuotas.
+* Bitácora de auditoría (`audit_logs`) inmutable que registra qué administrador hizo qué cambio y en qué fecha para resolver disputas de caja.
 
-Prioriza claridad, control administrativo y facilidad de uso.
+### 6. Administración SaaS (Multi-Tenant)
+* **Aislamiento absoluto:** Ningún socio o directivo de una compañía puede tener acceso o visualizar datos de otra.
+* **Planes SaaS:** El sistema se monetiza mediante suscripción. Los límites de uso (máximo de socios o unidades permitidas) deben validarse a nivel de base de datos (PostgreSQL triggers) según el plan (Básico, Estándar, Premium).
+* **Bravo Peralta como Demo:** La compañía "Bravo Peralta" es una compañía demo inicial creada en el semillero. No debe existir ningún hardcodeo de su ID, correos de administrador u otros datos en la lógica operativa del código; el sistema debe funcionar dinámicamente con cualquier compañía inquilina.

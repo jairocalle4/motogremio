@@ -565,19 +565,19 @@ Antes de implementar funcionalidades importantes, el agente debe:
 
 ---
 
-## 12. Estado actual del proyecto
+## 13. Estado actual del proyecto
 
 Actualmente:
 
-* Se definió la idea de negocio.
-* El producto se llamará **MotoGremio** con el slogan *"Gestión inteligente para compañías de mototaxi"*.
-* Se definió que será una aplicación web SaaS multiempresa.
-* Se definieron módulos principales.
-* Se definieron roles iniciales.
-* Se definieron planes comerciales preliminares.
-* Se decidió usar React, Vite, TypeScript, Tailwind y Supabase.
-* Se crearon tres skills para apoyar el desarrollo.
-* Se creó y configuró el proyecto Supabase de desarrollo `motogremio-ec-dev`.
-* Se confirmó que `disk_number` es único por compañía: `UNIQUE(company_id, disk_number)`.
-* Se aprobó la paleta corporativa con azul profundo `#1E3A5F`.
-* El plan de implementación por fases fue presentado y está pendiente de aprobación para iniciar Fase 1.
+* El sistema cuenta con los módulos núcleo implementados (Socios, Unidades, Conductores, Documentos, Pagos, Sanciones, Reuniones y Asistencias).
+* Se completaron y validaron las siguientes fases de comercialización SaaS y seguridad:
+  * **Fase 4.1 — Panel Super Admin SaaS**: Pantallas e infraestructura para administrar compañías y asignar planes.
+  * **Fase 4.2 — Onboarding SaaS y Gestión de Usuarios**: Registro restringido a través de invitaciones y triggers seguros de asignación de empresa/roles en base de datos.
+  * **Fase 4.3 — Límites por Plan y Control de Suscripción**: Triggers y restricciones en base de datos e interfaz para controlar el número máximo de socios y unidades según el plan contratado.
+  * **Fase 4.4 — Gestión de Planes desde Super Admin**: Funciones e interfaz para crear y editar planes, así como forzar el cambio de planes recalculando límites.
+  * **Fase 4.5 — Auditoría Administrativa y Bitácora Super Admin**: Registros inmutables en base de datos y visor seguro con paginación y visor JSON.
+* **Último merge conocido:** `d1c3bcc Merge branch 'feature/fase-4.5-auditoria-super-admin' into main`.
+* **Regla de asignación de Skills:**
+  * Para tareas frontend/UI, aplicar siempre la skill [professional-ui-ux-saas](file:///.agents/skills/professional-ui-ux-saas/SKILL.md).
+  * Para tareas Supabase/backend, aplicar siempre la skill [saas-architecture-supabase](file:///.agents/skills/saas-architecture-supabase/SKILL.md).
+  * Para decisiones de negocio, aplicar siempre [product-owner-mototaxis](file:///.agents/skills/product-owner-mototaxis/SKILL.md).
