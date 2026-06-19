@@ -12,6 +12,9 @@ import { Textarea } from '@/components/ui/Textarea'
 import { Select } from '@/components/ui/Select'
 import { Modal } from '@/components/ui/Modal'
 import { ConfirmModal } from '@/components/ui/ConfirmModal'
+import { useAuth } from '@/context/useAuth'
+import { getMyCompanyPlanUsage, type CompanyPlanUsage } from '../subscription/hooks/usePlanUsage'
+import { PlanUsageCard } from '../subscription/components/PlanUsageCard'
 import { 
   Building2, 
   Save, 
@@ -54,6 +57,26 @@ type DocTypeFormData = z.infer<typeof docTypeSchema>
 export function CompanyConfigPage() {
   const [activeTab, setActiveTab] = useState<'info' | 'document_types'>('info')
   const { company, loading: companyLoading, updateCompany, fetchCompany } = useCompany()
+  const { profile } = useAuth()
+
+  // Estado de uso de plan
+  const [myPlanUsage, setMyPlanUsage] = useState<CompanyPlanUsage | null>(null)
+  
+  const showPlanUsage = profile && ['admin', 'gerente', 'presidente', 'secretaria', 'tesorero'].includes(profile.role)
+
+  useEffect(() => {
+    async function loadPlanUsage() {
+      if (showPlanUsage) {
+        try {
+          const usage = await getMyCompanyPlanUsage()
+          setMyPlanUsage(usage)
+        } catch (err: any) {
+          console.error('Error al cargar uso del plan:', err.message)
+        }
+      }
+    }
+    loadPlanUsage()
+  }, [showPlanUsage])
 
   // Hook de documentos
   const { 
@@ -265,6 +288,11 @@ export function CompanyConfigPage() {
         <h1 className="text-2xl font-bold text-gray-900">Configuración</h1>
         <p className="text-gray-500 mt-1">Gestiona los datos de tu cooperativa y administra los tipos de documentos.</p>
       </div>
+
+      {/* Plan Usage Widget inside Configuration (only visible to admins, gerente, presidente, secretaria, tesorero) */}
+      {showPlanUsage && myPlanUsage && (
+        <PlanUsageCard usage={myPlanUsage} />
+      )}
 
       {/* ─── PESTAÑAS / TABS ─────────────────────────────────────────────────── */}
       <div className="flex border-b border-gray-200">

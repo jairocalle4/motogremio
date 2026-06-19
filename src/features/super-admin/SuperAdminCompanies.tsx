@@ -13,6 +13,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import toast from 'react-hot-toast'
 import type { Database } from '@/types/database.types'
+import { getSuperAdminPlanUsageOverview, type SuperAdminPlanOverview } from '../subscription/hooks/usePlanUsage'
 
 interface CompanyStats {
   id: string
@@ -46,6 +47,7 @@ type CompanyForm = z.infer<typeof companySchema>
 
 export function SuperAdminCompanies() {
   const [companies, setCompanies] = useState<CompanyStats[]>([])
+  const [planOverview, setPlanOverview] = useState<SuperAdminPlanOverview[]>([])
   const [plans, setPlans] = useState<Plan[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
@@ -70,9 +72,20 @@ export function SuperAdminCompanies() {
   })
 
   useEffect(() => {
-    fetchCompanies()
-    fetchPlans()
+    fetchData()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  async function fetchData() {
+    setLoading(true)
+    try {
+      await Promise.all([fetchCompanies(), fetchPlans(), fetchPlanOverview()])
+    } catch (err: any) {
+      console.error(err)
+    } finally {
+      setLoading(false)
+    }
+  }
 
   async function fetchCompanies() {
     try {
@@ -81,8 +94,15 @@ export function SuperAdminCompanies() {
       setCompanies((data as unknown as CompanyStats[]) || [])
     } catch (err: any) {
       toast.error('Error al cargar compañías: ' + err.message)
-    } finally {
-      setLoading(false)
+    }
+  }
+
+  async function fetchPlanOverview() {
+    try {
+      const data = await getSuperAdminPlanUsageOverview()
+      setPlanOverview(data)
+    } catch (err: any) {
+      console.error('Error al cargar resumen de planes:', err.message)
     }
   }
 
@@ -115,6 +135,7 @@ export function SuperAdminCompanies() {
       if (error) throw error
       toast.success(`Compañía marcada como ${newStatus}`)
       fetchCompanies()
+      fetchPlanOverview()
     } catch (err: any) {
       toast.error('Error al cambiar estado: ' + err.message)
     }
@@ -143,11 +164,13 @@ export function SuperAdminCompanies() {
         setIsSuccessOpen(true)
         reset()
         fetchCompanies()
+        fetchPlanOverview()
       } else {
         toast.success('Compañía creada con éxito')
         setIsCreateOpen(false)
         reset()
         fetchCompanies()
+        fetchPlanOverview()
       }
     } catch (err: any) {
       toast.error(err.message || 'Error al crear la compañía')
@@ -211,52 +234,99 @@ export function SuperAdminCompanies() {
                 <th className="px-4 py-3 font-medium">Compañía</th>
                 <th className="px-4 py-3 font-medium">RUC</th>
                 <th className="px-4 py-3 font-medium">Plan</th>
-                <th className="px-4 py-3 font-medium text-center">Socios</th>
-                <th className="px-4 py-3 font-medium text-center">Unidades</th>
+                <th className="px-4 py-3 font-medium text-center">Socios Activos</th>
+                <th className="px-4 py-3 font-medium text-center">Unidades Activas/Mantenimiento</th>
                 <th className="px-4 py-3 font-medium text-right">Deuda</th>
                 <th className="px-4 py-3 font-medium text-center">Estado</th>
                 <th className="px-4 py-3 font-medium text-right">Acciones</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {filtered.map(c => (
-                <tr key={c.id} className="hover:bg-slate-50/50">
-                  <td className="px-4 py-3">
-                    <div className="font-medium text-slate-900">{c.legal_name}</div>
-                    {c.trade_name && <div className="text-xs text-slate-500">{c.trade_name}</div>}
-                  </td>
-                  <td className="px-4 py-3 font-mono text-xs">{c.ruc}</td>
-                  <td className="px-4 py-3 capitalize">{c.plan_name || '-'}</td>
-                  <td className="px-4 py-3 text-center">{c.members_count}</td>
-                  <td className="px-4 py-3 text-center">{c.vehicles_count}</td>
-                  <td className="px-4 py-3 text-right text-red-600 font-medium">
-                    ${Number(c.total_debt).toFixed(2)}
-                  </td>
-                  <td className="px-4 py-3 text-center">
-                    <Badge variant={(c.status === 'activa' || c.status === 'activo') ? 'success' : 'danger'}>
-                      {c.status || 'desconocido'}
-                    </Badge>
-                  </td>
-                  <td className="px-4 py-3 text-right">
-                    <div className="flex justify-end gap-2">
-                      <Link 
-                        to={`/super-admin/companies/${c.id}`}
-                        className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded transition-colors"
-                        title="Ver detalles"
-                      >
-                        <Eye className="h-4 w-4" />
-                      </Link>
-                      <button
-                        onClick={() => toggleStatus(c.id, c.status)}
-                        className="p-2 text-orange-400 hover:text-orange-600 hover:bg-orange-50 rounded transition-colors"
-                        title={(c.status === 'activa' || c.status === 'activo') ? 'Desactivar compañía' : 'Activar compañía'}
-                      >
-                        <ShieldAlert className="h-4 w-4" />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
+              {filtered.map(c => {
+                const planUsage = planOverview.find(po => po.company_id === c.id)
+                
+                // Determinación del Badge de Límites del Plan
+                let limitBadge = <Badge variant="default">Normal</Badge>
+                if (!planUsage || planUsage.plan_name === 'Sin plan') {
+                  limitBadge = <Badge variant="danger">Sin Plan</Badge>
+                } else {
+                  const mPerc = planUsage.members_usage_percent
+                  const vPerc = planUsage.vehicles_usage_percent
+                  const reached = (planUsage.max_members > 0 && planUsage.current_members >= planUsage.max_members) ||
+                                  (planUsage.max_vehicles > 0 && planUsage.current_vehicles >= planUsage.max_vehicles)
+                  const near = mPerc >= 80 || vPerc >= 80
+
+                  if (reached) {
+                    limitBadge = <Badge variant="danger">Límite Alcanzado</Badge>
+                  } else if (near) {
+                    limitBadge = <Badge variant="warning">Cerca del Límite</Badge>
+                  }
+                }
+
+                return (
+                  <tr key={c.id} className="hover:bg-slate-50/50">
+                    <td className="px-4 py-3">
+                      <div className="font-medium text-slate-900">{c.legal_name}</div>
+                      {c.trade_name && <div className="text-xs text-slate-500">{c.trade_name}</div>}
+                    </td>
+                    <td className="px-4 py-3 font-mono text-xs">{c.ruc}</td>
+                    <td className="px-4 py-3">
+                      <span className="capitalize block font-medium text-slate-800">
+                        {planUsage?.plan_name || c.plan_name || 'Sin plan'}
+                      </span>
+                      <div className="mt-0.5">{limitBadge}</div>
+                    </td>
+                    <td className="px-4 py-3 text-center">
+                      {planUsage ? (
+                        <div>
+                          <span className="font-semibold text-slate-800">{planUsage.current_members}</span>
+                          <span className="text-slate-400"> / {planUsage.max_members || '∞'}</span>
+                          <span className="text-xs text-slate-500 block">({planUsage.members_usage_percent}%)</span>
+                        </div>
+                      ) : (
+                        c.members_count
+                      )}
+                    </td>
+                    <td className="px-4 py-3 text-center">
+                      {planUsage ? (
+                        <div>
+                          <span className="font-semibold text-slate-800">{planUsage.current_vehicles}</span>
+                          <span className="text-slate-400"> / {planUsage.max_vehicles || '∞'}</span>
+                          <span className="text-xs text-slate-500 block">({planUsage.vehicles_usage_percent}%)</span>
+                        </div>
+                      ) : (
+                        c.vehicles_count
+                      )}
+                    </td>
+                    <td className="px-4 py-3 text-right text-red-600 font-medium">
+                      ${Number(c.total_debt).toFixed(2)}
+                    </td>
+                    <td className="px-4 py-3 text-center">
+                      <Badge variant={(c.status === 'activa' || c.status === 'activo') ? 'success' : 'danger'}>
+                        {c.status || 'desconocido'}
+                      </Badge>
+                    </td>
+                    <td className="px-4 py-3 text-right">
+                      <div className="flex justify-end gap-2">
+                        <Link 
+                          to={`/super-admin/companies/${c.id}`}
+                          className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded transition-colors"
+                          title="Ver detalles"
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Link>
+                        <button
+                          onClick={() => toggleStatus(c.id, c.status)}
+                          className="p-2 text-orange-400 hover:text-orange-600 hover:bg-orange-50 rounded transition-colors"
+                          title={(c.status === 'activa' || c.status === 'activo') ? 'Desactivar compañía' : 'Activar compañía'}
+                        >
+                          <ShieldAlert className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                )
+              })}
               {filtered.length === 0 && (
                 <tr>
                   <td colSpan={8} className="px-4 py-8 text-center text-slate-500">

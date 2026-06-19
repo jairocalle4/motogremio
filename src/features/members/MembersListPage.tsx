@@ -10,6 +10,7 @@ import { Select } from '@/components/ui/Select'
 import { Badge } from '@/components/ui/Badge'
 import { ConfirmModal } from '@/components/ui/ConfirmModal'
 import { MemberFormModal, type MemberFormData } from './MemberFormModal'
+import { getMyCompanyPlanUsage, type CompanyPlanUsage } from '../subscription/hooks/usePlanUsage'
 import {
   Users,
   UserCheck,
@@ -32,6 +33,9 @@ export function MembersListPage() {
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState<string>('')
 
+  // Plan usage state
+  const [planUsage, setPlanUsage] = useState<CompanyPlanUsage | null>(null)
+
   // ── Modal Formulario ─────────────────────────────────────────────────────────
   const [isFormOpen, setIsFormOpen] = useState(false)
   const [selectedMember, setSelectedMember] = useState<Member | null>(null)
@@ -52,10 +56,21 @@ export function MembersListPage() {
       search: searchTerm || undefined,
       status: (statusFilter as MemberStatus) || undefined,
     })
+    loadPlanUsage()
   }, [fetchMembers, searchTerm, statusFilter])
+
+  async function loadPlanUsage() {
+    try {
+      const usage = await getMyCompanyPlanUsage()
+      setPlanUsage(usage)
+    } catch (err) {
+      console.error('Error al consultar límites de plan:', err)
+    }
+  }
 
   useEffect(() => {
     fetchMembers()
+    loadPlanUsage()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
@@ -89,7 +104,13 @@ export function MembersListPage() {
       setSelectedMember(null)
       refresh()
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Error al guardar el socio.'
+      let msg = err instanceof Error ? err.message : 'Error al guardar el socio.'
+      
+      // Friendly DB Exception handling for triggers limit
+      if (msg.includes('Límite alcanzado') || msg.includes('limite') || msg.includes('plan')) {
+        msg = 'Límite alcanzado: tu plan ya llegó al máximo de socios activos. Contacta al super administrador para ampliar el plan.'
+      }
+      
       toast.error(msg, { id: toastId })
       // No cerramos el modal → el usuario ve el error y corrige
     }
@@ -120,7 +141,10 @@ export function MembersListPage() {
       setConfirmState({ open: false, member: null, nextStatus: 'inactivo', loading: false })
       refresh()
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Error al cambiar el estado.'
+      let msg = err instanceof Error ? err.message : 'Error al cambiar el estado.'
+      if (msg.includes('Límite alcanzado') || msg.includes('limite') || msg.includes('plan')) {
+        msg = 'Límite alcanzado: tu plan ya llegó al máximo de socios activos. Contacta al super administrador para ampliar el plan.'
+      }
       toast.error(msg, { id: toastId })
       setConfirmState((s) => ({ ...s, loading: false }))
     }
@@ -148,8 +172,21 @@ export function MembersListPage() {
     ? 'El socio pasará a estado inactivo. Su historial de pagos, sanciones y documentos se conservará sin ningún cambio.'
     : 'El socio volverá a estado activo y podrá operar normalmente dentro de la cooperativa.'
 
+  const isMembersLimitReached = !!planUsage?.is_members_limit_reached
+
   return (
     <div className="space-y-6 pb-12">
+
+      {/* Warning banner of plan limit */}
+      {isMembersLimitReached && (
+        <div className="p-4 bg-amber-50 border-l-4 border-amber-500 rounded-r-md text-sm text-amber-800 flex items-start gap-3 shadow-sm">
+          <AlertTriangle className="h-5 w-5 text-amber-500 flex-shrink-0 mt-0.5" />
+          <div>
+            <h4 className="font-semibold">Límite de Socios Alcanzado</h4>
+            <p className="mt-0.5">Límite alcanzado: tu plan ya llegó al máximo de socios activos. Contacta al super administrador para ampliar el plan.</p>
+          </div>
+        </div>
+      )}
 
       {/* ── Header ────────────────────────────────────────────────────────────── */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -171,7 +208,9 @@ export function MembersListPage() {
           {canManageMembers && (
             <Button
               className="flex items-center gap-2"
+              disabled={isMembersLimitReached}
               onClick={() => { setSelectedMember(null); setIsFormOpen(true) }}
+              title={isMembersLimitReached ? 'Límite alcanzado' : ''}
             >
               <Plus className="w-4 h-4" />
               Nuevo Socio

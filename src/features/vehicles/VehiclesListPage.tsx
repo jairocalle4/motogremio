@@ -12,6 +12,7 @@ import { Select } from '@/components/ui/Select'
 import { Badge } from '@/components/ui/Badge'
 import { ConfirmModal } from '@/components/ui/ConfirmModal'
 import { VehicleFormModal, type VehicleFormData } from './VehicleFormModal'
+import { getMyCompanyPlanUsage } from '../subscription/hooks/usePlanUsage'
 import {
   Bike,
   CheckCircle,
@@ -45,6 +46,9 @@ export function VehiclesListPage() {
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState<string>('')
 
+  // Plan limits state
+  const [planUsage, setPlanUsage] = useState<any | null>(null)
+
   // ── Modal Formulario ─────────────────────────────────────────────────────────
   const [isFormOpen, setIsFormOpen] = useState(false)
   const [selectedVehicle, setSelectedVehicle] = useState<VehicleWithMember | null>(null)
@@ -63,12 +67,23 @@ export function VehiclesListPage() {
       search: searchTerm || undefined,
       status: (statusFilter as VehicleStatus) || undefined,
     })
+    loadPlanUsage()
   }, [fetchVehicles, searchTerm, statusFilter])
+
+  async function loadPlanUsage() {
+    try {
+      const usage = await getMyCompanyPlanUsage()
+      setPlanUsage(usage)
+    } catch (err) {
+      console.error('Error al consultar límites de plan:', err)
+    }
+  }
 
   useEffect(() => {
     fetchVehicles()
     fetchMembers()
     fetchDrivers()
+    loadPlanUsage()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
@@ -110,7 +125,10 @@ export function VehiclesListPage() {
       refresh()
       vehicleDraftRef.current = null
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Error al guardar la unidad.'
+      let msg = err instanceof Error ? err.message : 'Error al guardar la unidad.'
+      if (msg.includes('Límite alcanzado') || msg.includes('limite') || msg.includes('plan')) {
+        msg = 'Límite alcanzado: tu plan ya llegó al máximo de unidades activas o en mantenimiento. Contacta al super administrador para ampliar el plan.'
+      }
       toast.error(msg, { id: toastId })
     }
   }
@@ -158,7 +176,10 @@ export function VehiclesListPage() {
       setConfirmState({ open: false, vehicle: null, nextStatus: 'inactiva', loading: false })
       refresh()
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Error al cambiar el estado.'
+      let msg = err instanceof Error ? err.message : 'Error al cambiar el estado.'
+      if (msg.includes('Límite alcanzado') || msg.includes('limite') || msg.includes('plan')) {
+        msg = 'Límite alcanzado: tu plan ya llegó al máximo de unidades activas o en mantenimiento. Contacta al super administrador para ampliar el plan.'
+      }
       toast.error(msg, { id: toastId })
       setConfirmState((s) => ({ ...s, loading: false }))
     }
@@ -185,8 +206,21 @@ export function VehiclesListPage() {
 
   // ── ConfirmModal labels ───────────────────────────────────────────────────────
 
+  const isVehiclesLimitReached = !!planUsage?.is_vehicles_limit_reached
+
   return (
     <div className="space-y-6 pb-12">
+
+      {/* Warning banner of plan limit */}
+      {isVehiclesLimitReached && (
+        <div className="p-4 bg-amber-50 border-l-4 border-amber-500 rounded-r-md text-sm text-amber-800 flex items-start gap-3 shadow-sm">
+          <AlertTriangle className="h-5 w-5 text-amber-500 flex-shrink-0 mt-0.5" />
+          <div>
+            <h4 className="font-semibold">Límite de Unidades Alcanzado</h4>
+            <p className="mt-0.5">Límite alcanzado: tu plan ya llegó al máximo de unidades activas o en mantenimiento. Contacta al super administrador para ampliar el plan.</p>
+          </div>
+        </div>
+      )}
 
       {/* ── Header ──────────────────────────────────────────────────────────── */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -208,7 +242,9 @@ export function VehiclesListPage() {
           {canManageVehicles && (
             <Button
               className="flex items-center gap-2"
+              disabled={isVehiclesLimitReached}
               onClick={() => { setSelectedVehicle(null); setIsFormOpen(true) }}
+              title={isVehiclesLimitReached ? 'Límite alcanzado' : ''}
             >
               <Plus className="w-4 h-4" />
               Nueva Unidad
