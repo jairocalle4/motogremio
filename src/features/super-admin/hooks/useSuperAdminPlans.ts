@@ -69,7 +69,7 @@ export const createSuperAdminPlan = async (params: {
     p_max_members: params.max_members,
     p_max_vehicles: params.max_vehicles,
     p_price_monthly: params.price_monthly,
-    p_features: JSON.stringify(params.features) as any, // Cast to any because RPC args expects jsonb
+    p_features: params.features,
     p_is_active: params.is_active,
   })
   if (error) throw error
@@ -106,7 +106,7 @@ export const updateSuperAdminPlan = async (params: {
     p_max_members: params.maxMembers,
     p_max_vehicles: params.maxVehicles,
     p_price_monthly: params.priceMonthly,
-    p_features: JSON.stringify(params.features) as any,
+    p_features: params.features,
     p_is_active: params.isActive,
     p_force: params.force ?? false,
   })

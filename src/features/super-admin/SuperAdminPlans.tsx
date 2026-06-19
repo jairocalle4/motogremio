@@ -227,15 +227,15 @@ export function SuperAdminPlans() {
     }
   }
 
-  const namesCreated = plans.map((p) => p.name)
+  const namesCreated: string[] = plans.map((p) => p.name)
   const allPlanesCreated = ['basico', 'profesional', 'empresarial'].every((name) =>
-    namesCreated.includes(name as any)
+    namesCreated.includes(name)
   )
 
   const availableOptions = [
     { value: '', label: 'Seleccionar nombre...' },
     ...['basico', 'profesional', 'empresarial']
-      .filter((name) => !namesCreated.includes(name as any))
+      .filter((name) => !namesCreated.includes(name))
       .map((name) => ({ value: name, label: name.toUpperCase() })),
   ]
 
