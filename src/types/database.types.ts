@@ -1548,6 +1548,24 @@ export type Database = {
       get_company_users: { Args: { p_company_id: string }; Returns: Json }
       get_my_company_id: { Args: never; Returns: string }
       get_my_company_plan_usage: { Args: never; Returns: Json }
+      get_super_admin_audit_filters: { Args: never; Returns: Json }
+      get_super_admin_audit_log_detail: {
+        Args: { p_audit_log_id: string }
+        Returns: Json
+      }
+      get_super_admin_audit_logs: {
+        Args: {
+          p_action?: string
+          p_company_id?: string
+          p_date_from?: string
+          p_date_to?: string
+          p_limit?: number
+          p_offset?: number
+          p_table_name?: string
+          p_user_id?: string
+        }
+        Returns: Json
+      }
       get_super_admin_company_detail: {
         Args: { p_company_id: string }
         Returns: Json
