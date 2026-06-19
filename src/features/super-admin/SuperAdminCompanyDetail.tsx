@@ -15,6 +15,13 @@ import { z } from 'zod'
 import toast from 'react-hot-toast'
 import type { Database } from '@/types/database.types'
 import { getCompanyPlanUsage, type CompanyPlanUsage } from '../subscription/hooks/usePlanUsage'
+import {
+  getSuperAdminPlans,
+  previewCompanyPlanChange,
+  updateCompanyPlan,
+  type SuperAdminPlan,
+  type CompanyPlanChangePreview
+} from './hooks/useSuperAdminPlans'
 
 type Company = Database['public']['Tables']['companies']['Row']
 type UserRole = Database['public']['Enums']['user_role']
@@ -73,6 +80,14 @@ export function SuperAdminCompanyDetail() {
   const [isSuccessOpen, setIsSuccessOpen] = useState(false)
   const [inviteLink, setInviteLink] = useState('')
   const [copied, setCopied] = useState(false)
+
+  // Cambiar Plan states
+  const [isPlanModalOpen, setIsPlanModalOpen] = useState(false)
+  const [allPlans, setAllPlans] = useState<SuperAdminPlan[]>([])
+  const [selectedNewPlanId, setSelectedNewPlanId] = useState('')
+  const [planChangePreview, setPlanChangePreview] = useState<CompanyPlanChangePreview | null>(null)
+  const [forcePlanChange, setForcePlanChange] = useState(false)
+  const [isSavingPlanChange, setIsSavingPlanChange] = useState(false)
 
   // Control de Edición de Rol
   const [editingUser, setEditingUser] = useState<CompanyUser | null>(null)
@@ -219,6 +234,61 @@ export function SuperAdminCompanyDetail() {
     }
   }
 
+  const handleOpenPlanChange = async () => {
+    try {
+      const data = await getSuperAdminPlans()
+      setAllPlans(data)
+      setSelectedNewPlanId('')
+      setPlanChangePreview(null)
+      setForcePlanChange(false)
+      setIsPlanModalOpen(true)
+    } catch (err: any) {
+      toast.error('Error al cargar planes: ' + err.message)
+    }
+  }
+
+  const handlePlanSelect = async (planId: string) => {
+    setSelectedNewPlanId(planId)
+    setForcePlanChange(false)
+    if (!planId || !companyId) {
+      setPlanChangePreview(null)
+      return
+    }
+
+    const toastId = toast.loading('Calculando previsualización del cambio...')
+    try {
+      const preview = await previewCompanyPlanChange(companyId, planId)
+      setPlanChangePreview(preview)
+    } catch (err: any) {
+      toast.error('Error al previsualizar cambio de plan: ' + err.message)
+      setPlanChangePreview(null)
+    } finally {
+      toast.dismiss(toastId)
+    }
+  }
+
+  const onSubmitPlanChange = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!companyId || !selectedNewPlanId) return
+
+    setIsSavingPlanChange(true)
+    const toastId = toast.loading('Asignando nuevo plan...')
+    try {
+      await updateCompanyPlan(companyId, selectedNewPlanId, forcePlanChange)
+      toast.success('Plan asignado correctamente.', { id: toastId })
+      setIsPlanModalOpen(false)
+      loadDetails()
+    } catch (err: any) {
+      let msg = err.message || 'Error al cambiar de plan'
+      if (msg.includes('excede los límites') || msg.includes('cupo') || msg.includes('límite') || msg.includes('supera')) {
+        msg = 'Cambio bloqueado: El uso actual de la cooperativa supera los límites del nuevo plan. Marca el checkbox de forzado si deseas continuar.'
+      }
+      toast.error(msg, { id: toastId })
+    } finally {
+      setIsSavingPlanChange(false)
+    }
+  }
+
   const copyToClipboard = async () => {
     try {
       await navigator.clipboard.writeText(inviteLink)
@@ -286,10 +356,20 @@ export function SuperAdminCompanyDetail() {
 
         {/* Tarjeta de Uso de Plan */}
         <Card className="p-6">
-          <h2 className="text-lg font-semibold text-slate-900 mb-4 flex items-center gap-2">
-            <Building2 className="h-5 w-5 text-slate-400" />
-            Uso del Plan
-          </h2>
+          <div className="flex justify-between items-start mb-4">
+            <h2 className="text-lg font-semibold text-slate-900 flex items-center gap-2">
+              <Building2 className="h-5 w-5 text-slate-400" />
+              Uso del Plan
+            </h2>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleOpenPlanChange}
+              className="text-xs"
+            >
+              Cambiar plan
+            </Button>
+          </div>
           {planUsage ? (
             <div className="space-y-4">
               <div>
@@ -715,6 +795,122 @@ export function SuperAdminCompanyDetail() {
           </div>
         </Modal>
       )}
+
+      {/* ── Modal de Cambiar Plan ── */}
+      <Modal
+        isOpen={isPlanModalOpen}
+        onClose={() => setIsPlanModalOpen(false)}
+        title="Cambiar Plan de Suscripción de Compañía"
+        size="md"
+      >
+        <form onSubmit={onSubmitPlanChange} className="space-y-4 py-2">
+          <div>
+            <label className="text-sm font-semibold text-slate-700 block mb-1">
+              Seleccionar Nuevo Plan
+            </label>
+            <select
+              value={selectedNewPlanId}
+              onChange={(e) => handlePlanSelect(e.target.value)}
+              className="w-full rounded-md border border-slate-300 py-2 px-3 text-sm focus:border-slate-500 focus:outline-none focus:ring-1 focus:ring-slate-500"
+              required
+            >
+              <option value="">Selecciona un plan activo...</option>
+              {allPlans.map((p) => (
+                <option 
+                  key={p.id} 
+                  value={p.id}
+                  disabled={!p.is_active || p.id === planUsage?.plan_id}
+                >
+                  {p.name.toUpperCase()} - ${p.price_monthly}/mes {!p.is_active ? '(Inactivo)' : p.id === planUsage?.plan_id ? '(Actual)' : ''}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {planChangePreview && (
+            <div className="space-y-3 p-3 bg-slate-50 border border-slate-200 rounded-md">
+              <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider">
+                Previsualización de Límites
+              </h4>
+
+              <div className="grid grid-cols-2 gap-4 text-xs">
+                <div>
+                  <span className="text-slate-500 block">Plan Destino:</span>
+                  <span className="font-semibold text-slate-800 capitalize">
+                    {planChangePreview.new_plan_name}
+                  </span>
+                  <div className="mt-0.5">
+                    <Badge variant={planChangePreview.new_plan_is_active ? 'success' : 'danger'}>
+                      {planChangePreview.new_plan_is_active ? 'Activo' : 'Inactivo'}
+                    </Badge>
+                  </div>
+                </div>
+
+                <div>
+                  <span className="text-slate-500 block">Viabilidad:</span>
+                  <span className={`font-bold ${planChangePreview.can_change ? 'text-green-600' : 'text-red-600'}`}>
+                    {planChangePreview.can_change ? 'Permitido' : 'Excede límites'}
+                  </span>
+                </div>
+              </div>
+
+              <div className="space-y-2 pt-2 border-t border-slate-200 text-xs">
+                <div className="flex justify-between">
+                  <span className="text-slate-600">Socios Activos:</span>
+                  <span className={`font-medium ${planChangePreview.exceeds_members ? 'text-red-600 font-bold' : 'text-slate-800'}`}>
+                    {planChangePreview.current_members} / {planChangePreview.new_max_members}
+                  </span>
+                </div>
+
+                <div className="flex justify-between">
+                  <span className="text-slate-600">Unidades:</span>
+                  <span className={`font-medium ${planChangePreview.exceeds_vehicles ? 'text-red-600 font-bold' : 'text-slate-800'}`}>
+                    {planChangePreview.current_vehicles} / {planChangePreview.new_max_vehicles}
+                  </span>
+                </div>
+              </div>
+
+              {planChangePreview.warning_message && (
+                <div className="p-2 bg-amber-50 border border-amber-200 text-amber-800 text-[11px] rounded leading-relaxed">
+                  ⚠️ {planChangePreview.warning_message}
+                </div>
+              )}
+
+              {!planChangePreview.can_change && (
+                <div className="flex items-start gap-2 pt-2 border-t border-slate-200">
+                  <input
+                    type="checkbox"
+                    id="force_plan_change"
+                    checked={forcePlanChange}
+                    onChange={(e) => setForcePlanChange(e.target.checked)}
+                    className="rounded border-slate-300 text-blue-600 focus:ring-blue-500 mt-0.5"
+                  />
+                  <label htmlFor="force_plan_change" className="text-xs font-semibold text-red-800 cursor-pointer">
+                    Entiendo que esta compañía excede los límites del nuevo plan y deseo forzar el cambio.
+                  </label>
+                </div>
+              )}
+            </div>
+          )}
+
+          <div className="flex justify-end gap-3 pt-4 border-t border-slate-100">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setIsPlanModalOpen(false)}
+            >
+              Cancelar
+            </Button>
+            <Button
+              type="submit"
+              variant={planChangePreview && !planChangePreview.can_change ? 'danger' : 'primary'}
+              disabled={!!(isSavingPlanChange || (planChangePreview && !planChangePreview.can_change && !forcePlanChange))}
+            >
+              Confirmar Cambio
+            </Button>
+          </div>
+        </form>
+      </Modal>
     </div>
   )
 }
