@@ -10,7 +10,7 @@ Demostrar la versatilidad de MotoGremio como un SaaS multiempresa de transporte 
 ## 2. Datos Simulados Incluidos (El Dorado S.A.)
 La demostración utiliza la compañía ficticia **Cooperativa de Transporte Ejecutivo El Dorado S.A.** con los siguientes datos simulados listos para usarse:
 
-* **Identificador Fijo (company_id)**: `00000000-0000-0000-0000-00000000demo`
+* **Identificador Fijo (company_id)**: `00000000-0000-4000-8000-000000000049`
 * **Tipo de Servicio**: Taxi (Clasificado como `taxi` en base de datos).
 * **Socios (6 en total)**:
   - *Alejandro Mendoza*: Activo, al día con sus cuotas mensuales.
@@ -59,7 +59,7 @@ Debido a que el seed de base de datos no introduce registros directamente en la 
 5. Ejecute un query SQL en su editor para asociar dicho UUID al perfil de la compañía demo, asignándole el rol `admin`:
    ```sql
    INSERT INTO profiles (id, company_id, first_name, last_name, role, is_active)
-   VALUES ('[AUTH_USER_UUID]', '00000000-0000-0000-0000-00000000demo', 'Administrador', 'El Dorado', 'admin', true)
+   VALUES ('[AUTH_USER_UUID]', '00000000-0000-4000-8000-000000000049', 'Administrador', 'El Dorado', 'admin', true)
    ON CONFLICT (id) DO UPDATE SET company_id = EXCLUDED.company_id, role = EXCLUDED.role;
    ```
 

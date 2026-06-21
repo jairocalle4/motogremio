@@ -53,7 +53,7 @@ BEGIN
       email
     )
     VALUES (
-      '00000000-0000-0000-0000-00000000demo',
+      '00000000-0000-4000-8000-000000000049',
       'Cooperativa de Transporte Ejecutivo El Dorado S.A.',
       'Cooperativa El Dorado',
       '0999999999001',
@@ -257,7 +257,7 @@ BEGIN
   -- Reunión 1: Pasada (finalizada con asistencia)
   INSERT INTO meetings (id, company_id, title, description, date, "time", location, status, meeting_type, is_mandatory)
   VALUES (
-    '00000000-0000-0000-0000-0000meet1111',
+    '00000000-0000-4000-8000-000000001111',
     v_company_id, 
     'Asamblea Ordinaria Junio', 
     'Evaluación administrativa del mes de Mayo y balance financiero.', 
@@ -287,7 +287,7 @@ BEGIN
   -- Reunión 2: Convocatoria Futura
   INSERT INTO meetings (id, company_id, title, description, date, "time", location, status, meeting_type, is_mandatory)
   VALUES (
-    '00000000-0000-0000-0000-0000meet2222',
+    '00000000-0000-4000-8000-000000002222',
     v_company_id, 
     'Reunión de Seguridad y Rutas', 
     'Coordinación de nuevas rutas operativas y revisión de protocolos de seguridad vial.', 
