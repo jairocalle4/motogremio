@@ -56,18 +56,19 @@ const companyNav: NavSection[] = [
 const adminNav: NavSection[] = [
   {
     items: [
-      { to: '/dashboard',           label: 'Dashboard',        icon: LayoutDashboard },
-      { to: '/admin/companias',     label: 'Compañías',        icon: Building2 },
-      { to: '/admin/planes',        label: 'Planes',           icon: Package },
-      { to: '/admin/suscripciones', label: 'Suscripciones',    icon: CreditCard },
-      { to: '/admin/metricas',      label: 'Métricas',         icon: TrendingUp },
+      { to: '/super-admin',           label: 'Dashboard',        icon: LayoutDashboard },
+      { to: '/super-admin/companies',     label: 'Compañías',        icon: Building2 },
+      { to: '/super-admin/plans',        label: 'Planes',           icon: Package },
+      { to: '/super-admin/subscriptions', label: 'Suscripciones',    icon: CreditCard },
+      { to: '/super-admin/metrics',      label: 'Métricas',         icon: TrendingUp },
     ],
   },
   {
     separator: true,
     items: [
-      { to: '/admin/configuracion', label: 'Configuración',    icon: Settings },
-      { to: '/account/security',    label: 'Seguridad',        icon: ShieldCheck },
+      { to: '/super-admin/settings', label: 'Configuración',    icon: Settings },
+      { to: '/super-admin/security',    label: 'Seguridad',        icon: ShieldCheck },
+      { to: '/super-admin/auditoria',    label: 'Auditoría',        icon: Activity },
     ],
   },
 ]

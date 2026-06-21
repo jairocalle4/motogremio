@@ -1,5 +1,5 @@
 import { Outlet, Link, useLocation } from 'react-router-dom'
-import { LayoutDashboard, Building2, Package, LogOut, ShieldAlert } from 'lucide-react'
+import { LayoutDashboard, Building2, Package, LogOut, ShieldAlert, CreditCard, TrendingUp, Settings, ShieldCheck } from 'lucide-react'
 import { useAuth } from '@/context/useAuth'
 
 export function SuperAdminLayout() {
@@ -10,6 +10,10 @@ export function SuperAdminLayout() {
     { name: 'Dashboard SaaS', href: '/super-admin', icon: LayoutDashboard },
     { name: 'Compañías', href: '/super-admin/companies', icon: Building2 },
     { name: 'Planes SaaS', href: '/super-admin/plans', icon: Package },
+    { name: 'Suscripciones', href: '/super-admin/subscriptions', icon: CreditCard },
+    { name: 'Métricas', href: '/super-admin/metrics', icon: TrendingUp },
+    { name: 'Configuración', href: '/super-admin/settings', icon: Settings },
+    { name: 'Seguridad', href: '/super-admin/security', icon: ShieldCheck },
     { name: 'Auditoría', href: '/super-admin/auditoria', icon: ShieldAlert },
   ]
 
