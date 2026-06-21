@@ -53,18 +53,15 @@ export interface Company {
   ruc: string
   logo_url: string | null
   address: string | null
-  canton: string | null
-  province: string | null
   phone: string | null
   email: string | null
-  legal_rep: string | null
   manager_name: string | null
   president_name: string | null
   secretary_name: string | null
   treasurer_name: string | null
   institutional_info: string | null
-  operation_permit: string | null
-  max_vehicles: number | null
+  service_type: string
+  custom_service_type: string | null
   plan_id: string | null
   status: CompanyStatus
   created_at: string
@@ -145,11 +142,21 @@ export interface Vehicle {
   motor_number: string | null
   chassis_number: string | null
   observations: string | null  // campo adicional — migración 14
+  vehicle_type: string | null
+  custom_vehicle_type: string | null
   status: VehicleStatus
   created_at: string
   updated_at: string
   // Relaciones cargadas con JOIN
-  member?: Pick<Member, 'id' | 'first_name' | 'last_name' | 'document_id' | 'phone' | 'email' | 'status'> | null
+  member?: {
+    id: string
+    first_name: string
+    last_name: string
+    document_id: string
+    phone?: string | null
+    email?: string | null
+    status?: string | null
+  } | null
   driver?: Pick<Driver, 'id' | 'first_name' | 'last_name' | 'document_id' | 'status'> | null
 }
 
