@@ -25,12 +25,12 @@ DECLARE
   v_meet_1_id UUID;
   v_meet_2_id UUID;
 BEGIN
-  -- 1. Obtener o crear un plan premium (el más alto disponible o crear uno para la demo)
-  SELECT id INTO v_plan_id FROM plans WHERE name = 'premium' LIMIT 1;
+  -- 1. Obtener o crear un plan empresarial (el más alto disponible o crear uno para la demo)
+  SELECT id INTO v_plan_id FROM plans WHERE name = 'empresarial' LIMIT 1;
   
   IF v_plan_id IS NULL THEN
     INSERT INTO plans (name, max_members, max_vehicles, price_monthly)
-    VALUES ('premium', 500, 500, 99.99)
+    VALUES ('empresarial', 500, 500, 99.99)
     RETURNING id INTO v_plan_id;
   END IF;
 
