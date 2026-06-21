@@ -79,6 +79,9 @@ const vehicleSchema = z.object({
     .optional()
     .or(z.literal('')),
 
+  vehicle_type: z.enum(['moto', 'auto', 'camioneta', 'furgoneta', 'tricimoto', 'otro'] as const).optional().nullable().or(z.literal('')),
+  custom_vehicle_type: z.string().max(80, 'Máximo 80 caracteres').optional().nullable().or(z.literal('')),
+
   // Conductor de la unidad (opcional)
   driver_id: z.string().optional().or(z.literal('')),
 })
@@ -111,6 +114,8 @@ const defaultValues: VehicleFormData = {
   status: 'activa',
   observations: '',
   driver_id: '',
+  vehicle_type: '',
+  custom_vehicle_type: '',
 }
 
 export function VehicleFormModal({
@@ -147,6 +152,8 @@ export function VehicleFormModal({
     defaultValues,
   })
 
+  const watchVehicleType = watch('vehicle_type')
+
   // Estado local para el tipo de asignación de conductor
   const [driverType, setDriverType] = useState<'none' | 'owner' | 'existing'>('none')
 
@@ -167,6 +174,8 @@ export function VehicleFormModal({
           status: vehicle.status || 'activa',
           observations: vehicle.observations || '',
           driver_id: vehicle.driver_id || '',
+          vehicle_type: (vehicle.vehicle_type || '') as any,
+          custom_vehicle_type: vehicle.custom_vehicle_type || '',
         })
 
         // Determinar driverType inicial
@@ -270,7 +279,7 @@ export function VehicleFormModal({
       <Modal
         isOpen={isOpen}
         onClose={isBusy ? undefined : handleClose}
-        title={isEdit ? 'Editar Unidad / Mototaxi' : 'Registrar Nueva Unidad'}
+        title={isEdit ? 'Editar Unidad / Vehículo' : 'Registrar Nueva Unidad'}
         size="lg"
         closeOnOverlay={!isBusy}
         footer={
@@ -337,7 +346,7 @@ export function VehicleFormModal({
             <Select
               label="Socio Propietario"
               options={memberOptions}
-              hint="El socio registrado como dueño legal de esta mototaxi"
+              hint="El socio registrado como dueño legal de esta unidad"
               {...register('member_id')}
               error={errors.member_id?.message}
             />
@@ -536,6 +545,31 @@ export function VehicleFormModal({
                 {...register('chassis_number')}
                 error={errors.chassis_number?.message}
               />
+
+              <Select
+                label="Tipo de Vehículo"
+                options={[
+                  { value: '', label: 'Seleccionar tipo (opcional)...' },
+                  { value: 'moto', label: 'Moto' },
+                  { value: 'auto', label: 'Auto' },
+                  { value: 'camioneta', label: 'Camioneta' },
+                  { value: 'furgoneta', label: 'Furgoneta' },
+                  { value: 'tricimoto', label: 'Tricimoto' },
+                  { value: 'otro', label: 'Otro' },
+                ]}
+                {...register('vehicle_type')}
+                error={errors.vehicle_type?.message}
+              />
+
+              {watchVehicleType === 'otro' && (
+                <Input
+                  label="Tipo de vehículo personalizado"
+                  placeholder="Ej. Bicicleta, Buggy..."
+                  maxLength={80}
+                  {...register('custom_vehicle_type')}
+                  error={errors.custom_vehicle_type?.message}
+                />
+              )}
             </div>
           </div>
 

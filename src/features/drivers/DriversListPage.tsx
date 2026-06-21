@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/Button'
 import { Select } from '@/components/ui/Select'
 import { ConfirmModal } from '@/components/ui/ConfirmModal'
 import { LicenseBadge } from '@/components/ui/LicenseBadge'
-import { useDrivers, getA1License, type DriverWithRelations } from '@/hooks/useDrivers'
+import { useDrivers, getPrimaryLicense, type DriverWithRelations } from '@/hooks/useDrivers'
 import { useMembers } from '@/hooks/useMembers'
 import { usePermissions } from '@/hooks/usePermissions'
 import { DriverFormModal } from './DriverFormModal'
@@ -52,11 +52,11 @@ export function DriversListPage() {
   const activos  = drivers.filter((d) => d.status === 'activo').length
   const inactivos = total - activos
   const sinLicencia = drivers.filter((d) => {
-    const lic = getA1License(d.licenses || [])
+    const lic = getPrimaryLicense(d.licenses || [])
     return !lic
   }).length
   const licVencidas = drivers.filter((d) => {
-    const lic = getA1License(d.licenses || [])
+    const lic = getPrimaryLicense(d.licenses || [])
     if (!lic) return false
     return new Date(lic.expiry_date) < new Date()
   }).length
@@ -162,7 +162,7 @@ export function DriversListPage() {
           </div>
           <p className="text-2xl font-bold text-amber-600 mt-2">{sinLicencia + licVencidas}</p>
           <p className="text-xs text-gray-500 mt-0.5">
-            {sinLicencia} sin A1 · {licVencidas} vencida{licVencidas !== 1 ? 's' : ''}
+            {sinLicencia} sin licencia · {licVencidas} vencida{licVencidas !== 1 ? 's' : ''}
           </p>
         </div>
       </div>
@@ -248,14 +248,14 @@ export function DriversListPage() {
                   <th className="text-left px-4 py-3 font-semibold text-gray-600 text-xs uppercase tracking-wide hidden md:table-cell">Tipo</th>
                   <th className="text-left px-4 py-3 font-semibold text-gray-600 text-xs uppercase tracking-wide hidden sm:table-cell">Teléfono</th>
                   <th className="text-left px-4 py-3 font-semibold text-gray-600 text-xs uppercase tracking-wide">Estado</th>
-                  <th className="text-left px-4 py-3 font-semibold text-gray-600 text-xs uppercase tracking-wide hidden lg:table-cell">Licencia A1</th>
+                  <th className="text-left px-4 py-3 font-semibold text-gray-600 text-xs uppercase tracking-wide hidden lg:table-cell">Licencia</th>
                   <th className="text-left px-4 py-3 font-semibold text-gray-600 text-xs uppercase tracking-wide hidden xl:table-cell">Unidad</th>
                   <th className="text-right px-4 py-3 font-semibold text-gray-600 text-xs uppercase tracking-wide">Acciones</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
                 {drivers.map((driver) => {
-                  const a1 = getA1License(driver.licenses || [])
+                  const license = getPrimaryLicense(driver.licenses || [])
                   const vehicle = driver.assigned_vehicle
                   const isSocio = !!driver.member_id
 
@@ -302,8 +302,9 @@ export function DriversListPage() {
 
                       <td className="px-4 py-3 hidden lg:table-cell">
                         <LicenseBadge
-                          expiryDate={a1?.expiry_date}
-                          licenseNumber={a1?.license_number}
+                          expiryDate={license?.expiry_date}
+                          licenseNumber={license?.license_number}
+                          licenseType={license?.license_type}
                           compact
                         />
                       </td>

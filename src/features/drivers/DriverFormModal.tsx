@@ -476,11 +476,11 @@ export function DriverFormModal({
             </div>
           </div>
 
-          {/* ── Licencia A1 ────────────────────────────────────────────── */}
+          {/* ── Licencia de Conducir ────────────────────────────────────────── */}
           <div className="border-t border-gray-100 pt-5 mb-5">
             <div className="flex items-center justify-between mb-4">
               <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">
-                Licencia A1
+                Licencia de Conducir
               </p>
               <label className="flex items-center gap-2 cursor-pointer select-none">
                 <input
@@ -496,7 +496,7 @@ export function DriverFormModal({
               <div className="flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-lg px-4 py-3">
                 <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0" />
                 <p className="text-sm text-amber-700">
-                  Sin licencia A1 registrada. Se podrá agregar después desde la ficha del conductor.
+                  Sin licencia registrada. Se podrá agregar después desde la ficha del conductor.
                 </p>
               </div>
             )}
@@ -504,12 +504,22 @@ export function DriverFormModal({
             {registerLicense && (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-5">
                 <div className="md:col-span-2 md:w-1/2">
-                  <Input
+                  <Select
                     label="Tipo de Licencia"
-                    value="A1"
-                    readOnly
-                    hint="Tipo requerido para mototaxistas en Ecuador"
+                    options={[
+                      { value: 'A', label: 'Tipo A - Motocicletas' },
+                      { value: 'A1', label: 'Tipo A1 - Ciclomotores, mototaxis y tricimotos' },
+                      { value: 'B', label: 'Tipo B - Automóviles y camionetas' },
+                      { value: 'C', label: 'Tipo C - Taxis' },
+                      { value: 'C1', label: 'Tipo C1 - Camionetas' },
+                      { value: 'D', label: 'Tipo D - Transporte público' },
+                      { value: 'E', label: 'Tipo E - Camiones pesados' },
+                      { value: 'G', label: 'Tipo G - Maquinaria agrícola' },
+                      { value: 'Otro', label: 'Otro' },
+                    ]}
+                    hint="Selecciona la categoría correspondiente"
                     {...register('license_type')}
+                    error={errors.license_type?.message as string | undefined}
                   />
                 </div>
 

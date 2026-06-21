@@ -193,6 +193,7 @@ export type Database = {
         Row: {
           address: string | null
           created_at: string | null
+          custom_service_type: string | null
           email: string | null
           id: string
           institutional_info: string | null
@@ -204,6 +205,7 @@ export type Database = {
           president_name: string | null
           ruc: string
           secretary_name: string | null
+          service_type: string
           status: string | null
           trade_name: string | null
           treasurer_name: string | null
@@ -212,6 +214,7 @@ export type Database = {
         Insert: {
           address?: string | null
           created_at?: string | null
+          custom_service_type?: string | null
           email?: string | null
           id?: string
           institutional_info?: string | null
@@ -223,6 +226,7 @@ export type Database = {
           president_name?: string | null
           ruc: string
           secretary_name?: string | null
+          service_type?: string
           status?: string | null
           trade_name?: string | null
           treasurer_name?: string | null
@@ -231,6 +235,7 @@ export type Database = {
         Update: {
           address?: string | null
           created_at?: string | null
+          custom_service_type?: string | null
           email?: string | null
           id?: string
           institutional_info?: string | null
@@ -242,6 +247,7 @@ export type Database = {
           president_name?: string | null
           ruc?: string
           secretary_name?: string | null
+          service_type?: string
           status?: string | null
           trade_name?: string | null
           treasurer_name?: string | null
@@ -1470,6 +1476,7 @@ export type Database = {
           color: string | null
           company_id: string
           created_at: string | null
+          custom_vehicle_type: string | null
           disk_number: string
           driver_id: string | null
           id: string
@@ -1480,6 +1487,7 @@ export type Database = {
           plate: string
           status: Database["public"]["Enums"]["vehicle_status"] | null
           updated_at: string | null
+          vehicle_type: string | null
           year: number | null
         }
         Insert: {
@@ -1488,6 +1496,7 @@ export type Database = {
           color?: string | null
           company_id: string
           created_at?: string | null
+          custom_vehicle_type?: string | null
           disk_number: string
           driver_id?: string | null
           id?: string
@@ -1498,6 +1507,7 @@ export type Database = {
           plate: string
           status?: Database["public"]["Enums"]["vehicle_status"] | null
           updated_at?: string | null
+          vehicle_type?: string | null
           year?: number | null
         }
         Update: {
@@ -1506,6 +1516,7 @@ export type Database = {
           color?: string | null
           company_id?: string
           created_at?: string | null
+          custom_vehicle_type?: string | null
           disk_number?: string
           driver_id?: string | null
           id?: string
@@ -1516,6 +1527,7 @@ export type Database = {
           plate?: string
           status?: Database["public"]["Enums"]["vehicle_status"] | null
           updated_at?: string | null
+          vehicle_type?: string | null
           year?: number | null
         }
         Relationships: [
@@ -1578,9 +1590,11 @@ export type Database = {
           p_admin_email: string
           p_admin_first_name: string
           p_admin_last_name: string
+          p_custom_service_type?: string
           p_legal_name: string
           p_plan_id: string
           p_ruc: string
+          p_service_type?: string
           p_status: string
           p_trade_name: string
         }

@@ -297,7 +297,7 @@ export function ReportsPage() {
       {/* PRINT-ONLY HEADER */}
       <div className="hidden print:block mb-8 text-center">
         <h1 className="text-3xl font-bold text-gray-900 border-b-2 border-gray-800 pb-2">
-          SAS MOTOTAXIS - INFORME GENERAL
+          SISTEMA DE GESTIÓN DE TRANSPORTE - INFORME GENERAL
         </h1>
         <p className="text-sm text-gray-600 mt-2">
           Generado el: {new Date().toLocaleDateString('es-EC')} | Rango Recaudaciones: {dateRange.startDate} a {dateRange.endDate}

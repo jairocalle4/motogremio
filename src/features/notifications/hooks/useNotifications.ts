@@ -401,7 +401,7 @@ export function useNotifications() {
         })
       }
 
-      // ─── 6. UNIDADES O MOTOTAXIS ───────────────────────────────
+      // ─── 6. UNIDADES / VEHÍCULOS ───────────────────────────────
       if (vehicles) {
         vehicles.forEach((veh: any) => {
           if (veh.status === 'activa') {

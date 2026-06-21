@@ -67,15 +67,15 @@ export function LoginPage() {
         {/* Contenido central */}
         <div className="relative z-10">
           <h2 className="text-white text-3xl font-bold leading-snug mb-4">
-            Administra tu compañía<br />de mototaxi con orden
+            Administra tu compañía<br />de transporte con orden
           </h2>
           <p className="text-primary-200 text-sm leading-relaxed mb-8">
             {APP_SLOGAN}. Socios, pagos, unidades, sanciones y convocatorias en un solo lugar.
           </p>
-
+          
           {/* Features */}
           {[
-            'Control de socios y licencias A1',
+            'Control de socios y licencias de conducir',
             'Gestión de unidades con número de disco',
             'Pagos, cuotas y deudas al instante',
             'Convocatorias por correo y WhatsApp',

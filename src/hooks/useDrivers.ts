@@ -59,12 +59,14 @@ export function getLicenseStatus(expiryDate: string): 'vigente' | 'por_vencer' |
   return 'vigente'
 }
 
-/** Retorna la licencia A1 activa (o la primera si hay varias) */
-export function getA1License(licenses: DriverLicense[]): DriverLicense | null {
+/** Retorna la licencia principal/activa (o la primera si hay varias) */
+export function getPrimaryLicense(licenses: DriverLicense[]): DriverLicense | null {
   if (!licenses || licenses.length === 0) return null
-  const a1 = licenses.find((l) => l.license_type?.toUpperCase() === 'A1')
-  return a1 ?? licenses[0]
+  return licenses[0]
 }
+
+/** @deprecated Usar getPrimaryLicense en su lugar */
+export const getA1License = getPrimaryLicense
 
 // ─── Hook principal ──────────────────────────────────────────────────────────
 export function useDrivers() {

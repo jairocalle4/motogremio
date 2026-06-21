@@ -2,19 +2,18 @@ import type { UserRole, MemberStatus, VehicleStatus, DriverStatus, DocumentStatu
 
 // ─── Aplicación ───────────────────────────────────────
 export const APP_NAME = 'MotoGremio'
-export const APP_SLOGAN = 'Gestión inteligente para compañías de mototaxi'
+export const APP_SLOGAN = 'Gestión inteligente para compañías de transporte'
 export const APP_VERSION = '0.1.0'
 
-// ─── Etiquetas de roles ───────────────────────────────
 export const ROLE_LABELS: Record<UserRole, string> = {
-  super_admin: 'Super Administrador',
+  super_admin: 'Super Admin',
   admin:       'Administrador',
-  gerente:     'Gerente',
-  presidente:  'Presidente',
+  gerente:     'Administrador',
+  presidente:  'Administrador',
   secretaria:  'Secretaria',
-  tesorero:    'Tesorero',
-  operador:    'Operador',
-  socio:       'Socio',
+  tesorero:    'Administrador',
+  operador:    'Secretaria / Asistente operativo',
+  socio:       'Socio / Conductor consulta',
 }
 
 export const ROLE_COLORS: Record<UserRole, string> = {

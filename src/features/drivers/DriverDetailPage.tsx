@@ -9,7 +9,7 @@ import {
 import { Button } from '@/components/ui/Button'
 import { ConfirmModal } from '@/components/ui/ConfirmModal'
 import { LicenseBadge } from '@/components/ui/LicenseBadge'
-import { useDrivers, getA1License, type DriverWithRelations } from '@/hooks/useDrivers'
+import { useDrivers, getPrimaryLicense, type DriverWithRelations } from '@/hooks/useDrivers'
 import { useMembers } from '@/hooks/useMembers'
 import { usePermissions } from '@/hooks/usePermissions'
 import { useLicenses } from '@/hooks/useLicenses'
@@ -47,7 +47,7 @@ export function DriverDetailPage() {
   }, [id, fetchDriverById, fetchMembers])
 
   const driver = currentDriver as DriverWithRelations | null
-  const a1     = driver ? getA1License(driver.licenses || []) : null
+  const license = driver ? getPrimaryLicense(driver.licenses || []) : null
   const isSocio = !!driver?.member_id
 
   const handleToggleStatus = async () => {
@@ -78,8 +78,8 @@ export function DriverDetailPage() {
 
   const handleLicenseSubmit = async (data: any) => {
     try {
-      if (a1) {
-        const { error } = await updateLicense(a1.id, data)
+      if (license) {
+        const { error } = await updateLicense(license.id, data)
         if (error) throw new Error(error)
         toast.success('Licencia actualizada correctamente')
       } else {
@@ -118,10 +118,10 @@ export function DriverDetailPage() {
   }
 
   // ── Calcular estado de licencia para info adicional ───
-  const licStatus = a1
+  const licStatus = license
     ? (() => {
         const now  = new Date()
-        const exp  = new Date(a1.expiry_date)
+        const exp  = new Date(license.expiry_date)
         const diff = (exp.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)
         if (diff < 0)  return { icon: AlertTriangle, label: 'Licencia VENCIDA', color: 'text-danger-600', bg: 'bg-danger-50 border-danger-200' }
         if (diff <= 30) return { icon: Clock, label: `Vence en ${Math.ceil(diff)} días`, color: 'text-amber-600', bg: 'bg-amber-50 border-amber-200' }
@@ -260,26 +260,26 @@ export function DriverDetailPage() {
           </dl>
         </div>
 
-        {/* Licencia A1 */}
+        {/* Licencia de Conducir */}
         <div className="bg-white rounded-xl border border-gray-200 p-5">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-sm font-semibold text-gray-700 flex items-center gap-2">
               <FileText className="w-4 h-4 text-gray-400" />
-              Licencia A1
+              Licencia de Conducir
             </h2>
-            {canManageDrivers && a1 && (
+            {canManageDrivers && license && (
               <Button variant="outline" size="sm" onClick={() => setLicenseModal(true)}>
                 Editar licencia
               </Button>
             )}
           </div>
 
-          {a1 ? (
+          {license ? (
             <div className="space-y-3">
               <LicenseBadge
-                expiryDate={a1.expiry_date}
-                licenseNumber={a1.license_number}
-                licenseType={a1.license_type}
+                expiryDate={license.expiry_date}
+                licenseNumber={license.license_number}
+                licenseType={license.license_type}
               />
 
               {licStatus && (
@@ -295,13 +295,13 @@ export function DriverDetailPage() {
               <dl className="space-y-2">
                 <div>
                   <dt className="text-xs text-gray-500">N.° de licencia</dt>
-                  <dd className="text-sm font-semibold text-gray-800 font-mono">{a1.license_number}</dd>
+                  <dd className="text-sm font-semibold text-gray-800 font-mono">{license.license_number}</dd>
                 </div>
-                {a1.issue_date && (
+                {license.issue_date && (
                   <div>
                     <dt className="text-xs text-gray-500">Fecha de emisión</dt>
                     <dd className="text-sm text-gray-800">
-                      {new Date(a1.issue_date + 'T00:00:00').toLocaleDateString('es-EC', {
+                      {new Date(license.issue_date + 'T00:00:00').toLocaleDateString('es-EC', {
                         day: '2-digit', month: 'short', year: 'numeric',
                       })}
                     </dd>
@@ -310,7 +310,7 @@ export function DriverDetailPage() {
                 <div>
                   <dt className="text-xs text-gray-500">Fecha de vencimiento</dt>
                   <dd className="text-sm text-gray-800">
-                    {new Date(a1.expiry_date + 'T00:00:00').toLocaleDateString('es-EC', {
+                    {new Date(license.expiry_date + 'T00:00:00').toLocaleDateString('es-EC', {
                       day: '2-digit', month: 'short', year: 'numeric',
                     })}
                   </dd>
@@ -322,9 +322,9 @@ export function DriverDetailPage() {
               <div className="w-12 h-12 rounded-xl bg-amber-50 flex items-center justify-center mb-3">
                 <AlertTriangle className="w-6 h-6 text-amber-400" />
               </div>
-              <p className="text-sm font-medium text-gray-700">Sin licencia A1 registrada</p>
+              <p className="text-sm font-medium text-gray-700">Sin licencia registrada</p>
               <p className="text-xs text-gray-500 mt-1">
-                Edita el conductor para registrar la licencia A1.
+                Edita el conductor para registrar la licencia.
               </p>
               {canManageDrivers && (
                 <Button
@@ -408,7 +408,7 @@ export function DriverDetailPage() {
         isOpen={licenseModal}
         onClose={() => setLicenseModal(false)}
         onSubmit={handleLicenseSubmit}
-        license={a1 as any}
+        license={license as any}
         driverId={driver.id}
       />
 
