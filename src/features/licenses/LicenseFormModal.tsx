@@ -4,6 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { Modal } from '@/components/ui/Modal'
 import { Input } from '@/components/ui/Input'
+import { Select } from '@/components/ui/Select'
 import { Button } from '@/components/ui/Button'
 import type { LicenseInsert, LicenseRow } from '@/hooks/useLicenses'
 
@@ -85,8 +86,19 @@ export function LicenseFormModal({
       <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-4">
         <div className="grid grid-cols-3 gap-3">
           <div className="col-span-1">
-            <Input
+            <Select
               label="Tipo"
+              options={[
+                { value: 'A', label: 'A' },
+                { value: 'A1', label: 'A1' },
+                { value: 'B', label: 'B' },
+                { value: 'C', label: 'C' },
+                { value: 'C1', label: 'C1' },
+                { value: 'D', label: 'D' },
+                { value: 'E', label: 'E' },
+                { value: 'G', label: 'G' },
+                { value: 'Otro', label: 'Otro' },
+              ]}
               error={errors.license_type?.message as string}
               {...register('license_type')}
             />

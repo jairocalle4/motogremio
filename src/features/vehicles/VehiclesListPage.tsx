@@ -225,9 +225,9 @@ export function VehiclesListPage() {
       {/* ── Header ──────────────────────────────────────────────────────────── */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Unidades / Mototaxis</h1>
+          <h1 className="text-2xl font-bold text-gray-900">Unidades / Vehículos</h1>
           <p className="text-gray-500 mt-1">
-            Administra las mototaxis de la cooperativa, propietarios y estado operativo.
+            Administra las unidades de la compañía, propietarios y estado operativo.
           </p>
         </div>
         <div className="flex items-center gap-3">
@@ -358,7 +358,7 @@ export function VehiclesListPage() {
               <Bike className="w-12 h-12 text-gray-300 mx-auto mb-4" />
               <h3 className="text-gray-700 font-semibold mb-1">No se encontraron unidades</h3>
               <p className="text-gray-500 text-sm max-w-sm mx-auto">
-                No hay mototaxis registradas que coincidan con la búsqueda, o aún no se han registrado unidades.
+                No hay unidades registradas que coincidan con la búsqueda, o aún no se han registrado unidades.
               </p>
               {canManageVehicles && (
                 <Button
@@ -428,9 +428,15 @@ export function VehiclesListPage() {
                       <div className="text-gray-800">
                         {[vehicle.brand, vehicle.model].filter(Boolean).join(' ') || '—'}
                       </div>
-                      {vehicle.year && (
-                        <div className="text-xs text-gray-400 mt-0.5">{vehicle.year}</div>
-                      )}
+                      <div className="flex flex-wrap items-center gap-1.5 mt-0.5">
+                        {vehicle.year && <span className="text-xs text-gray-400">{vehicle.year}</span>}
+                        {vehicle.year && vehicle.vehicle_type && <span className="text-gray-300 text-xs">•</span>}
+                        {vehicle.vehicle_type && (
+                          <span className="text-[10px] bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded font-medium capitalize">
+                            {vehicle.vehicle_type === 'otro' ? (vehicle.custom_vehicle_type || 'Otro') : vehicle.vehicle_type}
+                          </span>
+                        )}
+                      </div>
                     </td>
 
                     <td className="px-6 py-4">

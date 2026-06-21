@@ -251,12 +251,12 @@ export function MemberDetailPage() {
 
         {/* Right column - operational links/placeholders */}
         <div className="lg:col-span-2 space-y-6">
-          {/* Vehicles / Mototaxis tab */}
+          {/* Vehicles / Unidades tab */}
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle className="text-base flex items-center gap-2">
                 <Car className="w-4 h-4 text-primary-500" />
-                Unidades del Socio (Mototaxis)
+                Unidades del Socio
               </CardTitle>
             </CardHeader>
             <CardContent>

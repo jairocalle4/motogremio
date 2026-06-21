@@ -16,6 +16,7 @@ import { z } from 'zod'
 import toast from 'react-hot-toast'
 import type { Database } from '@/types/database.types'
 import { getCompanyPlanUsage, type CompanyPlanUsage } from '../subscription/hooks/usePlanUsage'
+import { ROLE_LABELS } from '@/lib/constants'
 import {
   getSuperAdminPlans,
   previewCompanyPlanChange,
@@ -473,6 +474,14 @@ export function SuperAdminCompanyDetail() {
               <dt className="text-sm font-medium text-slate-500">Dirección</dt>
               <dd className="mt-1 text-sm text-slate-900">{company.address || 'No registrado'}</dd>
             </div>
+            <div>
+              <dt className="text-sm font-medium text-slate-500">Tipo de Servicio</dt>
+              <dd className="mt-1 text-sm text-slate-900 capitalize font-medium">
+                {company.service_type === 'otro'
+                  ? (company.custom_service_type || 'Otro')
+                  : (company.service_type || 'mototaxi')}
+              </dd>
+            </div>
           </dl>
         </Card>
 
@@ -737,7 +746,7 @@ export function SuperAdminCompanyDetail() {
                             {u.first_name} {u.last_name} {isSelf && <span className="text-[10px] bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded font-bold ml-1">Tú</span>}
                           </td>
                           <td className="px-4 py-3 text-slate-600">{u.email}</td>
-                          <td className="px-4 py-3 capitalize text-slate-800">{u.role}</td>
+                          <td className="px-4 py-3 text-slate-800">{ROLE_LABELS[u.role] || u.role}</td>
                           <td className="px-4 py-3 text-center">
                             <Badge variant={u.is_active ? 'success' : 'danger'}>
                               {u.is_active ? 'Activo' : 'Inactivo'}
@@ -806,7 +815,7 @@ export function SuperAdminCompanyDetail() {
                           {i.first_name} {i.last_name}
                         </td>
                         <td className="px-4 py-3 text-slate-600">{i.email}</td>
-                        <td className="px-4 py-3 capitalize text-slate-800">{i.role}</td>
+                        <td className="px-4 py-3 text-slate-800">{ROLE_LABELS[i.role] || i.role}</td>
                         <td className="px-4 py-3 text-center">
                           <Badge variant={i.status === 'pending' ? 'warning' : 'danger'}>
                             {i.status}
@@ -889,13 +898,9 @@ export function SuperAdminCompanyDetail() {
             required
             error={errors.role?.message}
             options={[
-              { value: 'admin', label: 'Administrador (Admin)' },
-              { value: 'operador', label: 'Operador' },
-              { value: 'gerente', label: 'Gerente' },
-              { value: 'presidente', label: 'Presidente' },
+              { value: 'admin', label: 'Administrador' },
               { value: 'secretaria', label: 'Secretaria' },
-              { value: 'tesorero', label: 'Tesorero' },
-              { value: 'socio', label: 'Socio' }
+              { value: 'socio', label: 'Socio / Conductor consulta' }
             ]}
             {...register('role')}
           />
@@ -977,13 +982,9 @@ export function SuperAdminCompanyDetail() {
               defaultValue={editingUser.role}
               id="new-role-select"
               options={[
-                { value: 'admin', label: 'Administrador (Admin)' },
-                { value: 'operador', label: 'Operador' },
-                { value: 'gerente', label: 'Gerente' },
-                { value: 'presidente', label: 'Presidente' },
+                { value: 'admin', label: 'Administrador' },
                 { value: 'secretaria', label: 'Secretaria' },
-                { value: 'tesorero', label: 'Tesorero' },
-                { value: 'socio', label: 'Socio' }
+                { value: 'socio', label: 'Socio / Conductor consulta' }
               ]}
             />
             <div className="flex justify-end gap-3 border-t border-slate-100 pt-4 mt-6">

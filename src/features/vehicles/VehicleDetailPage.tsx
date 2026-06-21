@@ -3,7 +3,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import { useVehicles } from '@/hooks/useVehicles'
 import { useMembers } from '@/hooks/useMembers'
-import { useDrivers, getA1License } from '@/hooks/useDrivers'
+import { useDrivers, getPrimaryLicense } from '@/hooks/useDrivers'
 import { usePermissions } from '@/hooks/usePermissions'
 import { usePayments } from '@/hooks/usePayments'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card'
@@ -387,10 +387,16 @@ export function VehicleDetailPage() {
                 { label: 'Modelo', value: currentVehicle.model },
                 { label: 'Año', value: currentVehicle.year?.toString() },
                 { label: 'Color', value: currentVehicle.color },
+                {
+                  label: 'Tipo de Vehículo',
+                  value: currentVehicle.vehicle_type === 'otro'
+                    ? (currentVehicle.custom_vehicle_type || 'Otro')
+                    : currentVehicle.vehicle_type
+                },
               ].map(({ label, value }) => (
                 <div key={label}>
                   <p className="text-xs font-semibold text-gray-400 uppercase">{label}</p>
-                  <p className="text-sm font-medium text-gray-800 mt-0.5">{value || '—'}</p>
+                  <p className="text-sm font-medium text-gray-800 mt-0.5 capitalize">{value || '—'}</p>
                 </div>
               ))}
             </CardContent>
@@ -518,8 +524,9 @@ export function VehicleDetailPage() {
                         )}
                         <div className="mt-1.5">
                           <LicenseBadge
-                            expiryDate={getA1License(currentVehicle.driver.licenses || [])?.expiry_date}
-                            licenseNumber={getA1License(currentVehicle.driver.licenses || [])?.license_number}
+                            expiryDate={getPrimaryLicense(currentVehicle.driver.licenses || [])?.expiry_date}
+                            licenseNumber={getPrimaryLicense(currentVehicle.driver.licenses || [])?.license_number}
+                            licenseType={getPrimaryLicense(currentVehicle.driver.licenses || [])?.license_type}
                             compact
                           />
                         </div>
@@ -534,12 +541,12 @@ export function VehicleDetailPage() {
                     </Button>
                   </div>
 
-                  {/* Advertencia si falta licencia A1 */}
-                  {!getA1License(currentVehicle.driver.licenses || []) && (
+                  {/* Advertencia si falta licencia */}
+                  {!getPrimaryLicense(currentVehicle.driver.licenses || []) && (
                     <div className="flex items-center justify-between gap-2 bg-amber-50 border border-amber-200 rounded-lg p-3 text-xs text-amber-800">
                       <div className="flex-1">
-                        <p className="font-semibold">⚠️ Licencia A1 pendiente</p>
-                        <p className="text-amber-700 mt-0.5">El conductor no tiene una licencia A1 registrada en su ficha.</p>
+                        <p className="font-semibold">⚠️ Licencia de conducir pendiente</p>
+                        <p className="text-amber-700 mt-0.5">El conductor no tiene una licencia registrada en su ficha.</p>
                       </div>
                       <Button
                         size="sm"

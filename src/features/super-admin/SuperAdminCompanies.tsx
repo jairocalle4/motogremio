@@ -21,6 +21,8 @@ interface CompanyStats {
   trade_name: string | null
   ruc: string
   status: string | null
+  service_type: string | null
+  custom_service_type: string | null
   created_at: string | null
   plan_name: string | null
   members_count: number
@@ -38,6 +40,8 @@ const companySchema = z.object({
   ruc: z.string().length(13, 'El RUC debe tener exactamente 13 caracteres.'),
   plan_id: z.string().min(1, 'Selecciona un plan.'),
   status: z.enum(['activa', 'inactiva']),
+  service_type: z.enum(['mototaxi', 'taxi', 'camioneta', 'transporte_mixto', 'otro']),
+  custom_service_type: z.string().max(80, 'Máximo 80 caracteres.').optional().or(z.literal('')),
   admin_first_name: z.string().min(2, 'El nombre debe tener al menos 2 caracteres.'),
   admin_last_name: z.string().min(2, 'El apellido debe tener al menos 2 caracteres.'),
   admin_email: z.string().email('Ingresa un correo de administrador válido.'),
@@ -62,14 +66,19 @@ export function SuperAdminCompanies() {
     register,
     handleSubmit,
     reset,
+    watch,
     formState: { errors, isSubmitting },
   } = useForm<CompanyForm>({
     resolver: zodResolver(companySchema),
     defaultValues: {
       status: 'activa',
       trade_name: '',
+      service_type: 'mototaxi',
+      custom_service_type: '',
     },
   })
+
+  const watchServiceType = watch('service_type')
 
   useEffect(() => {
     fetchData()
@@ -152,6 +161,8 @@ export function SuperAdminCompanies() {
         p_admin_first_name: data.admin_first_name,
         p_admin_last_name: data.admin_last_name,
         p_admin_email: data.admin_email,
+        p_service_type: data.service_type,
+        p_custom_service_type: (data.service_type === 'otro' ? data.custom_service_type : null) || undefined,
       })
 
       if (error) throw error
@@ -267,7 +278,13 @@ export function SuperAdminCompanies() {
                   <tr key={c.id} className="hover:bg-slate-50/50">
                     <td className="px-4 py-3">
                       <div className="font-medium text-slate-900">{c.legal_name}</div>
-                      {c.trade_name && <div className="text-xs text-slate-500">{c.trade_name}</div>}
+                      <div className="flex flex-wrap items-center gap-1.5 mt-0.5">
+                        {c.trade_name && <span className="text-xs text-slate-500">{c.trade_name}</span>}
+                        {c.trade_name && <span className="text-slate-300">•</span>}
+                        <span className="text-[10px] bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded font-medium capitalize">
+                          {c.service_type === 'otro' ? (c.custom_service_type || 'Otro') : (c.service_type || 'mototaxi')}
+                        </span>
+                      </div>
                     </td>
                     <td className="px-4 py-3 font-mono text-xs">{c.ruc}</td>
                     <td className="px-4 py-3">
@@ -393,6 +410,29 @@ export function SuperAdminCompanies() {
                 ]}
                 {...register('status')}
               />
+              <Select
+                label="Tipo de Servicio"
+                required
+                error={errors.service_type?.message}
+                options={[
+                  { value: 'mototaxi', label: 'Mototaxi' },
+                  { value: 'taxi', label: 'Taxi' },
+                  { value: 'camioneta', label: 'Camioneta' },
+                  { value: 'transporte_mixto', label: 'Transporte Mixto' },
+                  { value: 'otro', label: 'Otro' }
+                ]}
+                {...register('service_type')}
+              />
+              {watchServiceType === 'otro' && (
+                <Input
+                  label="Tipo de servicio personalizado"
+                  type="text"
+                  placeholder="Ej. Triciclo, Bus, etc."
+                  required
+                  error={errors.custom_service_type?.message}
+                  {...register('custom_service_type')}
+                />
+              )}
             </div>
           </div>
 

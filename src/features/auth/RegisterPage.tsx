@@ -128,7 +128,7 @@ export function RegisterPage() {
         {/* Contenido central */}
         <div className="relative z-10">
           <h2 className="text-white text-3xl font-bold leading-snug mb-4">
-            Únete a la plataforma<br />de gestión de mototaxis
+            Únete a la plataforma<br />de gestión de transporte
           </h2>
           <p className="text-primary-200 text-sm leading-relaxed mb-8">
             {APP_SLOGAN}. Administra socios, unidades, conductores y pagos de forma centralizada y segura.

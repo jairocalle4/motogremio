@@ -31,7 +31,7 @@ const statusConfig = {
     classes:  'bg-danger-50 text-danger-700 border-danger-200',
   },
   sin_licencia: {
-    label:    'Sin licencia A1',
+    label:    'Sin licencia',
     icon:     AlertTriangle,
     classes:  'bg-gray-100 text-gray-500 border-gray-200',
   },
@@ -40,7 +40,7 @@ const statusConfig = {
 export function LicenseBadge({
   expiryDate,
   licenseNumber,
-  licenseType = 'A1',
+  licenseType,
   status,
   compact = false,
   className,
@@ -60,6 +60,8 @@ export function LicenseBadge({
 
   const config = statusConfig[effectiveStatus]
   const Icon   = config.icon
+  const compactType = licenseType ? `${licenseType} ` : ''
+  const displayType = licenseType ? `tipo ${licenseType}` : 'de conducir'
 
   if (compact) {
     return (
@@ -71,7 +73,7 @@ export function LicenseBadge({
         )}
       >
         <Icon className="w-3 h-3" />
-        {licenseType} {config.label}
+        {compactType}{config.label}
       </span>
     )
   }
@@ -86,7 +88,7 @@ export function LicenseBadge({
     >
       <div className="flex items-center gap-1.5 font-semibold">
         <Icon className="w-3.5 h-3.5" />
-        <span>Licencia {licenseType} — {config.label}</span>
+        <span>Licencia {displayType} — {config.label}</span>
       </div>
       {licenseNumber && (
         <span className="font-mono opacity-80">N.° {licenseNumber}</span>
