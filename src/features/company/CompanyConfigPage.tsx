@@ -15,6 +15,7 @@ import { ConfirmModal } from '@/components/ui/ConfirmModal'
 import { useAuth } from '@/context/useAuth'
 import { getMyCompanyPlanUsage, type CompanyPlanUsage } from '../subscription/hooks/usePlanUsage'
 import { PlanUsageCard } from '../subscription/components/PlanUsageCard'
+import { CompanyBrandingTab } from './CompanyBrandingTab'
 import { 
   Building2, 
   Save, 
@@ -55,7 +56,7 @@ const docTypeSchema = z.object({
 type DocTypeFormData = z.infer<typeof docTypeSchema>
 
 export function CompanyConfigPage() {
-  const [activeTab, setActiveTab] = useState<'info' | 'document_types'>('info')
+  const [activeTab, setActiveTab] = useState<'info' | 'document_types' | 'branding'>('info')
   const { company, loading: companyLoading, updateCompany, fetchCompany } = useCompany()
   const { profile } = useAuth()
 
@@ -316,6 +317,16 @@ export function CompanyConfigPage() {
         >
           Tipos de Documentos
         </button>
+        <button
+          onClick={() => setActiveTab('branding')}
+          className={`py-2.5 px-5 border-b-2 font-medium text-sm transition-colors ${
+            activeTab === 'branding'
+              ? 'border-primary-500 text-primary-600'
+              : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+          }`}
+        >
+          Identidad Visual
+        </button>
       </div>
 
       {/* ─── PESTAÑA: INFORMACIÓN GENERAL ────────────────────────────────────── */}
@@ -436,6 +447,11 @@ export function CompanyConfigPage() {
             </div>
           </Card>
         </form>
+      )}
+
+      {/* ─── PESTAÑA: IDENTIDAD VISUAL ───────────────────────────────────────── */}
+      {activeTab === 'branding' && (
+        <CompanyBrandingTab userRole={profile?.role} />
       )}
 
       {/* ─── PESTAÑA: TIPOS DE DOCUMENTOS ────────────────────────────────────── */}

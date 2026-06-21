@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Select } from '@/components/ui/Select'
+import { Textarea } from '@/components/ui/Textarea'
 import { Modal } from '@/components/ui/Modal'
 import { Building2, ArrowLeft, Users, ShieldAlert, Plus, Mail, Copy, Check, Trash2, ShieldCheck, ToggleLeft, ToggleRight, UserCog } from 'lucide-react'
 import { useForm } from 'react-hook-form'
@@ -22,6 +23,11 @@ import {
   type SuperAdminPlan,
   type CompanyPlanChangePreview
 } from './hooks/useSuperAdminPlans'
+import {
+  getSuperAdminCompanyBranding,
+  updateSuperAdminCompanyBranding,
+  type CompanyBranding
+} from '@/hooks/useCompanyBranding'
 
 type Company = Database['public']['Tables']['companies']['Row']
 type UserRole = Database['public']['Enums']['user_role']
@@ -65,6 +71,37 @@ const invitationSchema = z.object({
 
 type InvitationForm = z.infer<typeof invitationSchema>
 
+// ─── Validación branding ─────────────────────────────
+const brandingSchema = z.object({
+  commercial_name: z.string().max(120, 'El nombre comercial no puede superar 120 caracteres.').nullable().optional().or(z.literal('')),
+  slogan: z.string().max(160, 'El eslogan no puede superar 160 caracteres.').nullable().optional().or(z.literal('')),
+  logo_url: z.string().nullable().optional().or(z.literal('')),
+  primary_color: z
+    .string()
+    .regex(/^#[0-9A-Fa-f]{6}$/, 'El color primario debe tener formato HEX #RRGGBB (ej. #1E3A5F)')
+    .nullable()
+    .optional()
+    .or(z.literal('')),
+  secondary_color: z
+    .string()
+    .regex(/^#[0-9A-Fa-f]{6}$/, 'El color secundario debe tener formato HEX #RRGGBB (ej. #4A90D9)')
+    .nullable()
+    .optional()
+    .or(z.literal('')),
+  contact_phone: z.string().max(30, 'El teléfono de contacto no puede superar 30 caracteres.').nullable().optional().or(z.literal('')),
+  contact_email: z
+    .string()
+    .email('Ingresa un correo de contacto válido.')
+    .max(100)
+    .nullable()
+    .optional()
+    .or(z.literal('')),
+  public_address: z.string().max(250, 'La dirección pública no puede superar 250 caracteres.').nullable().optional().or(z.literal('')),
+  report_header_text: z.string().max(500, 'El encabezado de reportes no puede superar 500 caracteres.').nullable().optional().or(z.literal('')),
+})
+
+type BrandingFormData = z.infer<typeof brandingSchema>
+
 export function SuperAdminCompanyDetail() {
   const { id: companyId } = useParams<{ id: string }>()
   const { profile: currentUserProfile } = useAuth()
@@ -104,14 +141,41 @@ export function SuperAdminCompanyDetail() {
     },
   })
 
+  // Control de Branding
+  const [branding, setBranding] = useState<CompanyBranding | null>(null)
+  const [isBrandingSaving, setIsBrandingSaving] = useState(false)
+  const [isBrandingModalOpen, setIsBrandingModalOpen] = useState(false)
+
+  const {
+    register: registerBranding,
+    handleSubmit: handleBrandingSubmit,
+    reset: resetBranding,
+    watch: watchBranding,
+    setValue: setBrandingValue,
+    formState: { errors: brandingErrors },
+  } = useForm<BrandingFormData>({
+    resolver: zodResolver(brandingSchema),
+  })
+
+  // Watch values for real-time preview in modal
+  const watchCommercialName = watchBranding('commercial_name')
+  const watchSlogan = watchBranding('slogan')
+  const watchLogoUrl = watchBranding('logo_url')
+  const watchPrimaryColor = watchBranding('primary_color')
+  const watchSecondaryColor = watchBranding('secondary_color')
+
   const loadDetails = useCallback(async () => {
     if (!companyId) return
     setLoadingDetails(true)
     try {
-      const [usersRes, invitesRes, planUsageRes] = await Promise.all([
+      const [usersRes, invitesRes, planUsageRes, brandingData] = await Promise.all([
         supabase.rpc('get_company_users', { p_company_id: companyId }),
         supabase.rpc('get_company_invitations', { p_company_id: companyId }),
         getCompanyPlanUsage(companyId),
+        getSuperAdminCompanyBranding(companyId).catch((err) => {
+          console.error('Error fetching branding:', err)
+          return null
+        })
       ])
 
       if (usersRes.error) throw usersRes.error
@@ -120,6 +184,9 @@ export function SuperAdminCompanyDetail() {
       setUsers((usersRes.data as unknown as CompanyUser[]) || [])
       setInvitations((invitesRes.data as unknown as CompanyInvitation[]) || [])
       setPlanUsage(planUsageRes)
+      if (brandingData) {
+        setBranding(brandingData)
+      }
     } catch (err: any) {
       toast.error('Error al cargar detalles: ' + err.message)
     } finally {
@@ -286,6 +353,61 @@ export function SuperAdminCompanyDetail() {
       toast.error(msg, { id: toastId })
     } finally {
       setIsSavingPlanChange(false)
+    }
+  }
+
+  const handleOpenBrandingChange = () => {
+    resetBranding({
+      commercial_name: branding?.commercial_name || '',
+      slogan: branding?.slogan || '',
+      logo_url: branding?.logo_url || '',
+      primary_color: branding?.primary_color || '#1e3a5f',
+      secondary_color: branding?.secondary_color || '#4a90d9',
+      contact_phone: branding?.contact_phone || '',
+      contact_email: branding?.contact_email || '',
+      public_address: branding?.public_address || '',
+      report_header_text: branding?.report_header_text || '',
+    })
+    setIsBrandingModalOpen(true)
+  }
+
+  const onSubmitBrandingChange = async (data: BrandingFormData) => {
+    if (!companyId) return
+    setIsBrandingSaving(true)
+    const toastId = toast.loading('Guardando branding de compañía...')
+    try {
+      const payload = {
+        commercial_name: data.commercial_name || '',
+        slogan: data.slogan || '',
+        logo_url: data.logo_url || '',
+        primary_color: data.primary_color || '#1e3a5f',
+        secondary_color: data.secondary_color || '#4a90d9',
+        contact_phone: data.contact_phone || '',
+        contact_email: data.contact_email || '',
+        public_address: data.public_address || '',
+        report_header_text: data.report_header_text || '',
+      }
+
+      const res = await updateSuperAdminCompanyBranding(companyId, payload)
+      setBranding(res)
+      toast.success('Branding de la compañía actualizado exitosamente.', { id: toastId })
+      setIsBrandingModalOpen(false)
+    } catch (err: any) {
+      let msg = err.message || 'Error al guardar branding'
+      if (msg.includes('Nombre comercial') || msg.includes('commercial_name')) {
+        msg = 'El nombre comercial no puede superar 120 caracteres.'
+      } else if (msg.includes('eslogan') || msg.includes('slogan')) {
+        msg = 'El eslogan no puede superar 160 caracteres.'
+      } else if (msg.includes('Color primario') || msg.includes('primary_color')) {
+        msg = 'Color primario inválido. Debe ser formato HEX #RRGGBB.'
+      } else if (msg.includes('Color secundario') || msg.includes('secondary_color')) {
+        msg = 'Color secundario inválido. Debe ser formato HEX #RRGGBB.'
+      } else if (msg.includes('Correo') || msg.includes('email')) {
+        msg = 'Correo de contacto inválido.'
+      }
+      toast.error(msg, { id: toastId })
+    } finally {
+      setIsBrandingSaving(false)
     }
   }
 
@@ -466,6 +588,99 @@ export function SuperAdminCompanyDetail() {
               <dd className="mt-1 text-sm text-slate-900">{company.treasurer_name || 'No registrado'}</dd>
             </div>
           </dl>
+        </Card>
+
+        {/* Tarjeta de Identidad Visual (Branding) */}
+        <Card className="p-6">
+          <div className="flex justify-between items-start mb-4">
+            <h2 className="text-lg font-semibold text-slate-900 flex items-center gap-2">
+              <Building2 className="h-5 w-5 text-slate-400" />
+              Identidad Visual
+            </h2>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleOpenBrandingChange}
+              className="text-xs"
+            >
+              Editar branding
+            </Button>
+          </div>
+
+          {branding ? (
+            <div className="border border-slate-200 shadow-sm rounded-xl overflow-hidden relative p-4 bg-white">
+              {/* Top colored visual bar */}
+              <div
+                className="h-2.5 absolute top-0 left-0 right-0"
+                style={{ backgroundColor: branding.primary_color || '#1e3a5f' }}
+              />
+
+              <div className="space-y-3 mt-1">
+                {/* Header info */}
+                <div className="flex items-center gap-3">
+                  {branding.logo_url ? (
+                    <img
+                      src={branding.logo_url}
+                      alt="Logo"
+                      onError={(e) => {
+                        (e.target as HTMLElement).style.display = 'none'
+                      }}
+                      className="w-10 h-10 rounded object-cover border border-slate-100 flex-shrink-0"
+                    />
+                  ) : (
+                    <div className="w-10 h-10 rounded bg-slate-100 text-[9px] text-slate-400 font-bold border border-slate-250 flex items-center justify-center flex-shrink-0">
+                      Sin logo
+                    </div>
+                  )}
+                  <div className="min-w-0">
+                    <h4 className="font-bold text-slate-800 text-xs truncate">
+                      {branding.commercial_name || 'Nombre Comercial'}
+                    </h4>
+                    <p className="text-[10px] text-slate-500 italic truncate">
+                      {branding.slogan || 'Eslogan comercial'}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Colors visual swatch */}
+                <div className="grid grid-cols-2 gap-2 text-center text-[9px] pt-1.5 border-t border-slate-100">
+                  <div className="rounded p-1 text-white font-medium" style={{ backgroundColor: branding.primary_color || '#1e3a5f' }}>
+                    Primario <span className="font-mono block text-[8px]">{branding.primary_color || '#1E3A5F'}</span>
+                  </div>
+                  <div className="rounded p-1 text-white font-medium" style={{ backgroundColor: branding.secondary_color || '#4a90d9' }}>
+                    Secundario <span className="font-mono block text-[8px]">{branding.secondary_color || '#4A90D9'}</span>
+                  </div>
+                </div>
+
+                {/* Contact swatches */}
+                <div className="text-[10px] space-y-1 pt-1.5 border-t border-slate-100 text-slate-650">
+                  <div>
+                    <span className="font-semibold text-slate-400 uppercase text-[8px] block">Teléfono:</span>
+                    <span>{branding.contact_phone || 'No registrado'}</span>
+                  </div>
+                  <div>
+                    <span className="font-semibold text-slate-400 uppercase text-[8px] block">Correo:</span>
+                    <span className="truncate block">{branding.contact_email || 'No registrado'}</span>
+                  </div>
+                  <div>
+                    <span className="font-semibold text-slate-400 uppercase text-[8px] block">Dirección:</span>
+                    <span className="line-clamp-2 block">{branding.public_address || 'No registrado'}</span>
+                  </div>
+                </div>
+
+                {/* Document output headers */}
+                <div className="pt-1.5 border-t border-slate-100">
+                  <span className="font-semibold text-slate-400 uppercase text-[8px] block">Encabezado de reportes:</span>
+                  <p className="text-[9px] text-slate-500 line-clamp-2 leading-relaxed mt-0.5">
+                    {branding.report_header_text || 'Sin encabezado registrado.'
+                    }
+                  </p>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="text-sm text-slate-400">Cargando branding...</div>
+          )}
         </Card>
       </div>
 
@@ -911,6 +1126,142 @@ export function SuperAdminCompanyDetail() {
           </div>
         </form>
       </Modal>
+
+      {/* ── Modal de Editar Branding (Identidad Visual) ── */}
+      {isBrandingModalOpen && (
+        <Modal
+          isOpen={isBrandingModalOpen}
+          onClose={() => setIsBrandingModalOpen(false)}
+          title={`Editar Identidad Visual - ${company.legal_name}`}
+          size="lg"
+        >
+          <form onSubmit={handleBrandingSubmit(onSubmitBrandingChange)} className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <Input
+                label="Nombre Comercial"
+                placeholder="Ej. Cooperativa MotoExpress"
+                error={brandingErrors.commercial_name?.message}
+                {...registerBranding('commercial_name')}
+              />
+              <Input
+                label="Eslogan Comercial"
+                placeholder="Ej. Rapidez y seguridad"
+                error={brandingErrors.slogan?.message}
+                {...registerBranding('slogan')}
+              />
+            </div>
+
+            <Input
+              label="URL del Logo"
+              placeholder="https://ejemplo.com/logo.png"
+              error={brandingErrors.logo_url?.message}
+              {...registerBranding('logo_url')}
+            />
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="text-xs font-semibold text-slate-600 block mb-1">Color Primario</label>
+                <div className="flex gap-2">
+                  <input
+                    type="color"
+                    value={watchPrimaryColor || '#1e3a5f'}
+                    onChange={(e) => setBrandingValue('primary_color', e.target.value)}
+                    className="w-10 h-9 rounded border border-slate-300 p-1 cursor-pointer bg-white"
+                  />
+                  <input
+                    type="text"
+                    placeholder="#1E3A5F"
+                    className="flex-1 rounded-md border border-slate-300 py-1.5 px-3 text-sm focus:border-slate-500 focus:outline-none"
+                    {...registerBranding('primary_color')}
+                  />
+                </div>
+                {brandingErrors.primary_color?.message && (
+                  <span className="text-xs text-red-600 block mt-1">{brandingErrors.primary_color.message}</span>
+                )}
+              </div>
+
+              <div>
+                <label className="text-xs font-semibold text-slate-600 block mb-1">Color Secundario</label>
+                <div className="flex gap-2">
+                  <input
+                    type="color"
+                    value={watchSecondaryColor || '#4a90d9'}
+                    onChange={(e) => setBrandingValue('secondary_color', e.target.value)}
+                    className="w-10 h-9 rounded border border-slate-300 p-1 cursor-pointer bg-white"
+                  />
+                  <input
+                    type="text"
+                    placeholder="#4A90D9"
+                    className="flex-1 rounded-md border border-slate-300 py-1.5 px-3 text-sm focus:border-slate-500 focus:outline-none"
+                    {...registerBranding('secondary_color')}
+                  />
+                </div>
+                {brandingErrors.secondary_color?.message && (
+                  <span className="text-xs text-red-600 block mt-1">{brandingErrors.secondary_color.message}</span>
+                )}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <Input
+                label="Teléfono de Contacto"
+                placeholder="+593 999 999 999"
+                error={brandingErrors.contact_phone?.message}
+                {...registerBranding('contact_phone')}
+              />
+              <Input
+                label="Correo de Contacto"
+                placeholder="contacto@cooperativa.com"
+                error={brandingErrors.contact_email?.message}
+                {...registerBranding('contact_email')}
+              />
+            </div>
+
+            <Input
+              label="Dirección Pública"
+              placeholder="Av. Principal, Guayaquil, Ecuador"
+              error={brandingErrors.public_address?.message}
+              {...registerBranding('public_address')}
+            />
+
+            <Textarea
+              label="Encabezado de Reportes y Comprobantes"
+              placeholder="RUC, leyendas legales o fiscales..."
+              error={brandingErrors.report_header_text?.message}
+              rows={2}
+              {...registerBranding('report_header_text')}
+            />
+
+            {/* Modal Live Preview */}
+            <div className="p-3 bg-slate-50 rounded-lg border border-slate-200">
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-2">Vista previa rápida en modal</span>
+              <div className="border border-slate-200 rounded-lg overflow-hidden bg-white p-3 relative text-xs">
+                <div className="h-1.5 absolute top-0 left-0 right-0" style={{ backgroundColor: watchPrimaryColor || '#1e3a5f' }} />
+                <div className="flex items-center gap-2 mt-1">
+                  {watchLogoUrl ? (
+                    <img src={watchLogoUrl} className="w-8 h-8 object-cover rounded" onError={(e) => { (e.target as HTMLElement).style.display = 'none' }} alt="Logo" />
+                  ) : (
+                    <div className="w-8 h-8 rounded bg-slate-100 border text-[8px] text-slate-400 font-bold flex items-center justify-center">Sin logo</div>
+                  )}
+                  <div>
+                    <h5 className="font-bold text-slate-800">{watchCommercialName || 'Nombre comercial'}</h5>
+                    <p className="text-[9px] text-slate-500 italic">{watchSlogan || 'Eslogan'}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-3 pt-4 border-t border-slate-100">
+              <Button type="button" variant="outline" onClick={() => setIsBrandingModalOpen(false)}>
+                Cancelar
+              </Button>
+              <Button type="submit" isLoading={isBrandingSaving}>
+                Guardar Branding
+              </Button>
+            </div>
+          </form>
+        </Modal>
+      )}
     </div>
   )
 }
