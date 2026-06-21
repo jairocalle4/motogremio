@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '@/lib/supabaseClient'
 import { useAuth } from '@/context/useAuth'
 import { calculateDocumentStatus } from '@/utils/statusCalculator'
+import { getPrimaryLicense } from '@/hooks/useDrivers'
 import { isWithinInterval, parseISO, startOfDay, subDays } from 'date-fns'
 
 export interface ReportsData {
@@ -53,7 +54,7 @@ export interface ReportsData {
     inactive: number
     external: number
     socioDrivers: number
-    licenseA1ExpiredOrMissing: number
+    licenseExpiredOrMissing: number
     list: Array<{
       id: string
       document_id: string
@@ -331,7 +332,7 @@ export function useReports() {
       let inactiveDrivers = 0
       let externalDrivers = 0
       let socioDrivers = 0
-      let licenseA1ExpiredOrMissing = 0
+      let licenseExpiredOrMissing = 0
 
       const conductoresList = (drivers || []).map(d => {
         if (d.status === 'activo') activeDrivers++
@@ -340,18 +341,18 @@ export function useReports() {
         if (d.member_id) socioDrivers++
         else externalDrivers++
 
-        // A1 License check
-        const a1License = d.licenses?.find(l => l.license_type === 'A1')
+        // Generica License check (Verificar si tiene al menos una licencia vigente)
+        const primaryLicense = getPrimaryLicense((d.licenses || []) as any)
         let isExpiredOrMissing = false
         let licenseStatus: string | null = null
         let licenseExpiry: string | null = null
 
-        if (!a1License) {
+        if (!primaryLicense) {
           isExpiredOrMissing = true
           licenseStatus = 'Faltante'
         } else {
-          licenseExpiry = a1License.expiry_date
-          const exp = startOfDay(parseISO(a1License.expiry_date))
+          licenseExpiry = primaryLicense.expiry_date
+          const exp = startOfDay(parseISO(primaryLicense.expiry_date))
           if (exp < today) {
             isExpiredOrMissing = true
             licenseStatus = 'Vencida'
@@ -363,7 +364,7 @@ export function useReports() {
         }
 
         if (isExpiredOrMissing) {
-          licenseA1ExpiredOrMissing++
+          licenseExpiredOrMissing++
         }
 
         const sName = d.member ? `${d.member.first_name} ${d.member.last_name}` : null
@@ -377,7 +378,7 @@ export function useReports() {
           status: d.status || 'activo',
           type: (d.member_id ? 'socio' : 'externo') as 'socio' | 'externo',
           socio_name: sName,
-          license_type: a1License?.license_type || null,
+          license_type: primaryLicense?.license_type || null,
           license_status: licenseStatus,
           license_expiry: licenseExpiry,
         }
@@ -638,7 +639,7 @@ export function useReports() {
           inactive: inactiveDrivers,
           external: externalDrivers,
           socioDrivers,
-          licenseA1ExpiredOrMissing,
+          licenseExpiredOrMissing,
           list: conductoresList,
         },
         documentos: {

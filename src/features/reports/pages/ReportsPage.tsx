@@ -416,8 +416,8 @@ export function ReportsPage() {
                   <Badge variant="warning" className="font-semibold">{data.documentos.upcoming60}</Badge>
                 </div>
                 <div className="flex justify-between items-center py-2 border-b border-gray-50">
-                  <span className="text-gray-600 text-sm">Conductores con licencia A1 vencida o ausente</span>
-                  <Badge variant="danger" className="font-semibold">{data.conductores.licenseA1ExpiredOrMissing}</Badge>
+                  <span className="text-gray-600 text-sm">Conductores sin licencia principal vigente</span>
+                  <Badge variant="danger" className="font-semibold">{data.conductores.licenseExpiredOrMissing}</Badge>
                 </div>
                 <div className="flex justify-between items-center py-2">
                   <span className="text-gray-600 text-sm">Unidades sin conductor asignado</span>
@@ -676,8 +676,8 @@ export function ReportsPage() {
               <p className="text-xl font-bold text-gray-700 mt-1">{data.conductores.socioDrivers}</p>
             </div>
             <div className="bg-white border border-gray-200 p-4 rounded-xl shadow-sm">
-              <p className="text-xs text-red-500 font-medium">Licencia A1 Vencida/Ausente</p>
-              <p className="text-xl font-bold text-red-600 mt-1">{data.conductores.licenseA1ExpiredOrMissing}</p>
+              <p className="text-xs text-red-500 font-medium">Licencia principal vencida o ausente</p>
+              <p className="text-xl font-bold text-red-600 mt-1">{data.conductores.licenseExpiredOrMissing}</p>
             </div>
           </div>
 
@@ -706,7 +706,7 @@ export function ReportsPage() {
                     <th className="px-6 py-3">Conductor</th>
                     <th className="px-6 py-3">Teléfono</th>
                     <th className="px-6 py-3">Tipo</th>
-                    <th className="px-6 py-3">Licencia A1</th>
+                    <th className="px-6 py-3">Licencia</th>
                     <th className="px-6 py-3">Vencimiento</th>
                     <th className="px-6 py-3 text-center">Estado</th>
                   </tr>

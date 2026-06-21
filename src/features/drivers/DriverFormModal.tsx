@@ -93,7 +93,7 @@ const defaultValues: DriverFormData = {
   notes:            '',
   register_license: false,
   license_number:   '',
-  license_type:     'A1',
+  license_type:     '',
   issue_date:       '',
   expiry_date:      '',
 }
@@ -263,7 +263,7 @@ export function DriverFormModal({
         if (data.register_license && data.license_number && data.expiry_date) {
           const { error: licErr } = await createDriverLicense(newDriver.id, {
             driver_id:      newDriver.id,
-            license_type:   data.license_type || 'A1',
+            license_type:   data.license_type || 'Otro',
             license_number: data.license_number.trim(),
             issue_date:     data.issue_date || null,
             expiry_date:    data.expiry_date,
