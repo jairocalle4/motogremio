@@ -59,7 +59,7 @@ export function LicenseFormModal({
       } else {
         reset({
           license_number: '',
-          license_type: 'A1',
+          license_type: '',
           issue_date: '',
           expiry_date: '',
           file_url: ''

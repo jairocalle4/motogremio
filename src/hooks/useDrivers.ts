@@ -256,7 +256,7 @@ export function useDrivers() {
   const deactivateDriver = (id: string) => updateDriver(id, { status: 'inactivo' })
   const activateDriver   = (id: string) => updateDriver(id, { status: 'activo' })
 
-  // ── Crear licencia A1 para conductor ────────────────────────────────────────
+  // ── Crear licencia de conducir para conductor ────────────────────────────────────────
   const createDriverLicense = async (driverId: string, licenseData: LicenseInsert) => {
     if (!profile?.company_id) return { data: null, error: 'Sin company_id' }
 
