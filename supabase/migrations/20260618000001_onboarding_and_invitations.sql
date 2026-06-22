@@ -40,18 +40,30 @@ DECLARE
   v_invitation record;
   v_token text;
 BEGIN
-  -- Extraer el token de invitación de la metadata (opcional, para logs)
   v_token := NEW.raw_user_meta_data->>'invite_token';
 
-  -- Buscar invitación pendiente válida bloqueando la fila (solo por email)
-  SELECT * INTO v_invitation
-  FROM public.pending_invitations
-  WHERE lower(email) = lower(NEW.email)
-    AND status = 'pending'
-    AND expires_at > now()
-  FOR UPDATE;
+  -- 1. Buscar invitación solo por TOKEN (criptográficamente seguro)
+  IF v_token IS NOT NULL THEN
+    SELECT * INTO v_invitation
+    FROM public.pending_invitations
+    WHERE token = v_token
+    FOR UPDATE;
+  END IF;
 
   IF v_invitation IS NOT NULL THEN
+    -- 2. Validaciones manuales para tener errores específicos
+    IF v_invitation.status != 'pending' THEN
+      RAISE EXCEPTION 'CRÍTICO: La invitación no está pendiente. Estado actual: %', v_invitation.status;
+    END IF;
+
+    IF v_invitation.expires_at < now() THEN
+      RAISE EXCEPTION 'CRÍTICO: La invitación expiró el %', v_invitation.expires_at;
+    END IF;
+
+    IF lower(v_invitation.email) != lower(NEW.email) THEN
+      RAISE EXCEPTION 'CRÍTICO: El correo registrado (%) no coincide con la invitación (%)', NEW.email, v_invitation.email;
+    END IF;
+
     -- Inserción con rol e inquilino autorizados por la invitación
     INSERT INTO public.profiles (id, first_name, last_name, role, company_id, is_active)
     VALUES (
@@ -71,12 +83,12 @@ BEGIN
         updated_at = now()
     WHERE id = v_invitation.id;
   ELSE
-    -- Si se proporcionó un token de invitación pero no se encontró, BLOQUEAR el registro.
-    IF NEW.raw_user_meta_data->>'invite_token' IS NOT NULL THEN
-      RAISE EXCEPTION 'Invitación no válida o expirada para el correo: %. Token: %', NEW.email, NEW.raw_user_meta_data->>'invite_token';
+    -- NUEVA DEFENSA: Si traía token pero no se encontró la fila en absoluto.
+    IF v_token IS NOT NULL THEN
+      RAISE EXCEPTION 'CRÍTICO: Fila de invitación invisible o inexistente para el token: %', v_token;
     END IF;
 
-    -- Registro convencional sin invitación: Forzar rol socio y sin compañía
+    -- Registro convencional (solo para quienes NO tienen token)
     INSERT INTO public.profiles (id, first_name, last_name, role, company_id, is_active)
     VALUES (
       NEW.id,
