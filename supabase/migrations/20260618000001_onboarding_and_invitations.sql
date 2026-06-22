@@ -40,14 +40,13 @@ DECLARE
   v_invitation record;
   v_token text;
 BEGIN
-  -- Extraer el token de invitación de la metadata
+  -- Extraer el token de invitación de la metadata (opcional, para logs)
   v_token := NEW.raw_user_meta_data->>'invite_token';
 
-  -- Buscar invitación pendiente válida bloqueando la fila
+  -- Buscar invitación pendiente válida bloqueando la fila (solo por email)
   SELECT * INTO v_invitation
   FROM public.pending_invitations
   WHERE lower(email) = lower(NEW.email)
-    AND token = v_token
     AND status = 'pending'
     AND expires_at > now()
   FOR UPDATE;
