@@ -64,6 +64,7 @@ export interface Company {
   custom_service_type: string | null
   plan_id: string | null
   status: CompanyStatus
+  primary_color?: string | null
   created_at: string
   updated_at: string
   plan?: Plan

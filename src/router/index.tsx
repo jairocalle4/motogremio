@@ -1,9 +1,10 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider } from '@/context/AuthContext'
+import { BrandingProvider } from '@/context/BrandingContext'
 import { ProtectedRoute } from './ProtectedRoute'
 import { AppLayout } from '@/components/layout/AppLayout'
 import { SuperAdminGuard } from '@/components/auth/SuperAdminGuard'
-import { SuperAdminLayout } from '@/layouts/SuperAdminLayout'
+
 import { SuperAdminDashboard } from '@/features/super-admin/SuperAdminDashboard'
 import { SuperAdminCompanies } from '@/features/super-admin/SuperAdminCompanies'
 import { SuperAdminCompanyDetail } from '@/features/super-admin/SuperAdminCompanyDetail'
@@ -45,6 +46,7 @@ export function AppRouter() {
   return (
     <BrowserRouter>
       <AuthProvider>
+        <BrandingProvider>
         <Routes>
           {/* Rutas públicas */}
           <Route path="/login" element={<LoginPage />} />
@@ -90,11 +92,9 @@ export function AppRouter() {
                 <Route path="/auditoria"     element={<Placeholder title="Auditoría" />} />
                 <Route path="/configuracion" element={<CompanyConfigPage />} />
               </Route>
-            </Route>
 
-            {/* Panel Super Admin SaaS */}
-            <Route path="/super-admin" element={<SuperAdminGuard />}>
-              <Route element={<SuperAdminLayout />}>
+              {/* Panel Super Admin SaaS */}
+              <Route path="/super-admin" element={<SuperAdminGuard />}>
                 <Route index element={<SuperAdminDashboard />} />
                 <Route path="companies" element={<SuperAdminCompanies />} />
                 <Route path="companies/:id" element={<SuperAdminCompanyDetail />} />
@@ -112,6 +112,7 @@ export function AppRouter() {
           {/* Ruta 404 */}
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Routes>
+        </BrandingProvider>
       </AuthProvider>
     </BrowserRouter>
   )

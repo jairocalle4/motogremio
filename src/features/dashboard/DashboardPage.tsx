@@ -4,7 +4,7 @@ import {
   ShieldAlert, Calendar, AlertTriangle, CheckCircle,
   ArrowRight, DollarSign,
 } from 'lucide-react'
-import { Link } from 'react-router-dom'
+import { Link, Navigate } from 'react-router-dom'
 import { StatCard } from './components/StatCard'
 import { Card, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Badge } from '@/components/ui/Badge'
@@ -15,7 +15,6 @@ import { supabase } from '@/lib/supabaseClient'
 import { formatDate } from '@/lib/utils'
 import { APP_NAME } from '@/lib/constants'
 import type { DebtorSummary } from '@/types'
-import { SuperAdminDashboard } from '@/features/super-admin/SuperAdminDashboard'
 
 // ─── Tipos de métricas ────────────────────────────────
 interface DashboardMetrics {
@@ -132,7 +131,7 @@ export function DashboardPage() {
 
   // Si es super admin, redirigir a panel admin
   if (isSuperAdmin) {
-    return <SuperAdminDashboard />
+    return <Navigate to="/super-admin" replace />
   }
 
   return (
