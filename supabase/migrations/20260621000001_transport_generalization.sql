@@ -97,7 +97,7 @@ BEGIN
   RETURNING id INTO v_company_id;
 
   -- 10. Generar Token Seguro con gen_random_bytes
-  v_token := encode(gen_random_bytes(32), 'hex');
+  v_token := encode(extensions.gen_random_bytes(32), 'hex');
 
   -- 11. Registrar invitación del Admin Inicial
   INSERT INTO public.pending_invitations (email, company_id, role, first_name, last_name, token, expires_at, created_by)
