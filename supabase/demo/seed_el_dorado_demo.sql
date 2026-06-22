@@ -11,6 +11,7 @@ DECLARE
   v_company_id       UUID;
   v_charge_type_id   UUID;
   v_sanction_type_id UUID;
+  v_sanction_type_atraso_id UUID;
   v_doc_type_id      UUID;
   v_socio_1_id UUID; v_socio_2_id UUID; v_socio_3_id UUID;
   v_socio_4_id UUID; v_socio_5_id UUID; v_socio_6_id UUID;
@@ -142,22 +143,22 @@ BEGIN
   -- Licencia clase C vigente — Conductor 1
   INSERT INTO licenses (company_id, driver_id, license_type, license_number, issue_date, expiry_date, status)
   VALUES (v_company_id, v_driver_1_id, 'C', 'LIC-C-1711111111', CURRENT_DATE - INTERVAL '730 days', CURRENT_DATE + INTERVAL '1000 days', 'vigente')
-  ON CONFLICT (company_id, license_number) DO NOTHING;
+  ON CONFLICT DO NOTHING;
 
   -- Licencia clase B vigente — Conductor 2
   INSERT INTO licenses (company_id, driver_id, license_type, license_number, issue_date, expiry_date, status)
   VALUES (v_company_id, v_driver_2_id, 'B', 'LIC-B-1722222222', CURRENT_DATE - INTERVAL '365 days', CURRENT_DATE + INTERVAL '730 days', 'vigente')
-  ON CONFLICT (company_id, license_number) DO NOTHING;
+  ON CONFLICT DO NOTHING;
 
   -- Licencia clase C por vencer en 15 días — Conductor 3
   INSERT INTO licenses (company_id, driver_id, license_type, license_number, issue_date, expiry_date, status)
   VALUES (v_company_id, v_driver_3_id, 'C', 'LIC-C-1733333333', CURRENT_DATE - INTERVAL '1800 days', CURRENT_DATE + INTERVAL '15 days', 'vigente')
-  ON CONFLICT (company_id, license_number) DO NOTHING;
+  ON CONFLICT DO NOTHING;
 
   -- Licencia vencida — Conductor externo (Gabriel)
   INSERT INTO licenses (company_id, driver_id, license_type, license_number, issue_date, expiry_date, status)
   VALUES (v_company_id, v_driver_5_id, 'C', 'LIC-C-1777777777', CURRENT_DATE - INTERVAL '2000 days', CURRENT_DATE - INTERVAL '45 days', 'vencido')
-  ON CONFLICT (company_id, license_number) DO NOTHING;
+  ON CONFLICT DO NOTHING;
 
   -- ─── 9. Vehículos (idempotente por disk_number) ───────────────────
   INSERT INTO vehicles (company_id, disk_number, plate, brand, model, year, color, status, member_id, driver_id)
@@ -284,21 +285,19 @@ BEGIN
   END IF;
 
   -- Sanción resuelta para Socio 4 (tipo "Atraso a Reunión")
-  DECLARE v_sanction_type_atraso_id UUID;
-  BEGIN
-    SELECT id INTO v_sanction_type_atraso_id FROM sanction_types
-    WHERE company_id = v_company_id AND name = 'Atraso a Reunión';
-    IF v_sanction_type_atraso_id IS NOT NULL THEN
-      INSERT INTO sanctions (company_id, member_id, sanction_type_id, date, reason, severity, status, resolution_notes)
-      VALUES (v_company_id, v_socio_4_id, v_sanction_type_atraso_id, CURRENT_DATE - INTERVAL '15 days',
-              'Atraso de 40 minutos a la Asamblea Ordinaria del mes de Junio.', 'leve', 'resuelta', 'Atraso justificado, multa perdonada.')
-      ON CONFLICT DO NOTHING;
-    END IF;
-  END;
+  SELECT id INTO v_sanction_type_atraso_id FROM sanction_types
+  WHERE company_id = v_company_id AND name = 'Atraso a Reunión';
+
+  IF v_sanction_type_atraso_id IS NOT NULL THEN
+    INSERT INTO sanctions (company_id, member_id, sanction_type_id, date, reason, severity, status, resolution_notes)
+    VALUES (v_company_id, v_socio_4_id, v_sanction_type_atraso_id, CURRENT_DATE - INTERVAL '15 days',
+            'Atraso de 40 minutos a la Asamblea Ordinaria del mes de Junio.', 'leve', 'resuelta', 'Atraso justificado, multa perdonada.')
+    ON CONFLICT DO NOTHING;
+  END IF;
 
   -- ─── 13. Reuniones ────────────────────────────────────────────────
   -- Reunión 1: Pasada (finalizada)
-  INSERT INTO meetings (id, company_id, title, description, date, time, location, status, meeting_type, is_mandatory)
+  INSERT INTO meetings (id, company_id, title, description, date, "time", location, status, meeting_type, is_mandatory)
   VALUES (
     '00000000-0000-4000-8000-000000001111',
     v_company_id,
@@ -327,7 +326,7 @@ BEGIN
   END IF;
 
   -- Reunión 2: Futura (programada)
-  INSERT INTO meetings (id, company_id, title, description, date, time, location, status, meeting_type, is_mandatory)
+  INSERT INTO meetings (id, company_id, title, description, date, "time", location, status, meeting_type, is_mandatory)
   VALUES (
     '00000000-0000-4000-8000-000000002222',
     v_company_id,
