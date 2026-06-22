@@ -159,6 +159,11 @@ BEGIN
     RAISE EXCEPTION 'Ya existe una invitación pendiente activa para el correo %.', p_admin_email;
   END IF;
 
+  -- 8.5 Validar que el usuario no exista ya en el sistema
+  IF EXISTS(SELECT 1 FROM auth.users WHERE lower(email) = v_email_trimmed) THEN
+    RAISE EXCEPTION 'El correo % ya pertenece a un usuario registrado en el sistema.', p_admin_email;
+  END IF;
+
   -- 9. Insertar Compañía
   INSERT INTO public.companies (legal_name, trade_name, ruc, plan_id, status)
   VALUES (p_legal_name, p_trade_name, v_ruc_trimmed, p_plan_id, p_status)
@@ -239,6 +244,11 @@ BEGIN
   -- 4. Validar duplicación de invitación pendiente activa
   IF EXISTS(SELECT 1 FROM public.pending_invitations WHERE lower(email) = v_email_normalized AND status = 'pending') THEN
     RAISE EXCEPTION 'Ya existe una invitación pendiente activa para el correo %.', p_email;
+  END IF;
+
+  -- 4.5 Validar que el usuario no exista ya en el sistema
+  IF EXISTS(SELECT 1 FROM auth.users WHERE lower(email) = v_email_normalized) THEN
+    RAISE EXCEPTION 'El correo % ya pertenece a un usuario registrado en el sistema.', p_email;
   END IF;
 
   -- 5. Validar privilegios del invocador
