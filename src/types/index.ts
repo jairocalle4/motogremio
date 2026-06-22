@@ -24,7 +24,7 @@ export type SanctionStatus  = 'pendiente' | 'apelacion' | 'resuelta' | 'anulada'
 export type MeetingType     = 'ordinaria' | 'extraordinaria' | 'asamblea' | 'capacitacion' | 'otra'
 export type MeetingStatus   = 'programada' | 'en_curso' | 'finalizada' | 'cancelada'
 export type AttendanceStatus = 'asistio' | 'ausente' | 'justificado' | 'tarde'
-export type PlanName        = 'basico' | 'estandar' | 'premium'
+export type PlanName        = 'basico' | 'profesional' | 'empresarial'
 export type SubscriptionStatus = 'activa' | 'suspendida' | 'cancelada' | 'vencida'
 
 // ═══════════════════════════════════════════════════════

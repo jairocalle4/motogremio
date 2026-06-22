@@ -148,15 +148,15 @@ export const ATTENDANCE_STATUS_COLORS: Record<AttendanceStatus, 'success' | 'dan
 
 // ─── Planes ───────────────────────────────────────────
 export const PLAN_LABELS: Record<PlanName, string> = {
-  basico:    'Básico',
-  estandar:  'Estándar',
-  premium:   'Premium',
+  basico:       'Básico',
+  profesional:  'Profesional',
+  empresarial:  'Empresarial',
 }
 
 export const PLAN_COLORS: Record<PlanName, string> = {
-  basico:   'bg-gray-100 text-gray-700',
-  estandar: 'bg-primary-100 text-primary-800',
-  premium:  'bg-purple-100 text-purple-800',
+  basico:      'bg-gray-100 text-gray-700',
+  profesional: 'bg-primary-100 text-primary-800',
+  empresarial: 'bg-purple-100 text-purple-800',
 }
 
 // ─── Paginación ───────────────────────────────────────
