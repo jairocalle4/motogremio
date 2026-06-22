@@ -71,6 +71,11 @@ BEGIN
         updated_at = now()
     WHERE id = v_invitation.id;
   ELSE
+    -- Si se proporcionó un token de invitación pero no se encontró, BLOQUEAR el registro.
+    IF NEW.raw_user_meta_data->>'invite_token' IS NOT NULL THEN
+      RAISE EXCEPTION 'Invitación no válida o expirada para el correo: %. Token: %', NEW.email, NEW.raw_user_meta_data->>'invite_token';
+    END IF;
+
     -- Registro convencional sin invitación: Forzar rol socio y sin compañía
     INSERT INTO public.profiles (id, first_name, last_name, role, company_id, is_active)
     VALUES (
