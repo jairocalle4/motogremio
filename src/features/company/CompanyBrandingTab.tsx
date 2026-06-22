@@ -8,6 +8,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import toast from 'react-hot-toast'
 import { ShieldAlert, Save, RefreshCw } from 'lucide-react'
+import { useBranding } from '@/context/BrandingContext'
 import {
   getMyCompanyBranding,
   updateMyCompanyBranding,
@@ -52,6 +53,7 @@ export function CompanyBrandingTab({ userRole }: CompanyBrandingTabProps) {
   const [branding, setBranding] = useState<CompanyBranding | null>(null)
   const [loading, setLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
+  const { reload: reloadBrandingContext } = useBranding()
 
   // check if user has edit permissions
   const canEdit = userRole && ['admin', 'gerente', 'presidente', 'secretaria', 'tesorero'].includes(userRole)
@@ -126,6 +128,8 @@ export function CompanyBrandingTab({ userRole }: CompanyBrandingTabProps) {
 
       const res = await updateMyCompanyBranding(payload)
       setBranding(res)
+      // Refresh global branding context so sidebar/UI colors update immediately
+      await reloadBrandingContext()
       toast.success('Branding actualizado exitosamente.', { id: toastId })
     } catch (err: any) {
       let msg = err.message || 'Error al guardar configuración'

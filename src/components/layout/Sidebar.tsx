@@ -10,6 +10,7 @@ import {
 
 import { useAuth } from '@/context/useAuth'
 import { usePermissions } from '@/hooks/usePermissions'
+import { useBranding } from '@/context/BrandingContext'
 import { cn, getInitials } from '@/lib/utils'
 import { ROLE_LABELS, APP_NAME } from '@/lib/constants'
 import toast from 'react-hot-toast'
@@ -77,8 +78,15 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const { profile, signOut } = useAuth()
   const permissions = usePermissions()
   const { isSuperAdmin } = permissions
+  const { branding } = useBranding()
   const navigate = useNavigate()
   const [signingOut, setSigningOut] = useState(false)
+
+  // Dynamic sidebar background derived from branding primary color
+  const sidebarBg = branding?.primary_color ?? null
+  const sidebarStyle = sidebarBg
+    ? { backgroundColor: sidebarBg, '--sidebar-bg': sidebarBg } as React.CSSProperties
+    : undefined
 
   const filteredCompanyNav = companyNav.map(section => ({
     ...section,
@@ -125,11 +133,13 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
       {/* Sidebar */}
       <aside
         className={cn(
-          'fixed inset-y-0 left-0 z-40 flex flex-col w-60 bg-brand-sidebar shadow-sidebar',
-          'transition-transform duration-300 ease-in-out',
+          'fixed inset-y-0 left-0 z-40 flex flex-col w-60 shadow-sidebar',
+          !sidebarBg && 'bg-brand-sidebar',
+          'transition-all duration-300 ease-in-out',
           'lg:translate-x-0 lg:static lg:z-auto',
           isOpen ? 'translate-x-0' : '-translate-x-full'
         )}
+        style={sidebarStyle}
       >
         {/* Brand */}
         <div className="flex items-center justify-between px-5 py-5 border-b border-white/10">
