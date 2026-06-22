@@ -3,8 +3,8 @@ import { NavLink, useNavigate } from 'react-router-dom'
 import {
   LayoutDashboard, Users, UserCheck, Bike, Wallet,
   ShieldAlert, BarChart3,
-  Settings, UserCog, Activity, Building2, Package,
-  CreditCard, TrendingUp, LogOut, ShieldCheck,
+  Settings, Activity, Building2, Package,
+  LogOut,
   X, Menu, Calendar, Bell,
 } from 'lucide-react'
 
@@ -47,8 +47,6 @@ const companyNav: NavSection[] = [
     separator: true,
     items: [
       { to: '/configuracion',label: 'Configuración',  icon: Settings },
-      { to: '/usuarios',     label: 'Usuarios',       icon: UserCog },
-      { to: '/auditoria',    label: 'Auditoría',      icon: Activity },
     ],
   },
 ]
@@ -59,15 +57,11 @@ const adminNav: NavSection[] = [
       { to: '/super-admin',           label: 'Dashboard',        icon: LayoutDashboard },
       { to: '/super-admin/companies',     label: 'Compañías',        icon: Building2 },
       { to: '/super-admin/plans',        label: 'Planes',           icon: Package },
-      { to: '/super-admin/subscriptions', label: 'Suscripciones',    icon: CreditCard },
-      { to: '/super-admin/metrics',      label: 'Métricas',         icon: TrendingUp },
     ],
   },
   {
     separator: true,
     items: [
-      { to: '/super-admin/settings', label: 'Configuración',    icon: Settings },
-      { to: '/super-admin/security',    label: 'Seguridad',        icon: ShieldCheck },
       { to: '/super-admin/auditoria',    label: 'Auditoría',        icon: Activity },
     ],
   },
