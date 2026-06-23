@@ -17,6 +17,7 @@ import { DashboardPage } from '@/features/dashboard/DashboardPage'
 import { ChangePasswordPage } from '@/features/account/ChangePasswordPage'
 import { CompanyConfigPage } from '@/features/company/CompanyConfigPage'
 import { CompanyUsersPage } from '@/features/company/CompanyUsersPage'
+import { CompanyDocumentsPage } from '@/features/documents/CompanyDocumentsPage'
 import { MembersListPage } from '@/features/members/MembersListPage'
 import { MemberDetailPage } from '@/features/members/MemberDetailPage'
 import { VehiclesListPage } from '@/features/vehicles/VehiclesListPage'
@@ -73,7 +74,7 @@ export function AppRouter() {
                 <Route path="/unidades"         element={<VehiclesListPage />} />
                 <Route path="/unidades/:id"     element={<VehicleDetailPage />} />
                 <Route path="/pagos"         element={<PaymentsPage />} />
-                <Route path="/documentos"    element={<Placeholder title="Documentos y Vencimientos" />} />
+                <Route path="/documentos"    element={<CompanyDocumentsPage />} />
 
                 {/* Módulos — Fase 4 */}
                 <Route path="/sanciones"     element={<SanctionsPage />} />

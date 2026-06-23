@@ -64,14 +64,13 @@ El rol `admin` representa al administrador principal de una compañía y puede g
 
 ### Roles vigentes del sistema
 
-* **`super_admin`**: propietario global y administrador de MotoGremio.
-* **`admin`**: administrador total de una compañía. Acceso total a los datos de su compañía y gestión de todos los módulos.
-* **`gerente`**: gestión y supervisión general. Lectura general y supervisión; edición limitada según módulo.
-* **`presidente`**: supervisión directiva, reuniones, sanciones y reportes. Sin acceso a finanzas y edición de socios.
-* **`secretaria`**: gestión operativa y alta capacidad de socios, unidades, documentos, convocatorias, asistencia y actas.
-* **`tesorero`**: gestión financiera de cuotas, pagos, deudas, multas y reportes financieros. Lectura de socios y unidades.
-* **`operador`**: rol auxiliar configurable o limitado para apoyo administrativo.
-* **`socio`**: acceso individual del socio/conductor a sus propios datos, cuando el plan de la compañía lo habilite.
+* **`super_admin`**: propietario global y administrador de MotoGremio (SaaS). **No es un rol interno de compañía**. Puede supervisar o asistir a nivel plataforma, pero no debe considerarse ni tratarse como rol operativo de una compañía.
+* **`admin`**: administrador total de una compañía. Acceso total a los documentos y módulos de su propia compañía. No puede crear otro `admin`.
+* **`secretaria`**: usuaria operativa. Gestiona documentos operativos (socios, conductores, unidades), pero **no** documentos institucionales críticos (entidad Compañía).
+* **`socio`**: usuario de consulta. No tiene acceso a módulos administrativos.
+
+> **Nota:** Ya no se utilizan roles legacy como `gerente`, `presidente`, `tesorero`, u `operador` para nuevas asignaciones.
+
 
 ### Escenarios de uso
 

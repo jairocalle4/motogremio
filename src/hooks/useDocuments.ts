@@ -11,6 +11,9 @@ export type DocumentUpdate = Database['public']['Tables']['documents']['Update']
 
 export type DocumentWithRelations = DocumentRow & {
   document_type: Pick<DocumentType, 'id' | 'name' | 'requires_expiry' | 'target_entity'>
+  member?: { id: string, first_name: string, last_name: string } | null
+  driver?: { id: string, first_name: string, last_name: string } | null
+  vehicle?: { id: string, disk_number: string, plate: string } | null
 }
 
 export function useDocuments() {
@@ -37,7 +40,7 @@ export function useDocuments() {
     }
   }, [profile?.company_id])
 
-  const fetchDocuments = useCallback(async (entityType: 'member' | 'driver' | 'vehicle', entityId: string) => {
+  const fetchDocuments = useCallback(async (entityType?: 'member' | 'driver' | 'vehicle' | 'company', entityId?: string) => {
     if (!profile?.company_id) return
     setLoading(true)
     setError(null)
@@ -46,13 +49,19 @@ export function useDocuments() {
         .from('documents')
         .select(`
           *,
-          document_type:document_types ( id, name, requires_expiry, target_entity )
+          document_type:document_types ( id, name, requires_expiry, target_entity ),
+          member:members ( id, first_name, last_name ),
+          driver:drivers ( id, first_name, last_name ),
+          vehicle:vehicles ( id, disk_number, plate )
         `)
         .eq('company_id', profile.company_id)
 
-      if (entityType === 'member') query = query.eq('member_id', entityId)
-      if (entityType === 'driver') query = query.eq('driver_id', entityId)
-      if (entityType === 'vehicle') query = query.eq('vehicle_id', entityId)
+      if (entityType === 'member' && entityId) query = query.eq('member_id', entityId)
+      if (entityType === 'driver' && entityId) query = query.eq('driver_id', entityId)
+      if (entityType === 'vehicle' && entityId) query = query.eq('vehicle_id', entityId)
+      if (entityType === 'company') {
+        query = query.is('member_id', null).is('driver_id', null).is('vehicle_id', null)
+      }
 
       const { data, error: fetchError } = await query
 

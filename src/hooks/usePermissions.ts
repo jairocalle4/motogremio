@@ -37,7 +37,7 @@ export function usePermissions() {
   const canViewDrivers   = hasRole('super_admin', 'admin', 'gerente', 'presidente', 'secretaria', 'tesorero', 'operador')
 
   /** Gestión de documentos y licencias */
-  const canManageDocuments = hasRole('super_admin', 'admin', 'secretaria')
+  const canManageDocuments = hasRole('admin', 'secretaria')
   const canViewDocuments   = hasRole('super_admin', 'admin', 'gerente', 'presidente', 'secretaria', 'tesorero', 'operador')
 
   /** Gestión financiera / pagos */
