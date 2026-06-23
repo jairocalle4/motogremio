@@ -61,11 +61,7 @@ const invitationSchema = z.object({
   last_name: z.string().min(2, 'El apellido debe tener al menos 2 caracteres.'),
   role: z.enum([
     'admin',
-    'operador',
-    'gerente',
-    'presidente',
     'secretaria',
-    'tesorero',
     'socio',
   ]),
 })
@@ -138,7 +134,7 @@ export function SuperAdminCompanyDetail() {
   } = useForm<InvitationForm>({
     resolver: zodResolver(invitationSchema),
     defaultValues: {
-      role: 'operador',
+      role: 'secretaria',
     },
   })
 
@@ -899,8 +895,8 @@ export function SuperAdminCompanyDetail() {
             error={errors.role?.message}
             options={[
               { value: 'admin', label: 'Administrador' },
-              { value: 'secretaria', label: 'Secretaria' },
-              { value: 'socio', label: 'Socio / Conductor consulta' }
+              { value: 'secretaria', label: 'Secretario/a' },
+              { value: 'socio', label: 'Socio / Consulta' }
             ]}
             {...register('role')}
           />
@@ -983,8 +979,8 @@ export function SuperAdminCompanyDetail() {
               id="new-role-select"
               options={[
                 { value: 'admin', label: 'Administrador' },
-                { value: 'secretaria', label: 'Secretaria' },
-                { value: 'socio', label: 'Socio / Conductor consulta' }
+                { value: 'secretaria', label: 'Secretario/a' },
+                { value: 'socio', label: 'Socio / Consulta' }
               ]}
             />
             <div className="flex justify-end gap-3 border-t border-slate-100 pt-4 mt-6">
