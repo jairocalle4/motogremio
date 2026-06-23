@@ -110,7 +110,19 @@ export function RegisterPage() {
         setServerError('No se pudo completar el registro. Inténtalo de nuevo.')
       }
     } catch (err: any) {
-      setServerError(err.message || 'Ocurrió un error al intentar registrarte.')
+      console.error("Auth error:", err)
+      let errorMessage = err.message || 'Ocurrió un error al intentar registrarte.'
+      
+      // Traducciones de errores comunes de Supabase Auth
+      if (errorMessage.toLowerCase().includes('email rate limit exceeded')) {
+        errorMessage = 'Límite de seguridad de correos alcanzado por hacer muchas pruebas seguidas. Por favor, espera unos minutos y vuelve a intentarlo.'
+      } else if (errorMessage.toLowerCase().includes('user already registered')) {
+        errorMessage = 'Este correo ya está registrado en el sistema.'
+      } else if (errorMessage.toLowerCase().includes('password should be at least')) {
+        errorMessage = 'La contraseña es demasiado débil.'
+      }
+
+      setServerError(errorMessage)
     }
   }
 
