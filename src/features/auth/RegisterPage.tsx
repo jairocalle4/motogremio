@@ -1,9 +1,9 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate, useSearchParams, Link } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { Eye, EyeOff, Bike, AlertCircle, CheckCircle } from 'lucide-react'
+import { Eye, EyeOff, Bike, AlertCircle, CheckCircle, Loader2 } from 'lucide-react'
 import { supabase } from '@/lib/supabaseClient'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
@@ -32,14 +32,48 @@ export function RegisterPage() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [serverError, setServerError] = useState<string | null>(null)
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
+  const [isLoadingToken, setIsLoadingToken] = useState(true)
+  const [invitationData, setInvitationData] = useState<any>(null)
 
   const {
     register,
     handleSubmit,
+    reset,
     formState: { errors, isSubmitting },
   } = useForm<RegisterForm>({
     resolver: zodResolver(registerSchema),
   })
+
+  useEffect(() => {
+    if (!inviteToken) {
+      setIsLoadingToken(false)
+      return
+    }
+
+    const fetchInvitation = async () => {
+      try {
+        const { data, error } = await supabase.rpc('get_invitation_info', { p_token: inviteToken })
+        if (error) throw error
+        
+        if (data) {
+          const invData = data as any
+          setInvitationData(invData)
+          // Pre-llenar formulario
+          reset({
+            first_name: invData.first_name,
+            last_name: invData.last_name,
+            email: invData.email,
+          })
+        }
+      } catch (err: any) {
+        console.error('Error fetching invitation:', err)
+      } finally {
+        setIsLoadingToken(false)
+      }
+    }
+
+    fetchInvitation()
+  }, [inviteToken, reset])
 
   const onSubmit = async (data: RegisterForm) => {
     if (!inviteToken) {
@@ -77,21 +111,33 @@ export function RegisterPage() {
         setServerError('No se pudo completar el registro. Inténtalo de nuevo.')
       }
     } catch (err: any) {
-      setServerError(err.message || 'Ocurrió un error al intentar registrarte.')
+      console.error("Auth error:", err)
+      let errorMessage = err.message || 'Ocurrió un error al intentar registrarte.'
+      
+      // Traducciones de errores comunes de Supabase Auth
+      if (errorMessage.toLowerCase().includes('email rate limit exceeded')) {
+        errorMessage = 'Límite de seguridad de correos alcanzado por hacer muchas pruebas seguidas. Por favor, espera unos minutos y vuelve a intentarlo.'
+      } else if (errorMessage.toLowerCase().includes('user already registered')) {
+        errorMessage = 'Este correo ya está registrado en el sistema.'
+      } else if (errorMessage.toLowerCase().includes('password should be at least')) {
+        errorMessage = 'La contraseña es demasiado débil.'
+      }
+
+      setServerError(errorMessage)
     }
   }
 
-  // Si no hay token de invitación en la URL, mostrar error de invitación requerida
-  if (!inviteToken) {
+  // Si no hay token o es inválido/expirado
+  if (!inviteToken || (!isLoadingToken && !invitationData)) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-gray-50">
         <div className="w-full max-w-md bg-white p-8 rounded-2xl border border-gray-100 shadow-sm text-center">
           <div className="w-12 h-12 rounded-full bg-danger-50 flex items-center justify-center mx-auto mb-4 text-danger-600">
             <AlertCircle className="h-6 w-6" />
           </div>
-          <h1 className="text-xl font-bold text-gray-950 mb-2">Enlace de Invitación Requerido</h1>
+          <h1 className="text-xl font-bold text-gray-950 mb-2">Enlace no válido</h1>
           <p className="text-sm text-gray-500 mb-6 leading-relaxed">
-            No puedes registrarte directamente. Para ingresar a MotoGremio, necesitas recibir un enlace de invitación de parte del administrador de tu compañía.
+            El enlace de invitación es incorrecto, ya ha sido utilizado o ha expirado. Por favor, solicita a tu administrador que te envíe una nueva invitación.
           </p>
           <Link
             to="/login"
@@ -100,6 +146,15 @@ export function RegisterPage() {
             Ir al inicio de sesión
           </Link>
         </div>
+      </div>
+    )
+  }
+
+  if (isLoadingToken) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-gray-50">
+        <Loader2 className="w-8 h-8 animate-spin text-primary-600 mb-4" />
+        <p className="text-sm text-gray-500 font-medium">Verificando invitación...</p>
       </div>
     )
   }
@@ -158,8 +213,14 @@ export function RegisterPage() {
             <p className="text-sm text-gray-500">Completa tus datos para activar tu invitación</p>
           </div>
 
-          <div className="mb-6 bg-blue-50 border border-blue-100 rounded-lg p-3.5 text-xs text-blue-800 leading-relaxed">
-            <strong>Nota importante:</strong> Debes registrarte usando el mismo correo electrónico al que fue enviada la invitación.
+          <div className="mb-6 bg-blue-50 border border-blue-100 rounded-lg p-4 shadow-sm">
+            <h3 className="text-blue-800 font-bold text-sm mb-1 flex items-center gap-2">
+              <CheckCircle className="w-5 h-5" />
+              Invitación verificada
+            </h3>
+            <p className="text-xs text-blue-700 leading-relaxed font-medium">
+              Tus datos han sido precargados de la invitación y asegurados. Solo necesitas crear una contraseña para activar tu cuenta.
+            </p>
           </div>
 
           {successMessage ? (
@@ -184,17 +245,19 @@ export function RegisterPage() {
                   label="Nombre"
                   type="text"
                   placeholder="Juan"
-                  required
+                  disabled
                   error={errors.first_name?.message}
                   {...register('first_name')}
+                  className="bg-gray-100 cursor-not-allowed opacity-70"
                 />
                 <Input
                   label="Apellido"
                   type="text"
                   placeholder="Pérez"
-                  required
+                  disabled
                   error={errors.last_name?.message}
                   {...register('last_name')}
+                  className="bg-gray-100 cursor-not-allowed opacity-70"
                 />
               </div>
 
@@ -202,9 +265,10 @@ export function RegisterPage() {
                 label="Correo electrónico"
                 type="email"
                 placeholder="correo@ejemplo.com"
-                required
+                disabled
                 error={errors.email?.message}
                 {...register('email')}
+                className="bg-gray-100 cursor-not-allowed opacity-70"
               />
 
               <div className="relative">

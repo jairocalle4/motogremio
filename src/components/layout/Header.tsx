@@ -21,11 +21,10 @@ const PAGE_TITLES: Record<string, string> = {
   '/configuracion':      'Configuración',
   '/usuarios':           'Usuarios y Roles',
   '/auditoria':          'Auditoría',
-  '/admin/companias':    'Compañías',
-  '/admin/planes':       'Planes',
-  '/admin/suscripciones':'Suscripciones',
-  '/admin/metricas':     'Métricas Globales',
-  '/admin/configuracion':'Configuración Global',
+  '/super-admin':        'Dashboard SaaS',
+  '/super-admin/companies': 'Compañías',
+  '/super-admin/plans':  'Planes SaaS',
+  '/super-admin/auditoria': 'Auditoría Global',
   '/notificaciones':     'Alertas y Notificaciones',
 }
 

@@ -1,4 +1,4 @@
-﻿export type Json =
+export type Json =
   | string
   | number
   | boolean
@@ -1574,6 +1574,10 @@ export type Database = {
       cancel_pending_invitation: {
         Args: { p_invitation_id: string }
         Returns: boolean
+      }
+      get_invitation_info: {
+        Args: { p_token: string }
+        Returns: Json
       }
       create_pending_invitation: {
         Args: {

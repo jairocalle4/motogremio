@@ -1,14 +1,16 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider } from '@/context/AuthContext'
+import { BrandingProvider } from '@/context/BrandingContext'
 import { ProtectedRoute } from './ProtectedRoute'
 import { AppLayout } from '@/components/layout/AppLayout'
 import { SuperAdminGuard } from '@/components/auth/SuperAdminGuard'
-import { SuperAdminLayout } from '@/layouts/SuperAdminLayout'
+
 import { SuperAdminDashboard } from '@/features/super-admin/SuperAdminDashboard'
 import { SuperAdminCompanies } from '@/features/super-admin/SuperAdminCompanies'
 import { SuperAdminCompanyDetail } from '@/features/super-admin/SuperAdminCompanyDetail'
 import { SuperAdminPlans } from '@/features/super-admin/SuperAdminPlans'
 import { SuperAdminAuditLogs } from '@/features/super-admin/SuperAdminAuditLogs'
+import { SuperAdminPlaceholder } from '@/features/super-admin/SuperAdminPlaceholder'
 import { LoginPage } from '@/features/auth/LoginPage'
 import { RegisterPage } from '@/features/auth/RegisterPage'
 import { DashboardPage } from '@/features/dashboard/DashboardPage'
@@ -44,6 +46,7 @@ export function AppRouter() {
   return (
     <BrowserRouter>
       <AuthProvider>
+        <BrandingProvider>
         <Routes>
           {/* Rutas públicas */}
           <Route path="/login" element={<LoginPage />} />
@@ -89,15 +92,17 @@ export function AppRouter() {
                 <Route path="/auditoria"     element={<Placeholder title="Auditoría" />} />
                 <Route path="/configuracion" element={<CompanyConfigPage />} />
               </Route>
-            </Route>
 
-            {/* Panel Super Admin SaaS */}
-            <Route path="/super-admin" element={<SuperAdminGuard />}>
-              <Route element={<SuperAdminLayout />}>
+              {/* Panel Super Admin SaaS */}
+              <Route path="/super-admin" element={<SuperAdminGuard />}>
                 <Route index element={<SuperAdminDashboard />} />
                 <Route path="companies" element={<SuperAdminCompanies />} />
                 <Route path="companies/:id" element={<SuperAdminCompanyDetail />} />
                 <Route path="plans" element={<SuperAdminPlans />} />
+                <Route path="subscriptions" element={<SuperAdminPlaceholder title="Suscripciones" description="Gestión de pagos y renovaciones SaaS" />} />
+                <Route path="metrics" element={<SuperAdminPlaceholder title="Métricas" description="Estadísticas de uso y crecimiento" />} />
+                <Route path="settings" element={<SuperAdminPlaceholder title="Configuración" description="Ajustes globales de la plataforma SaaS" />} />
+                <Route path="security" element={<SuperAdminPlaceholder title="Seguridad" description="Configuración de seguridad global" />} />
                 <Route path="auditoria" element={<SuperAdminAuditLogs />} />
               </Route>
             </Route>
@@ -107,6 +112,7 @@ export function AppRouter() {
           {/* Ruta 404 */}
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Routes>
+        </BrandingProvider>
       </AuthProvider>
     </BrowserRouter>
   )

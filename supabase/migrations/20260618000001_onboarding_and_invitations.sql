@@ -39,21 +39,29 @@ AS $$
 DECLARE
   v_invitation record;
   v_token text;
+  v_total_rows int;
 BEGIN
-  -- Extraer el token de invitación de la metadata
-  v_token := NEW.raw_user_meta_data->>'invite_token';
+  v_token := trim(NEW.raw_user_meta_data->>'invite_token');
 
-  -- Buscar invitación pendiente válida bloqueando la fila
-  SELECT * INTO v_invitation
-  FROM public.pending_invitations
-  WHERE lower(email) = lower(NEW.email)
-    AND token = v_token
-    AND status = 'pending'
-    AND expires_at > now()
-  FOR UPDATE;
+  -- Contar filas para saber si la tabla entera es invisible
+  SELECT count(*) INTO v_total_rows FROM public.pending_invitations;
 
-  IF v_invitation IS NOT NULL THEN
-    -- Inserción con rol e inquilino autorizados por la invitación
+  IF v_token IS NOT NULL AND v_token != '' THEN
+    SELECT * INTO v_invitation
+    FROM public.pending_invitations
+    WHERE token = v_token;
+  END IF;
+
+  IF FOUND THEN
+    IF v_invitation.status != 'pending' THEN
+      RAISE EXCEPTION 'CRÍTICO: La invitación no está pendiente. Estado actual: %', v_invitation.status;
+    END IF;
+
+    IF v_invitation.expires_at < now() THEN
+      RAISE EXCEPTION 'CRÍTICO: La invitación expiró el %', v_invitation.expires_at;
+    END IF;
+
+    -- Inserción oficial
     INSERT INTO public.profiles (id, first_name, last_name, role, company_id, is_active)
     VALUES (
       NEW.id,
@@ -64,24 +72,17 @@ BEGIN
       true
     );
     
-    -- Actualizar invitación
     UPDATE public.pending_invitations
-    SET status = 'accepted',
-        accepted_at = now(),
-        accepted_user_id = NEW.id,
-        updated_at = now()
+    SET status = 'accepted', accepted_at = now(), accepted_user_id = NEW.id, updated_at = now()
     WHERE id = v_invitation.id;
   ELSE
-    -- Registro convencional sin invitación: Forzar rol socio y sin compañía
+    IF v_token IS NOT NULL AND v_token != '' THEN
+      RAISE EXCEPTION 'CRÍTICO: Fila INVISIBLE. Total filas visibles en tabla: %. Token buscado: "%"', v_total_rows, v_token;
+    END IF;
+
+    -- Registro sin invitación
     INSERT INTO public.profiles (id, first_name, last_name, role, company_id, is_active)
-    VALUES (
-      NEW.id,
-      COALESCE(NEW.raw_user_meta_data->>'first_name', 'Usuario'),
-      COALESCE(NEW.raw_user_meta_data->>'last_name', ''),
-      'socio'::public.user_role,
-      NULL,
-      true
-    );
+    VALUES (NEW.id, COALESCE(NEW.raw_user_meta_data->>'first_name', 'Usuario'), COALESCE(NEW.raw_user_meta_data->>'last_name', ''), 'socio'::public.user_role, NULL, true);
   END IF;
 
   RETURN NEW;
@@ -160,13 +161,18 @@ BEGIN
     RAISE EXCEPTION 'Ya existe una invitación pendiente activa para el correo %.', p_admin_email;
   END IF;
 
+  -- 8.5 Validar que el usuario no exista ya en el sistema
+  IF EXISTS(SELECT 1 FROM auth.users WHERE lower(email) = v_email_trimmed) THEN
+    RAISE EXCEPTION 'El correo % ya pertenece a un usuario registrado en el sistema.', p_admin_email;
+  END IF;
+
   -- 9. Insertar Compañía
   INSERT INTO public.companies (legal_name, trade_name, ruc, plan_id, status)
   VALUES (p_legal_name, p_trade_name, v_ruc_trimmed, p_plan_id, p_status)
   RETURNING id INTO v_company_id;
 
   -- 10. Generar Token Seguro con gen_random_bytes
-  v_token := encode(gen_random_bytes(32), 'hex');
+  v_token := encode(extensions.gen_random_bytes(32), 'hex');
 
   -- 11. Registrar invitación del Admin Inicial
   INSERT INTO public.pending_invitations (email, company_id, role, first_name, last_name, token, expires_at, created_by)
@@ -242,6 +248,11 @@ BEGIN
     RAISE EXCEPTION 'Ya existe una invitación pendiente activa para el correo %.', p_email;
   END IF;
 
+  -- 4.5 Validar que el usuario no exista ya en el sistema
+  IF EXISTS(SELECT 1 FROM auth.users WHERE lower(email) = v_email_normalized) THEN
+    RAISE EXCEPTION 'El correo % ya pertenece a un usuario registrado en el sistema.', p_email;
+  END IF;
+
   -- 5. Validar privilegios del invocador
   SELECT role, company_id INTO v_caller_role, v_caller_company_id
   FROM public.profiles WHERE id = auth.uid();
@@ -263,7 +274,7 @@ BEGIN
   END IF;
 
   -- 6. Generar Token Seguro
-  v_token := encode(gen_random_bytes(32), 'hex');
+  v_token := encode(extensions.gen_random_bytes(32), 'hex');
 
   -- 7. Insertar
   INSERT INTO public.pending_invitations (email, company_id, role, first_name, last_name, token, expires_at, created_by)

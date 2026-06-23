@@ -4,7 +4,7 @@ import {
   ShieldAlert, Calendar, AlertTriangle, CheckCircle,
   ArrowRight, DollarSign,
 } from 'lucide-react'
-import { Link } from 'react-router-dom'
+import { Link, Navigate } from 'react-router-dom'
 import { StatCard } from './components/StatCard'
 import { Card, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Badge } from '@/components/ui/Badge'
@@ -131,27 +131,7 @@ export function DashboardPage() {
 
   // Si es super admin, redirigir a panel admin
   if (isSuperAdmin) {
-    return (
-      <div>
-        <div className="mb-8">
-          <h1 className="text-2xl font-bold text-gray-900">Panel de Administración</h1>
-          <p className="text-gray-500 text-sm mt-1">Vista general del SaaS {APP_NAME}</p>
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-          <StatCard title="Compañías activas"  value="—" icon={<Users className="h-5 w-5 text-primary-600" />}   loading={loading} />
-          <StatCard title="Total suscripciones" value="—" icon={<CheckCircle className="h-5 w-5 text-success-600" />} iconBg="bg-success-50" loading={loading} />
-          <StatCard title="Socios registrados" value="—" icon={<Users className="h-5 w-5 text-blue-600" />}     iconBg="bg-blue-50"    loading={loading} />
-          <StatCard title="Unidades registradas" value="—" icon={<Bike className="h-5 w-5 text-indigo-600" />}  iconBg="bg-indigo-50"  loading={loading} />
-        </div>
-        <div className="mt-6">
-          <Card padding="md">
-            <p className="text-sm text-gray-500 text-center py-4">
-              El panel de administración SaaS se construirá en la <strong>Fase 5</strong>.
-            </p>
-          </Card>
-        </div>
-      </div>
-    )
+    return <Navigate to="/super-admin" replace />
   }
 
   return (

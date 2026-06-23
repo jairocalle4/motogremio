@@ -3,13 +3,14 @@ import { NavLink, useNavigate } from 'react-router-dom'
 import {
   LayoutDashboard, Users, UserCheck, Bike, Wallet,
   ShieldAlert, BarChart3,
-  Settings, UserCog, Activity, Building2, Package,
-  CreditCard, TrendingUp, LogOut, ShieldCheck,
+  Settings, Activity, Building2, Package,
+  LogOut,
   X, Menu, Calendar, Bell,
 } from 'lucide-react'
 
 import { useAuth } from '@/context/useAuth'
 import { usePermissions } from '@/hooks/usePermissions'
+import { useBranding } from '@/context/BrandingContext'
 import { cn, getInitials } from '@/lib/utils'
 import { ROLE_LABELS, APP_NAME } from '@/lib/constants'
 import toast from 'react-hot-toast'
@@ -47,8 +48,6 @@ const companyNav: NavSection[] = [
     separator: true,
     items: [
       { to: '/configuracion',label: 'Configuración',  icon: Settings },
-      { to: '/usuarios',     label: 'Usuarios',       icon: UserCog },
-      { to: '/auditoria',    label: 'Auditoría',      icon: Activity },
     ],
   },
 ]
@@ -56,18 +55,15 @@ const companyNav: NavSection[] = [
 const adminNav: NavSection[] = [
   {
     items: [
-      { to: '/dashboard',           label: 'Dashboard',        icon: LayoutDashboard },
-      { to: '/admin/companias',     label: 'Compañías',        icon: Building2 },
-      { to: '/admin/planes',        label: 'Planes',           icon: Package },
-      { to: '/admin/suscripciones', label: 'Suscripciones',    icon: CreditCard },
-      { to: '/admin/metricas',      label: 'Métricas',         icon: TrendingUp },
+      { to: '/super-admin',           label: 'Dashboard',        icon: LayoutDashboard },
+      { to: '/super-admin/companies',     label: 'Compañías',        icon: Building2 },
+      { to: '/super-admin/plans',        label: 'Planes',           icon: Package },
     ],
   },
   {
     separator: true,
     items: [
-      { to: '/admin/configuracion', label: 'Configuración',    icon: Settings },
-      { to: '/account/security',    label: 'Seguridad',        icon: ShieldCheck },
+      { to: '/super-admin/auditoria',    label: 'Auditoría',        icon: Activity },
     ],
   },
 ]
@@ -82,8 +78,15 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const { profile, signOut } = useAuth()
   const permissions = usePermissions()
   const { isSuperAdmin } = permissions
+  const { branding } = useBranding()
   const navigate = useNavigate()
   const [signingOut, setSigningOut] = useState(false)
+
+  // Dynamic sidebar background derived from branding primary color
+  const sidebarBg = branding?.primary_color ?? null
+  const sidebarStyle = sidebarBg
+    ? { backgroundColor: sidebarBg, '--sidebar-bg': sidebarBg } as React.CSSProperties
+    : undefined
 
   const filteredCompanyNav = companyNav.map(section => ({
     ...section,
@@ -130,11 +133,13 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
       {/* Sidebar */}
       <aside
         className={cn(
-          'fixed inset-y-0 left-0 z-40 flex flex-col w-60 bg-brand-sidebar shadow-sidebar',
-          'transition-transform duration-300 ease-in-out',
+          'fixed inset-y-0 left-0 z-40 flex flex-col w-60 shadow-sidebar',
+          !sidebarBg && 'bg-brand-sidebar',
+          'transition-all duration-300 ease-in-out',
           'lg:translate-x-0 lg:static lg:z-auto',
           isOpen ? 'translate-x-0' : '-translate-x-full'
         )}
+        style={sidebarStyle}
       >
         {/* Brand */}
         <div className="flex items-center justify-between px-5 py-5 border-b border-white/10">
