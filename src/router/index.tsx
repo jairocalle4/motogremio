@@ -16,6 +16,7 @@ import { RegisterPage } from '@/features/auth/RegisterPage'
 import { DashboardPage } from '@/features/dashboard/DashboardPage'
 import { ChangePasswordPage } from '@/features/account/ChangePasswordPage'
 import { CompanyConfigPage } from '@/features/company/CompanyConfigPage'
+import { CompanyUsersPage } from '@/features/company/CompanyUsersPage'
 import { MembersListPage } from '@/features/members/MembersListPage'
 import { MemberDetailPage } from '@/features/members/MemberDetailPage'
 import { VehiclesListPage } from '@/features/vehicles/VehiclesListPage'
@@ -87,10 +88,12 @@ export function AppRouter() {
                   <Route path="/reportes"      element={<ReportsPage />} />
                 </Route>
 
-                {/* Administración interna */}
-                <Route path="/usuarios"      element={<Placeholder title="Usuarios y Roles" />} />
-                <Route path="/auditoria"     element={<Placeholder title="Auditoría" />} />
-                <Route path="/configuracion" element={<CompanyConfigPage />} />
+                {/* Administración interna — Solo Admin y Super Admin */}
+                <Route element={<ProtectedRoute allowedRoles={['super_admin', 'admin']} />}>
+                  <Route path="/usuarios"      element={<CompanyUsersPage />} />
+                  <Route path="/auditoria"     element={<Placeholder title="Auditoría" />} />
+                  <Route path="/configuracion" element={<CompanyConfigPage />} />
+                </Route>
               </Route>
 
               {/* Panel Super Admin SaaS */}

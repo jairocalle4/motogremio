@@ -47,6 +47,7 @@ const companyNav: NavSection[] = [
   {
     separator: true,
     items: [
+      { to: '/usuarios',     label: 'Usuarios',       icon: Users },
       { to: '/configuracion',label: 'Configuración',  icon: Settings },
     ],
   },
