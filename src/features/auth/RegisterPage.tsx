@@ -56,12 +56,13 @@ export function RegisterPage() {
         if (error) throw error
         
         if (data) {
-          setInvitationData(data)
+          const invData = data as any
+          setInvitationData(invData)
           // Pre-llenar formulario
           reset({
-            first_name: data.first_name,
-            last_name: data.last_name,
-            email: data.email,
+            first_name: invData.first_name,
+            last_name: invData.last_name,
+            email: invData.email,
           })
         }
       } catch (err: any) {

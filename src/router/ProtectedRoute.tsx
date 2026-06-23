@@ -3,6 +3,7 @@ import { useAuth } from '@/context/useAuth'
 import { usePermissions } from '@/hooks/usePermissions'
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
 import type { UserRole } from '@/types'
+import { AccountDisabledPage } from '@/features/auth/AccountDisabledPage'
 
 interface ProtectedRouteProps {
   allowedRoles?: UserRole[]
@@ -14,7 +15,7 @@ interface ProtectedRouteProps {
  * Valida roles permitidos si se especifica allowedRoles.
  */
 export function ProtectedRoute({ allowedRoles }: ProtectedRouteProps) {
-  const { user, loading } = useAuth()
+  const { user, profile, loading } = useAuth()
   const { role } = usePermissions()
   const location = useLocation()
 
@@ -28,6 +29,21 @@ export function ProtectedRoute({ allowedRoles }: ProtectedRouteProps) {
 
   if (!user) {
     return <Navigate to="/login" state={{ from: location }} replace />
+  }
+
+  // Si user existe pero el perfil aún está cargando (loading secundario de perfil)
+  // El loading principal de AuthContext suele cubrir esto, pero por seguridad:
+  if (user && loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <LoadingSpinner size="lg" label="Cargando perfil..." />
+      </div>
+    )
+  }
+
+  // Si el perfil ya cargó y está inactivo
+  if (profile && profile.is_active === false) {
+    return <AccountDisabledPage />
   }
 
   // Si se especificaron roles requeridos y el perfil ya cargó pero el rol no está permitido, redirigir
