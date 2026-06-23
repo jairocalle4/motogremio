@@ -8,21 +8,21 @@ export const APP_VERSION = '0.1.0'
 export const ROLE_LABELS: Record<UserRole, string> = {
   super_admin: 'Super Admin',
   admin:       'Administrador',
-  gerente:     'Administrador',
-  presidente:  'Administrador',
-  secretaria:  'Secretaria',
-  tesorero:    'Administrador',
-  operador:    'Secretaria / Asistente operativo',
-  socio:       'Socio / Conductor consulta',
+  gerente:     'Rol heredado: Gerente',
+  presidente:  'Rol heredado: Presidente',
+  secretaria:  'Secretario/a',
+  tesorero:    'Rol heredado: Tesorero',
+  operador:    'Rol heredado: Operador',
+  socio:       'Socio / Consulta',
 }
 
 export const ROLE_COLORS: Record<UserRole, string> = {
   super_admin: 'bg-purple-100 text-purple-800',
   admin:       'bg-primary-100 text-primary-800',
-  gerente:     'bg-blue-100 text-blue-800',
-  presidente:  'bg-indigo-100 text-indigo-800',
+  gerente:     'bg-gray-100 text-gray-800',
+  presidente:  'bg-gray-100 text-gray-800',
   secretaria:  'bg-teal-100 text-teal-800',
-  tesorero:    'bg-amber-100 text-amber-800',
+  tesorero:    'bg-gray-100 text-gray-800',
   operador:    'bg-gray-100 text-gray-800',
   socio:       'bg-gray-100 text-gray-700',
 }
