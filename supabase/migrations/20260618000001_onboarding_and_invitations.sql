@@ -39,19 +39,20 @@ AS $$
 DECLARE
   v_invitation record;
   v_token text;
+  v_total_rows int;
 BEGIN
-  v_token := NEW.raw_user_meta_data->>'invite_token';
+  v_token := trim(NEW.raw_user_meta_data->>'invite_token');
 
-  -- 1. Buscar invitación solo por TOKEN (criptográficamente seguro)
-  IF v_token IS NOT NULL THEN
+  -- Contar filas para saber si la tabla entera es invisible
+  SELECT count(*) INTO v_total_rows FROM public.pending_invitations;
+
+  IF v_token IS NOT NULL AND v_token != '' THEN
     SELECT * INTO v_invitation
     FROM public.pending_invitations
-    WHERE token = v_token
-    FOR UPDATE;
+    WHERE token = v_token;
   END IF;
 
-  IF v_invitation IS NOT NULL THEN
-    -- 2. Validaciones manuales para tener errores específicos
+  IF FOUND THEN
     IF v_invitation.status != 'pending' THEN
       RAISE EXCEPTION 'CRÍTICO: La invitación no está pendiente. Estado actual: %', v_invitation.status;
     END IF;
@@ -60,11 +61,7 @@ BEGIN
       RAISE EXCEPTION 'CRÍTICO: La invitación expiró el %', v_invitation.expires_at;
     END IF;
 
-    IF lower(v_invitation.email) != lower(NEW.email) THEN
-      RAISE EXCEPTION 'CRÍTICO: El correo registrado (%) no coincide con la invitación (%)', NEW.email, v_invitation.email;
-    END IF;
-
-    -- Inserción con rol e inquilino autorizados por la invitación
+    -- Inserción oficial
     INSERT INTO public.profiles (id, first_name, last_name, role, company_id, is_active)
     VALUES (
       NEW.id,
@@ -75,29 +72,17 @@ BEGIN
       true
     );
     
-    -- Actualizar invitación
     UPDATE public.pending_invitations
-    SET status = 'accepted',
-        accepted_at = now(),
-        accepted_user_id = NEW.id,
-        updated_at = now()
+    SET status = 'accepted', accepted_at = now(), accepted_user_id = NEW.id, updated_at = now()
     WHERE id = v_invitation.id;
   ELSE
-    -- NUEVA DEFENSA: Si traía token pero no se encontró la fila en absoluto.
-    IF v_token IS NOT NULL THEN
-      RAISE EXCEPTION 'CRÍTICO: Fila de invitación invisible o inexistente para el token: %', v_token;
+    IF v_token IS NOT NULL AND v_token != '' THEN
+      RAISE EXCEPTION 'CRÍTICO: Fila INVISIBLE. Total filas visibles en tabla: %. Token buscado: "%"', v_total_rows, v_token;
     END IF;
 
-    -- Registro convencional (solo para quienes NO tienen token)
+    -- Registro sin invitación
     INSERT INTO public.profiles (id, first_name, last_name, role, company_id, is_active)
-    VALUES (
-      NEW.id,
-      COALESCE(NEW.raw_user_meta_data->>'first_name', 'Usuario'),
-      COALESCE(NEW.raw_user_meta_data->>'last_name', ''),
-      'socio'::public.user_role,
-      NULL,
-      true
-    );
+    VALUES (NEW.id, COALESCE(NEW.raw_user_meta_data->>'first_name', 'Usuario'), COALESCE(NEW.raw_user_meta_data->>'last_name', ''), 'socio'::public.user_role, NULL, true);
   END IF;
 
   RETURN NEW;
