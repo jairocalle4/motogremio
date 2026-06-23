@@ -15,7 +15,7 @@ interface DocumentFormModalProps {
   onSubmit: (data: Partial<DocumentInsert>) => Promise<void>
   document?: DocumentWithRelations | null
   documentTypes: DocumentType[]
-  targetEntity: 'member' | 'driver' | 'vehicle'
+  targetEntity: 'member' | 'driver' | 'vehicle' | 'company'
   entityId: string
   loading?: boolean
 }

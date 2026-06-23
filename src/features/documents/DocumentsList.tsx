@@ -9,7 +9,7 @@ import { ConfirmModal } from '@/components/ui/ConfirmModal'
 import toast from 'react-hot-toast'
 
 interface DocumentsListProps {
-  targetEntity: 'member' | 'driver' | 'vehicle'
+  targetEntity: 'member' | 'driver' | 'vehicle' | 'company'
   entityId: string
   title?: string
 }

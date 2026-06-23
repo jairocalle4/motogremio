@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
 import {
   LayoutDashboard, Users, UserCheck, Bike, Wallet,
-  ShieldAlert, BarChart3,
+  ShieldAlert, BarChart3, FileText,
   Settings, Activity, Building2, Package,
   LogOut,
   X, Menu, Calendar, Bell,
@@ -36,8 +36,7 @@ const companyNav: NavSection[] = [
       { to: '/conductores',  label: 'Conductores',    icon: UserCheck },
       { to: '/unidades',     label: 'Unidades',       icon: Bike },
       { to: '/pagos',        label: 'Pagos',          icon: Wallet },
-      // Ocultado temporalmente por la fase 3.5 en desarrollo integrado
-      // { to: '/documentos',   label: 'Documentos',     icon: FileText },
+      { to: '/documentos',   label: 'Documentos',     icon: FileText },
       { to: '/sanciones',    label: 'Sanciones',      icon: ShieldAlert },
       { to: '/reuniones',    label: 'Reuniones',      icon: Calendar },
       { to: '/reportes',     label: 'Reportes',       icon: BarChart3 },
@@ -97,6 +96,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
       if (item.to === '/conductores') return permissions.canViewDrivers
       if (item.to === '/unidades') return permissions.canViewVehicles
       if (item.to === '/pagos') return permissions.canViewPayments
+      if (item.to === '/documentos') return permissions.canManageDocuments
       if (item.to === '/sanciones') return permissions.canViewSanctions
       if (item.to === '/reuniones') return permissions.canViewMeetings
       if (item.to === '/reportes') return permissions.canViewReports
