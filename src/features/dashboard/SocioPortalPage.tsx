@@ -13,7 +13,7 @@ interface SocioInfo {
 }
 
 export function SocioPortalPage() {
-  const { profile } = useAuth()
+  const { user, profile } = useAuth()
   const [data, setData] = useState<SocioInfo | null>(null)
   const [loading, setLoading] = useState(true)
 
@@ -107,8 +107,8 @@ export function SocioPortalPage() {
           </div>
           <h2 className="text-2xl font-bold text-gray-900 mb-2">¡Hola, {firstName}!</h2>
           <p className="text-gray-500 mb-6 max-w-md mx-auto">
-            Actualmente tu cuenta no tiene un perfil de socio vinculado en la base de datos de la compañía.
-            Por favor, comunícate con la administración para que enlacen tu usuario.
+            Aún no existes como socio o no estás registrado en la base de datos de tu compañía. 
+            Por favor, comunícate con la administración para que creen tu expediente y lo enlacen a tu correo electrónico ({user?.email || 'actual'}).
           </p>
         </Card>
       </div>
