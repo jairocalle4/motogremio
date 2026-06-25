@@ -47,14 +47,13 @@ export function SocioPortalPage() {
           .select('*')
           .eq('company_id', companyId!)
           .eq('member_id', memberData.id)
-          .is('deleted_at', null)
 
         // 3. Fetch documents of the member and their vehicles
         let documentsData: any[] = []
         
         const { data: memberDocs } = await supabase
           .from('documents')
-          .select('*')
+          .select('*, document_type:document_types(id, name, requires_expiry, target_entity)')
           .eq('company_id', companyId!)
           .eq('member_id', memberData.id)
 
@@ -64,7 +63,7 @@ export function SocioPortalPage() {
           const vehicleIds = vehiclesData.map(v => v.id)
           const { data: vehicleDocs } = await supabase
             .from('documents')
-            .select('*')
+            .select('*, document_type:document_types(id, name, requires_expiry, target_entity)')
             .eq('company_id', companyId!)
             .in('vehicle_id', vehicleIds)
           
@@ -213,19 +212,20 @@ export function SocioPortalPage() {
                 {documents.map(doc => {
                   const isExpired = doc.status === 'vencido'
                   const isWarning = doc.status === 'por_vencer'
+                  const typeName = doc.document_type?.name || 'Documento'
                   
                   return (
                     <div key={doc.id} className={`p-4 rounded-lg border ${isExpired ? 'bg-danger-50 border-danger-100' : isWarning ? 'bg-warning-50 border-warning-100' : 'bg-white border-gray-200'} shadow-sm`}>
                       <div className="flex justify-between items-start mb-2">
-                        <p className="text-sm font-semibold text-gray-900 line-clamp-1" title={doc.title}>{doc.title}</p>
+                        <p className="text-sm font-semibold text-gray-900 line-clamp-1" title={typeName}>{typeName}</p>
                         {(isExpired || isWarning) && (
                           <AlertTriangle className={`h-4 w-4 shrink-0 ${isExpired ? 'text-danger-500' : 'text-warning-500'}`} />
                         )}
                       </div>
-                      <p className="text-xs text-gray-500 capitalize mb-3">{doc.document_type.replace(/_/g, ' ')}</p>
+                      <p className="text-xs text-gray-500 font-mono mb-3">{doc.document_number || 'Sin número / ID'}</p>
                       <div className="flex items-center justify-between">
                         <span className="text-xs text-gray-500">
-                          {doc.expiration_date ? `Vence: ${formatDate(doc.expiration_date)}` : 'Sin vencimiento'}
+                          {doc.expiry_date ? `Vence: ${formatDate(doc.expiry_date)}` : 'Sin vencimiento'}
                         </span>
                         <Badge variant={isExpired ? 'danger' : isWarning ? 'warning' : 'success'}>
                           {doc.status.replace('_', ' ')}
