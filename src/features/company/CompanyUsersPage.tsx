@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Select } from '@/components/ui/Select'
 import { Modal } from '@/components/ui/Modal'
-import { Users, Plus, Mail, Copy, Check, Trash2, ShieldCheck, ToggleLeft, ToggleRight, UserCog } from 'lucide-react'
+import { Users, Plus, Mail, Copy, Check, Trash2, ShieldCheck, ToggleLeft, ToggleRight } from 'lucide-react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -44,7 +44,7 @@ const adminInvitationSchema = z.object({
   email: z.string().email('Ingresa un correo válido.'),
   first_name: z.string().min(2, 'El nombre debe tener al menos 2 caracteres.'),
   last_name: z.string().min(2, 'El apellido debe tener al menos 2 caracteres.'),
-  role: z.enum(['secretaria', 'socio']),
+  role: z.enum(['secretaria']),
 })
 
 // Super admin puede invitar también admin (si acceden a esta página)
@@ -52,7 +52,7 @@ const superAdminInvitationSchema = z.object({
   email: z.string().email('Ingresa un correo válido.'),
   first_name: z.string().min(2, 'El nombre debe tener al menos 2 caracteres.'),
   last_name: z.string().min(2, 'El apellido debe tener al menos 2 caracteres.'),
-  role: z.enum(['admin', 'secretaria', 'socio']),
+  role: z.enum(['admin', 'secretaria']),
 })
 
 type InvitationForm = z.infer<typeof superAdminInvitationSchema>
@@ -71,9 +71,6 @@ export function CompanyUsersPage() {
   const [inviteLink, setInviteLink] = useState('')
   const [copied, setCopied] = useState(false)
 
-  // Control de Edición de Rol
-  const [editingUser, setEditingUser] = useState<CompanyUser | null>(null)
-
   const isSuperAdmin = profile?.role === 'super_admin'
   const activeSchema = isSuperAdmin ? superAdminInvitationSchema : adminInvitationSchema
 
@@ -85,7 +82,7 @@ export function CompanyUsersPage() {
   } = useForm<InvitationForm>({
     resolver: zodResolver(activeSchema as z.ZodTypeAny),
     defaultValues: {
-      role: 'socio',
+      role: 'secretaria',
     },
   })
 
@@ -180,25 +177,6 @@ export function CompanyUsersPage() {
     }
   }
 
-  const updateUserRole = async (userId: string, newRole: UserRole) => {
-    try {
-      const { data: success, error } = await supabase.rpc('update_company_user_role', {
-        p_user_id: userId,
-        p_role: newRole,
-      })
-      if (error) throw error
-      if (success) {
-        toast.success('Rol de usuario actualizado')
-        setEditingUser(null)
-        loadData()
-      } else {
-        toast.error('No se pudo actualizar el rol')
-      }
-    } catch (err: any) {
-      toast.error('Error: ' + err.message)
-    }
-  }
-
   const copyToClipboard = async () => {
     try {
       await navigator.clipboard.writeText(inviteLink)
@@ -221,7 +199,6 @@ export function CompanyUsersPage() {
   const roleOptions = [
     ...(isSuperAdmin ? [{ value: 'admin', label: ROLE_LABELS['admin'] }] : []),
     { value: 'secretaria', label: ROLE_LABELS['secretaria'] },
-    { value: 'socio', label: ROLE_LABELS['socio'] },
   ]
 
   return (
@@ -271,8 +248,6 @@ export function CompanyUsersPage() {
                 <tbody className="divide-y divide-slate-100">
                   {users.map((u) => {
                     const isSelf = profile?.id === u.id
-                    // admin solo puede editar secretaria y socio.
-                    // super_admin no se puede editar a si mismo.
                     const canEdit = !isSelf && u.role !== 'super_admin' && (isSuperAdmin || (u.role !== 'admin' && profile?.role === 'admin'))
 
                     return (
@@ -290,14 +265,6 @@ export function CompanyUsersPage() {
                         <td className="px-4 py-3 text-slate-500">{u.created_at ? new Date(u.created_at).toLocaleDateString() : '—'}</td>
                         <td className="px-4 py-3 text-right">
                           <div className="flex justify-end gap-1">
-                            <button
-                              onClick={() => setEditingUser(u)}
-                              disabled={!canEdit}
-                              className="p-1.5 text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded disabled:opacity-30 disabled:cursor-not-allowed"
-                              title="Cambiar Rol"
-                            >
-                              <UserCog className="h-4 w-4" />
-                            </button>
                             <button
                               onClick={() => updateUserStatus(u.id, u.is_active)}
                               disabled={!canEdit}
@@ -403,7 +370,7 @@ export function CompanyUsersPage() {
 
       {/* ── Modal de Invitación ── */}
       <Modal isOpen={isInviteOpen} onClose={() => { setIsInviteOpen(false); reset() }} title="Invitar Nuevo Usuario">
-        <form onSubmit={handleSubmit(handleInviteSubmit)} className="space-y-4">
+        <form onSubmit={handleSubmit(handleInviteSubmit as any)} className="space-y-4">
           <p className="text-sm text-slate-500">
             Se generará un enlace único para que el usuario complete su registro. El rol determinará sus permisos.
           </p>
@@ -473,47 +440,6 @@ export function CompanyUsersPage() {
             </Button>
           </div>
         </div>
-      </Modal>
-
-      {/* ── Modal para Editar Rol ── */}
-      <Modal isOpen={!!editingUser} onClose={() => setEditingUser(null)} title="Cambiar Rol de Usuario">
-        {editingUser && (
-          <div className="space-y-4">
-            <p className="text-sm text-slate-600">
-              Selecciona el nuevo rol para <strong>{editingUser.first_name} {editingUser.last_name}</strong>.
-            </p>
-            <div className="space-y-2">
-              {isSuperAdmin && (
-                <button
-                  onClick={() => updateUserRole(editingUser.id, 'admin')}
-                  className={`w-full text-left px-4 py-3 rounded-lg border ${editingUser.role === 'admin' ? 'border-primary-500 bg-primary-50 ring-1 ring-primary-500' : 'border-slate-200 hover:border-slate-300'}`}
-                >
-                  <div className="font-medium text-slate-900">{ROLE_LABELS['admin']}</div>
-                  <div className="text-xs text-slate-500 mt-0.5">Control total sobre la compañía.</div>
-                </button>
-              )}
-              <button
-                onClick={() => updateUserRole(editingUser.id, 'secretaria')}
-                className={`w-full text-left px-4 py-3 rounded-lg border ${editingUser.role === 'secretaria' ? 'border-primary-500 bg-primary-50 ring-1 ring-primary-500' : 'border-slate-200 hover:border-slate-300'}`}
-              >
-                <div className="font-medium text-slate-900">{ROLE_LABELS['secretaria']}</div>
-                <div className="text-xs text-slate-500 mt-0.5">Acceso a gestión operativa, sin configuración avanzada.</div>
-              </button>
-              <button
-                onClick={() => updateUserRole(editingUser.id, 'socio')}
-                className={`w-full text-left px-4 py-3 rounded-lg border ${editingUser.role === 'socio' ? 'border-primary-500 bg-primary-50 ring-1 ring-primary-500' : 'border-slate-200 hover:border-slate-300'}`}
-              >
-                <div className="font-medium text-slate-900">{ROLE_LABELS['socio']}</div>
-                <div className="text-xs text-slate-500 mt-0.5">Rol base con acceso a consulta y operaciones propias.</div>
-              </button>
-            </div>
-            <div className="pt-4 flex justify-end gap-3">
-              <Button variant="outline" onClick={() => setEditingUser(null)}>
-                Cancelar
-              </Button>
-            </div>
-          </div>
-        )}
       </Modal>
 
     </div>
