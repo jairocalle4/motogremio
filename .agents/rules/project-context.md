@@ -553,6 +553,7 @@ Antes de implementar funcionalidades importantes, el agente debe:
 8. No generar datos falsos permanentes como si fueran definitivos.
 9. Mantener documentación actualizada cuando se tomen nuevas decisiones.
 10. Priorizar un producto vendible, mantenible y profesional.
+11. El rol socio solo puede consultar información propia. A nivel RLS, no debe poder leer documentos institucionales de compañía ni documentos de otros socios/unidades. La UI nunca debe ser la única barrera de seguridad.
 
 ---
 
