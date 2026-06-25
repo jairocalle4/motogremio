@@ -6,6 +6,7 @@ import {
 } from 'lucide-react'
 import { Link, Navigate } from 'react-router-dom'
 import { StatCard } from './components/StatCard'
+import { SocioPortalPage } from './SocioPortalPage'
 import { Card, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
@@ -134,28 +135,9 @@ export function DashboardPage() {
     return <Navigate to="/super-admin" replace />
   }
 
+  // Si es socio, mostrar su propio portal
   if (isSocio) {
-    return (
-      <div>
-        <div className="mb-7">
-          <h1 className="text-xl font-bold text-gray-900">
-            {greeting}, {firstName} 👋
-          </h1>
-          <p className="text-gray-500 text-sm mt-0.5">
-            {companyName} · {formatDate(new Date().toISOString(), "EEEE d 'de' MMMM, yyyy")}
-          </p>
-        </div>
-        <Card className="p-8 text-center bg-white border border-gray-200 shadow-sm">
-          <div className="w-16 h-16 rounded-full bg-primary-50 flex items-center justify-center mx-auto mb-4">
-            <span className="text-primary-600 text-2xl">👤</span>
-          </div>
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">Bienvenido a su portal de socio</h2>
-          <p className="text-sm text-gray-500 max-w-md mx-auto">
-            El portal para socios se encuentra en desarrollo. Pronto podrá revisar su estado de cuenta, consultar sus unidades registradas y gestionar sus documentos desde aquí.
-          </p>
-        </Card>
-      </div>
-    )
+    return <SocioPortalPage />
   }
 
   return (
