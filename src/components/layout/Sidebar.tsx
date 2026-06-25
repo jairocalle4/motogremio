@@ -105,6 +105,12 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
       if (item.to === '/usuarios') return permissions.canManageUsers
       if (item.to === '/auditoria') return permissions.canManageUsers
       return true
+    }).map(item => {
+      // Cambio de texto dinámico para el dashboard
+      if (item.to === '/dashboard' && permissions.isSocio) {
+        return { ...item, label: 'Mi Portal' }
+      }
+      return item
     })
   })).filter(section => section.items.length > 0)
 

@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/Input'
 import { Select } from '@/components/ui/Select'
 import { Textarea } from '@/components/ui/Textarea'
 import { Button } from '@/components/ui/Button'
-import type { DocumentWithRelations, DocumentType, DocumentInsert } from '@/hooks/useDocuments'
+import { useDocuments, type DocumentWithRelations, DocumentType, DocumentInsert } from '@/hooks/useDocuments'
 
 interface DocumentFormModalProps {
   isOpen: boolean
@@ -18,6 +18,7 @@ interface DocumentFormModalProps {
   targetEntity: 'member' | 'driver' | 'vehicle' | 'company'
   entityId: string
   loading?: boolean
+  onTypeCreated?: () => Promise<void> | void
 }
 
 export function DocumentFormModal({
@@ -28,9 +29,18 @@ export function DocumentFormModal({
   documentTypes,
   targetEntity,
   entityId,
-  loading
+  loading,
+  onTypeCreated
 }: DocumentFormModalProps) {
   const isEdit = !!document
+  const { createDocumentType } = useDocuments()
+
+  // Estados para creación rápida de tipo
+  const [isCreatingType, setIsCreatingType] = useState(false)
+  const [newTypeName, setNewTypeName] = useState('')
+  const [newTypeRequiresExpiry, setNewTypeRequiresExpiry] = useState(true)
+  const [quickLoading, setQuickLoading] = useState(false)
+  const [typeError, setTypeError] = useState<string | null>(null)
 
   // Filtrar tipos de documento por la entidad destino
   const availableTypes = documentTypes.filter(t => t.target_entity === targetEntity)
@@ -47,7 +57,7 @@ export function DocumentFormModal({
     notes: z.string().max(500).optional().or(z.literal(''))
   })
 
-  const { register, handleSubmit, reset, watch, formState: { errors } } = useForm({
+  const { register, handleSubmit, reset, watch, setValue, formState: { errors } } = useForm({
     resolver: (values, context, options) => {
       // Determinar en runtime si requiere expiry
       const selectedType = documentTypes.find(t => t.id === values.document_type_id)
@@ -100,9 +110,52 @@ export function DocumentFormModal({
       member_id: targetEntity === 'member' ? entityId : null,
       driver_id: targetEntity === 'driver' ? entityId : null,
       vehicle_id: targetEntity === 'vehicle' ? entityId : null,
+      issue_date: data.issue_date || null,
       expiry_date: data.expiry_date || null
     }
     await onSubmit(payload)
+  }
+
+  const handleQuickCreateType = async () => {
+    if (!newTypeName.trim()) {
+      setTypeError('El nombre es obligatorio')
+      return
+    }
+    if (newTypeName.trim().length < 3) {
+      setTypeError('El nombre debe tener al menos 3 caracteres')
+      return
+    }
+
+    setQuickLoading(true)
+    setTypeError(null)
+
+    try {
+      const { data, error: err } = await createDocumentType(
+        newTypeName.trim(),
+        targetEntity,
+        newTypeRequiresExpiry
+      )
+
+      if (err) {
+        throw new Error(err)
+      }
+
+      if (data) {
+        // Refrescar tipos en el componente padre
+        if (onTypeCreated) {
+          await onTypeCreated()
+        }
+        // Seleccionar el tipo recién creado
+        setValue('document_type_id', data.id)
+        // Ocultar formulario inline
+        setIsCreatingType(false)
+        setNewTypeName('')
+      }
+    } catch (e: any) {
+      setTypeError(e.message || 'Error al crear tipo de documento')
+    } finally {
+      setQuickLoading(false)
+    }
   }
 
   return (
@@ -113,15 +166,89 @@ export function DocumentFormModal({
       size="md"
     >
       <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-4">
-        <Select
-          label="Tipo de documento"
-          error={errors.document_type_id?.message as string}
-          options={[
-            { label: 'Seleccione un tipo...', value: '' },
-            ...availableTypes.map(t => ({ label: t.name, value: t.id }))
-          ]}
-          {...register('document_type_id')}
-        />
+        
+        <div className="flex flex-col gap-1.5">
+          <div className="flex justify-between items-center">
+            <label className="text-sm font-medium text-gray-700">
+              Tipo de documento <span className="text-danger-500">*</span>
+            </label>
+            {!isCreatingType && !isEdit && (
+              <button
+                type="button"
+                onClick={() => setIsCreatingType(true)}
+                className="text-xs text-brand-600 hover:text-brand-800 font-semibold"
+              >
+                + Crear tipo rápido
+              </button>
+            )}
+          </div>
+          
+          {!isCreatingType ? (
+            <Select
+              error={errors.document_type_id?.message as string}
+              options={[
+                { label: 'Seleccione un tipo...', value: '' },
+                ...availableTypes.map(t => ({ label: t.name, value: t.id }))
+              ]}
+              {...register('document_type_id')}
+            />
+          ) : (
+            <div className="p-3 bg-gray-50 border border-gray-200 rounded-lg space-y-3">
+              <p className="text-xs font-semibold text-gray-700">
+                Nuevo Tipo ({
+                  targetEntity === 'member' ? 'Socio' :
+                  targetEntity === 'driver' ? 'Conductor' :
+                  targetEntity === 'vehicle' ? 'Unidad' : 'Compañía'
+                })
+              </p>
+              <div className="space-y-2">
+                <input
+                  type="text"
+                  placeholder="Ej. Copia de RUC, Certificado"
+                  value={newTypeName}
+                  onChange={(e) => setNewTypeName(e.target.value)}
+                  className="input text-sm w-full bg-white"
+                />
+                {typeError && <p className="text-xs text-danger-600">{typeError}</p>}
+                
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    id="new_requires_expiry"
+                    checked={newTypeRequiresExpiry}
+                    onChange={(e) => setNewTypeRequiresExpiry(e.target.checked)}
+                    className="h-4.5 w-4.5 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
+                  />
+                  <label htmlFor="new_requires_expiry" className="text-xs text-gray-600 font-medium select-none">
+                    ¿Requiere fecha de vencimiento obligatoria?
+                  </label>
+                </div>
+              </div>
+              
+              <div className="flex justify-end gap-2 text-xs pt-1">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsCreatingType(false)
+                    setNewTypeName('')
+                    setTypeError(null)
+                  }}
+                  className="px-2.5 py-1.5 border border-gray-300 rounded text-gray-700 hover:bg-gray-100 font-medium"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  onClick={handleQuickCreateType}
+                  disabled={quickLoading}
+                  className="px-2.5 py-1.5 bg-brand-600 hover:bg-brand-700 text-white rounded font-medium disabled:opacity-50"
+                >
+                  {quickLoading ? 'Creando...' : 'Crear y Seleccionar'}
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
 
         <Input
           label="Número de documento / ID"

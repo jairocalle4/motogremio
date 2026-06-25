@@ -158,7 +158,7 @@ export function useDocuments() {
     }
   }, [profile?.company_id])
 
-  const createDocumentType = async (name: string, targetEntity: 'member' | 'driver' | 'vehicle', requiresExpiry: boolean) => {
+  const createDocumentType = async (name: string, targetEntity: 'member' | 'driver' | 'vehicle' | 'company', requiresExpiry: boolean) => {
     if (!profile?.company_id) return { data: null, error: 'No company_id' }
     try {
       const { data, error: insertError } = await supabase

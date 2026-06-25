@@ -47,7 +47,7 @@ type CompanyFormData = z.infer<typeof companySchema>
 // ─── ESQUEMA TIPO DOCUMENTO ────────────────────────────────────────────────
 const docTypeSchema = z.object({
   name: z.string().min(3, 'El nombre debe tener al menos 3 caracteres'),
-  target_entity: z.enum(['member', 'driver', 'vehicle'], {
+  target_entity: z.enum(['member', 'driver', 'vehicle', 'company'], {
     errorMap: () => ({ message: 'Selecciona una entidad destino válida' }),
   }),
   requires_expiry: z.boolean(),
@@ -272,6 +272,7 @@ export function CompanyConfigPage() {
     if (target === 'member') return 'Socio'
     if (target === 'driver') return 'Conductor'
     if (target === 'vehicle') return 'Unidad / Vehículo'
+    if (target === 'company') return 'Compañía'
     return target
   }
 
@@ -566,6 +567,7 @@ export function CompanyConfigPage() {
                 { label: 'Socio', value: 'member' },
                 { label: 'Conductor', value: 'driver' },
                 { label: 'Unidad / Vehículo', value: 'vehicle' },
+                { label: 'Compañía', value: 'company' },
               ]}
               {...registerType('target_entity')}
             />

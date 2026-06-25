@@ -3,6 +3,7 @@ import { useLocation, Link } from 'react-router-dom'
 import { useState, useEffect } from 'react'
 import { useAuth } from '@/context/useAuth'
 import { supabase } from '@/lib/supabaseClient'
+import { usePermissions } from '@/hooks/usePermissions'
 import { MenuToggle } from './Sidebar'
 import { PLAN_LABELS, PLAN_COLORS } from '@/lib/constants'
 import type { PlanName } from '@/types'
@@ -37,7 +38,12 @@ export function Header({ onMenuToggle }: HeaderProps) {
   const { pathname } = useLocation()
   const [unreadCount, setUnreadCount] = useState(0)
 
-  const pageTitle   = PAGE_TITLES[pathname] ?? 'MotoGremio'
+  // Use permissions to rename Dashboard if socio
+  const { isSocio } = usePermissions()
+  let pageTitle = PAGE_TITLES[pathname] ?? 'MotoGremio'
+  if (pathname === '/dashboard' && isSocio) {
+    pageTitle = 'Mi Portal'
+  }
   const planName    = profile?.company?.plan?.name as PlanName | undefined
   const planLabel   = planName ? PLAN_LABELS[planName] : null
   const planColor   = planName ? PLAN_COLORS[planName] : ''

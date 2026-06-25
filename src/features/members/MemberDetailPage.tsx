@@ -25,6 +25,7 @@ import type { MemberStatus } from '@/types'
 import { DocumentsList } from '@/features/documents/DocumentsList'
 import { usePermissions } from '@/hooks/usePermissions'
 import { MemberSanctionsSection } from '@/features/sanctions/components/MemberSanctionsSection'
+import { InviteMemberModal } from './components/InviteMemberModal'
 
 export function MemberDetailPage() {
   const { id } = useParams<{ id: string }>()
@@ -34,6 +35,7 @@ export function MemberDetailPage() {
   const { vehicles, fetchVehicles } = useVehicles()
   const { fetchCharges, charges: memberCharges } = usePayments()
   const [chargesLoading, setChargesLoading] = useState(false)
+  const [isInviteModalOpen, setIsInviteModalOpen] = useState(false)
 
   const loadMemberCharges = useCallback(async () => {
     if (!id) return
@@ -111,26 +113,45 @@ export function MemberDetailPage() {
         <div className="h-24 bg-gradient-to-r from-primary-500 to-indigo-600" />
         <CardContent className="p-6 -mt-10 relative">
           <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
-            <div className="flex items-center space-x-4">
-              <div className="w-20 h-20 rounded-2xl bg-white shadow border flex items-center justify-center text-primary-500 text-3xl font-bold">
+            <div className="flex items-center space-x-5">
+              <div className="w-24 h-24 rounded-full bg-white shadow-md border-4 border-white flex items-center justify-center text-primary-600 text-4xl font-bold uppercase tracking-wider relative -mt-6">
                 {currentMember.first_name[0]}
                 {currentMember.last_name[0]}
               </div>
               <div>
-                <h1 className="text-xl font-bold text-gray-900">
+                <h1 className="text-2xl font-bold text-gray-900 tracking-tight">
                   {currentMember.first_name} {currentMember.last_name}
                 </h1>
-                <div className="flex items-center gap-2 mt-1.5">
-                  <Badge variant={statusColors[currentMember.status || 'activo']}>
+                <div className="flex items-center gap-3 mt-2">
+                  <Badge variant={statusColors[currentMember.status || 'activo']} className="px-2.5 py-0.5 text-xs">
                     {currentMember.status === 'activo'
                       ? 'Activo'
                       : currentMember.status === 'inactivo'
                       ? 'Inactivo'
                       : 'Suspendido'}
                   </Badge>
-                  <span className="text-xs text-gray-400">• C.I: {currentMember.document_id}</span>
+                  <span className="text-sm text-gray-500 font-medium">C.I: {currentMember.document_id}</span>
                 </div>
               </div>
+            </div>
+            
+            {/* Right Side: System Access Status */}
+            <div className="flex items-center gap-3 pb-1">
+              {currentMember.profile_id ? (
+                <div className="flex items-center gap-2 text-sm text-success-700 bg-success-50 px-3 py-2 rounded-lg border border-success-200 font-medium shadow-sm">
+                  <CheckCircle2 className="w-4 h-4" /> 
+                  <span>Cuenta Web Enlazada</span>
+                </div>
+              ) : (
+                <Button 
+                  variant="primary" 
+                  className="shadow-md transition-all bg-primary-600 hover:bg-primary-700 text-white font-medium px-4 py-2" 
+                  onClick={() => setIsInviteModalOpen(true)}
+                >
+                  <ShieldAlert className="w-4 h-4 mr-2" />
+                  Otorgar Acceso Web
+                </Button>
+              )}
             </div>
           </div>
         </CardContent>
@@ -247,6 +268,7 @@ export function MemberDetailPage() {
               </CardContent>
             </Card>
           )}
+
         </div>
 
         {/* Right column - operational links/placeholders */}
@@ -259,7 +281,7 @@ export function MemberDetailPage() {
                 Unidades del Socio
               </CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-6">
               {memberVehicles.length > 0 ? (
                 <div className="space-y-3">
                   {memberVehicles.map((v) => (
@@ -304,10 +326,12 @@ export function MemberDetailPage() {
                   ))}
                 </div>
               ) : (
-                <div className="border border-dashed rounded-lg p-6 text-center text-gray-400">
-                  <Car className="w-8 h-8 text-gray-300 mx-auto mb-2" />
-                  <p className="text-sm">Este socio no tiene unidades registradas.</p>
-                  <p className="text-xs mt-1 text-gray-400">
+                <div className="text-center bg-slate-50 border border-dashed border-slate-200 rounded-xl p-8">
+                  <div className="bg-white w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-3 shadow-sm border border-slate-100">
+                    <Car className="w-6 h-6 text-slate-400" />
+                  </div>
+                  <p className="text-sm font-semibold text-slate-700">Este socio no tiene unidades registradas</p>
+                  <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
                     Puedes asociar a este socio como propietario al crear o editar una unidad en el listado de Unidades.
                   </p>
                 </div>
@@ -426,6 +450,15 @@ export function MemberDetailPage() {
           </Card>
         </div>
       </div>
+
+      <InviteMemberModal 
+        isOpen={isInviteModalOpen}
+        onClose={() => setIsInviteModalOpen(false)}
+        member={currentMember}
+        onSuccess={() => {
+          fetchMemberById(currentMember.id)
+        }}
+      />
     </div>
   )
 }

@@ -149,6 +149,7 @@ export function DocumentsList({ targetEntity, entityId, title = 'Documentos' }: 
           targetEntity={targetEntity}
           entityId={entityId}
           loading={isSubmitting}
+          onTypeCreated={fetchDocumentTypes}
         />
       )}
 
