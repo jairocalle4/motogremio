@@ -65,7 +65,7 @@ export function AppRouter() {
               <Route path="/account/security" element={<ChangePasswordPage />} />
 
               {/* Rutas de Compañía (Cooperativa) */}
-              <Route element={<ProtectedRoute allowedRoles={['admin', 'gerente', 'presidente', 'secretaria', 'tesorero', 'operador', 'socio']} />}>
+              <Route element={<ProtectedRoute allowedRoles={['admin', 'gerente', 'presidente', 'secretaria', 'tesorero', 'operador']} />}>
                 {/* Módulos — Fase 3 */}
                 <Route path="/socios"           element={<MembersListPage />} />
                 <Route path="/socios/:id"       element={<MemberDetailPage />} />
