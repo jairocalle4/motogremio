@@ -584,12 +584,16 @@ export function useReports(activeTab: string = 'resumen') {
       })
 
       // Filter payments by date range
-      const startRange = startOfDay(parseISO(dateRange.startDate))
-      const endRange = startOfDay(parseISO(dateRange.endDate))
-      
       const filteredPayments = (payments || []).filter(p => {
-        const pDate = startOfDay(parseISO(p.payment_date))
-        return isWithinInterval(pDate, { start: startRange, end: endRange })
+        if (!dateRange.startDate || !dateRange.endDate) return true
+        try {
+          const startRange = startOfDay(parseISO(dateRange.startDate))
+          const endRange = startOfDay(parseISO(dateRange.endDate))
+          const pDate = startOfDay(parseISO(p.payment_date))
+          return isWithinInterval(pDate, { start: startRange, end: endRange })
+        } catch (e) {
+          return true
+        }
       })
 
       const paymentsSum = filteredPayments.reduce((sum, p) => sum + Number(p.amount), 0)
