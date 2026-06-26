@@ -3,6 +3,7 @@ import { AppAlert } from '../hooks/useNotifications'
 import { useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
+import { usePermissions } from '@/hooks/usePermissions'
 import { 
   ShieldAlert, Bell, 
   ExternalLink, Check, Calendar, Wallet, Bike, 
@@ -81,8 +82,18 @@ export function NotificationCard({ alert, onMarkAsRead }: NotificationCardProps)
 
   const styles = getSeverityStyle()
 
+  const { isSocio } = usePermissions()
+  
+  const isAllowedPath = (path?: string) => {
+    if (!path) return false
+    if (!isSocio) return true
+    return path === '/dashboard' || path === '/notificaciones'
+  }
+
+  const allowed = isAllowedPath(alert.link_url)
+
   const handleActionClick = () => {
-    if (alert.link_url) {
+    if (alert.link_url && allowed) {
       navigate(alert.link_url)
     }
   }
@@ -162,7 +173,7 @@ export function NotificationCard({ alert, onMarkAsRead }: NotificationCardProps)
           </Button>
         )}
 
-        {alert.link_url && (
+        {alert.link_url && allowed && (
           <Button
             variant="primary"
             size="sm"
@@ -172,6 +183,11 @@ export function NotificationCard({ alert, onMarkAsRead }: NotificationCardProps)
             <ExternalLink className="h-3.5 w-3.5" />
             Ir al módulo
           </Button>
+        )}
+        {alert.link_url && !allowed && (
+          <span className="text-xs text-gray-400 font-medium px-2 italic">
+            Solo lectura en portal
+          </span>
         )}
       </div>
     </div>
