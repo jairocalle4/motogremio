@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo } from 'react'
 import {
   Printer, Users, Bike, UserCheck, FileText,
   DollarSign, AlertTriangle, Calendar, Search, TrendingUp,
@@ -12,12 +12,11 @@ import { usePermissions } from '@/hooks/usePermissions'
 type TabType = 'resumen' | 'socios' | 'unidades' | 'conductores' | 'documentos' | 'finanzas' | 'sanciones' | 'reuniones'
 
 export function ReportsPage() {
-  const [loadDetails, setLoadDetails] = useState(false)
+  const [activeTab, setActiveTab] = useState<TabType>('resumen')
   const { loading: summaryLoading, error: summaryError, summary } = useReportsSummary()
-  const { loading: detailLoading, data: rawData, dateRange, setDateRange } = useReports({ enabled: loadDetails })
+  const { loading: detailLoading, data: rawData, dateRange, setDateRange } = useReports(activeTab)
   const data = rawData!
   const { canViewReports } = usePermissions()
-  const [activeTab, setActiveTab] = useState<TabType>('resumen')
   const [searchTerm, setSearchTerm] = useState('')
 
   // ─── FILTERED LISTS ────────────────────────────────────────────────────────
@@ -110,18 +109,7 @@ export function ReportsPage() {
   const handleTabChange = (tab: TabType) => {
     setActiveTab(tab)
     setSearchTerm('')
-    if (tab !== 'resumen') {
-      setLoadDetails(true)
-    }
   }
-
-  // Carga en segundo plano al montar la página para que la exportación y la impresión estén listas
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setLoadDetails(true)
-    }, 1000)
-    return () => clearTimeout(timer)
-  }, [])
 
   if (!canViewReports) {
     return (
