@@ -222,10 +222,9 @@ export function useReportsSummary() {
   }
 }
 
-export function useReports(options?: { enabled?: boolean }) {
-  const enabled = options?.enabled ?? true
+export function useReports(activeTab: string = 'resumen') {
   const { profile } = useAuth()
-  const [loading, setLoading] = useState(enabled)
+  const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [data, setData] = useState<ReportsData | null>(null)
   const [dateRange, setDateRange] = useState<{ startDate: string; endDate: string }>({
@@ -233,74 +232,111 @@ export function useReports(options?: { enabled?: boolean }) {
     endDate: new Date().toISOString().split('T')[0],
   })
 
-  const fetchReports = useCallback(async () => {
-    if (!profile?.company_id) {
-      setLoading(false)
-      return
-    }
+  // States for lazy-loaded entities
+  const [members, setMembers] = useState<any[] | null>(null)
+  const [vehicles, setVehicles] = useState<any[] | null>(null)
+  const [drivers, setDrivers] = useState<any[] | null>(null)
+  const [documents, setDocuments] = useState<any[] | null>(null)
+  const [charges, setCharges] = useState<any[] | null>(null)
+  const [payments, setPayments] = useState<any[] | null>(null)
+  const [sanctions, setSanctions] = useState<any[] | null>(null)
+  const [meetings, setMeetings] = useState<any[] | null>(null)
+
+  const loadTabEntities = useCallback(async (toLoad: string[]) => {
+    if (!profile?.company_id || toLoad.length === 0) return
+    const companyId = profile.company_id
 
     setLoading(true)
     setError(null)
 
     try {
-      const companyId = profile.company_id
+      const promises = toLoad.map(async (entity) => {
+        if (entity === 'members') {
+          const { data, error } = await supabase.from('members').select('*, licenses(*)').eq('company_id', companyId)
+          if (error) throw error
+          setMembers(data)
+        }
+        else if (entity === 'vehicles') {
+          const { data, error } = await supabase.from('vehicles').select('*, member:members(id, first_name, last_name, document_id)').eq('company_id', companyId)
+          if (error) throw error
+          setVehicles(data)
+        }
+        else if (entity === 'drivers') {
+          const { data, error } = await supabase.from('drivers').select('*, member:members(id, first_name, last_name, document_id), licenses(*)').eq('company_id', companyId)
+          if (error) throw error
+          setDrivers(data)
+        }
+        else if (entity === 'documents') {
+          const { data, error } = await supabase.from('documents').select('*, document_type:document_types(*), member:members(id, first_name, last_name, document_id), vehicle:vehicles(id, disk_number, plate), driver:drivers(id, first_name, last_name, document_id)').eq('company_id', companyId)
+          if (error) throw error
+          setDocuments(data)
+        }
+        else if (entity === 'charges') {
+          const { data, error } = await supabase.from('charges').select('*, charge_type:charge_types(*), member:members(id, first_name, last_name, document_id), vehicle:vehicles(id, disk_number, plate)').eq('company_id', companyId)
+          if (error) throw error
+          setCharges(data)
+        }
+        else if (entity === 'payments') {
+          const { data, error } = await supabase.from('payments').select('*, member:members(id, first_name, last_name, document_id)').eq('company_id', companyId)
+          if (error) throw error
+          setPayments(data)
+        }
+        else if (entity === 'sanctions') {
+          const { data, error } = await supabase.from('sanctions').select('*, sanction_type:sanction_types(*), member:members(id, first_name, last_name, document_id), vehicle:vehicles(id, disk_number, plate), charge:charges(*)').eq('company_id', companyId)
+          if (error) throw error
+          setSanctions(data)
+        }
+        else if (entity === 'meetings') {
+          const { data, error } = await supabase.from('meetings').select('*, meeting_attendances(*, member:members(id, first_name, last_name, document_id))').eq('company_id', companyId)
+          if (error) throw error
+          setMeetings(data)
+        }
+      })
+
+      await Promise.all(promises)
+    } catch (err: any) {
+      console.error('Error fetching tab entities:', err)
+      setError(err.message || 'Error al cargar los datos detallados.')
+    } finally {
+      setLoading(false)
+    }
+  }, [profile?.company_id])
+
+  useEffect(() => {
+    const tabRequirements: Record<string, string[]> = {
+      socios: ['members', 'vehicles'],
+      unidades: ['vehicles', 'drivers', 'members', 'documents'],
+      conductores: ['drivers', 'members'],
+      documentos: ['documents', 'members', 'vehicles', 'drivers'],
+      finanzas: ['charges', 'payments', 'members', 'vehicles'],
+      sanciones: ['sanctions', 'members', 'vehicles', 'charges'],
+      reuniones: ['meetings'],
+    }
+
+    const required = tabRequirements[activeTab] || []
+    if (required.length === 0) return
+
+    const toLoad: string[] = []
+    if (required.includes('members') && !members) toLoad.push('members')
+    if (required.includes('vehicles') && !vehicles) toLoad.push('vehicles')
+    if (required.includes('drivers') && !drivers) toLoad.push('drivers')
+    if (required.includes('documents') && !documents) toLoad.push('documents')
+    if (required.includes('charges') && !charges) toLoad.push('charges')
+    if (required.includes('payments') && !payments) toLoad.push('payments')
+    if (required.includes('sanctions') && !sanctions) toLoad.push('sanctions')
+    if (required.includes('meetings') && !meetings) toLoad.push('meetings')
+
+    if (toLoad.length > 0) {
+      loadTabEntities(toLoad)
+    }
+  }, [activeTab, loadTabEntities, members, vehicles, drivers, documents, charges, payments, sanctions, meetings])
+
+  // Calculation effect
+  useEffect(() => {
+    if (!profile?.company_id) return
+
+    try {
       const today = startOfDay(new Date())
-
-      // 1. Fetch members
-      const { data: members, error: mErr } = await supabase
-        .from('members')
-        .select('*, licenses(*)')
-        .eq('company_id', companyId)
-      if (mErr) throw mErr
-
-      // 2. Fetch vehicles
-      const { data: vehicles, error: vErr } = await supabase
-        .from('vehicles')
-        .select('*, member:members(id, first_name, last_name, document_id)')
-        .eq('company_id', companyId)
-      if (vErr) throw vErr
-
-      // 3. Fetch drivers
-      const { data: drivers, error: dErr } = await supabase
-        .from('drivers')
-        .select('*, member:members(id, first_name, last_name, document_id), licenses(*)')
-        .eq('company_id', companyId)
-      if (dErr) throw dErr
-
-      // 4. Fetch documents
-      const { data: documents, error: docErr } = await supabase
-        .from('documents')
-        .select('*, document_type:document_types(*), member:members(id, first_name, last_name, document_id), vehicle:vehicles(id, disk_number, plate), driver:drivers(id, first_name, last_name, document_id)')
-        .eq('company_id', companyId)
-      if (docErr) throw docErr
-
-      // 5. Fetch charges
-      const { data: charges, error: cErr } = await supabase
-        .from('charges')
-        .select('*, charge_type:charge_types(*), member:members(id, first_name, last_name, document_id), vehicle:vehicles(id, disk_number, plate)')
-        .eq('company_id', companyId)
-      if (cErr) throw cErr
-
-      // 6. Fetch payments
-      const { data: payments, error: pErr } = await supabase
-        .from('payments')
-        .select('*, member:members(id, first_name, last_name, document_id)')
-        .eq('company_id', companyId)
-      if (pErr) throw pErr
-
-      // 7. Fetch sanctions
-      const { data: sanctions, error: sErr } = await supabase
-        .from('sanctions')
-        .select('*, sanction_type:sanction_types(*), member:members(id, first_name, last_name, document_id), vehicle:vehicles(id, disk_number, plate), charge:charges(*)')
-        .eq('company_id', companyId)
-      if (sErr) throw sErr
-
-      // 8. Fetch meetings and attendances
-      const { data: meetings, error: mtErr } = await supabase
-        .from('meetings')
-        .select('*, meeting_attendances(*, member:members(id, first_name, last_name, document_id))')
-        .eq('company_id', companyId)
-      if (mtErr) throw mtErr
 
       // ─── COMPUTACIONES / METRICAS DE SOCIOS ─────────────────────────────────
       const memberVehicleMap = new Map<string, string[]>()
@@ -750,16 +786,8 @@ export function useReports(options?: { enabled?: boolean }) {
     } catch (err: any) {
       console.error('Error computing report metrics:', err)
       setError(err.message || 'Error al calcular métricas de reportes.')
-    } finally {
-      setLoading(false)
     }
-  }, [profile?.company_id, dateRange.startDate, dateRange.endDate])
-
-  useEffect(() => {
-    if (enabled) {
-      fetchReports()
-    }
-  }, [fetchReports, enabled])
+  }, [profile?.company_id, dateRange.startDate, dateRange.endDate, members, vehicles, drivers, documents, charges, payments, sanctions, meetings])
 
   return {
     loading,
@@ -767,6 +795,27 @@ export function useReports(options?: { enabled?: boolean }) {
     data,
     dateRange,
     setDateRange,
-    refetch: fetchReports,
+    refetch: () => {
+      const tabRequirements: Record<string, string[]> = {
+        socios: ['members', 'vehicles'],
+        unidades: ['vehicles', 'drivers', 'members', 'documents'],
+        conductores: ['drivers', 'members'],
+        documentos: ['documents', 'members', 'vehicles', 'drivers'],
+        finanzas: ['charges', 'payments', 'members', 'vehicles'],
+        sanciones: ['sanctions', 'members', 'vehicles', 'charges'],
+        reuniones: ['meetings'],
+      }
+      const required = tabRequirements[activeTab] || []
+      if (required.length > 0) {
+        if (required.includes('members')) setMembers(null)
+        if (required.includes('vehicles')) setVehicles(null)
+        if (required.includes('drivers')) setDrivers(null)
+        if (required.includes('documents')) setDocuments(null)
+        if (required.includes('charges')) setCharges(null)
+        if (required.includes('payments')) setPayments(null)
+        if (required.includes('sanctions')) setSanctions(null)
+        if (required.includes('meetings')) setMeetings(null)
+      }
+    },
   }
 }
