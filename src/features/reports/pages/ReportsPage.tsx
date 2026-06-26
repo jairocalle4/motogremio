@@ -19,6 +19,35 @@ export function ReportsPage() {
   const { canViewReports } = usePermissions()
   const [searchTerm, setSearchTerm] = useState('')
 
+  // Local state for date filters
+  const [tempStartDate, setTempStartDate] = useState(dateRange.startDate)
+  const [tempEndDate, setTempEndDate] = useState(dateRange.endDate)
+  const [dateError, setDateError] = useState<string | null>(null)
+
+  const handleApplyFilters = () => {
+    if ((tempStartDate && !tempEndDate) || (!tempStartDate && tempEndDate)) {
+      setDateError('Ambas fechas son obligatorias si se aplica el filtro.')
+      return
+    }
+
+    if (tempStartDate && tempEndDate) {
+      if (new Date(tempStartDate) > new Date(tempEndDate)) {
+        setDateError('La fecha "Desde" no puede ser mayor que la fecha "Hasta".')
+        return
+      }
+    }
+
+    setDateError(null)
+    setDateRange({ startDate: tempStartDate, endDate: tempEndDate })
+  }
+
+  const handleClearFilters = () => {
+    setTempStartDate('')
+    setTempEndDate('')
+    setDateError(null)
+    setDateRange({ startDate: '', endDate: '' })
+  }
+
   // ─── FILTERED LISTS ────────────────────────────────────────────────────────
   const filteredSocios = useMemo(() => {
     if (!data?.socios.list) return []
@@ -264,6 +293,49 @@ export function ReportsPage() {
 
   return (
     <div className="page-container p-6 space-y-6 max-w-7xl mx-auto print:p-0 print:m-0 print:max-w-none">
+      <style>{`
+        @media print {
+          /* Ocultar barra lateral, cabecera de la app y controles interactivos */
+          aside, header, nav, button, input, select,
+          .no-print, .print\\:hidden, .filters-container, .tabs-container {
+            display: none !important;
+          }
+          body, html, #root, .app-layout, .page-container {
+            background: white !important;
+            color: black !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            width: 100% !important;
+            max-width: 100% !important;
+            box-shadow: none !important;
+          }
+          .page-container {
+            padding: 1.5cm !important;
+          }
+          .card {
+            border: 1px solid #e2e8f0 !important;
+            box-shadow: none !important;
+            page-break-inside: avoid;
+            margin-bottom: 20px;
+          }
+          table {
+            width: 100% !important;
+            border-collapse: collapse !important;
+          }
+          th, td {
+            border: 1px solid #cbd5e1 !important;
+            padding: 8px !important;
+            font-size: 11px !important;
+          }
+          thead {
+            display: table-header-group;
+          }
+          tr {
+            page-break-inside: avoid;
+          }
+        }
+      `}</style>
+
       {/* HEADER */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-gray-200 pb-5 print:hidden">
         <div>
@@ -273,36 +345,72 @@ export function ReportsPage() {
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-3">
-          <div className="flex items-center gap-2 border border-gray-300 rounded-lg p-2 bg-white shadow-sm">
-            <span className="text-xs text-gray-500 font-medium px-1">Rango Recaudaciones:</span>
-            <input
-              type="date"
-              className="text-sm border-none focus:ring-0 p-0 text-gray-700"
-              value={dateRange.startDate}
-              onChange={e => setDateRange(prev => ({ ...prev, startDate: e.target.value }))}
-            />
-            <span className="text-gray-400 text-sm">-</span>
-            <input
-              type="date"
-              className="text-sm border-none focus:ring-0 p-0 text-gray-700"
-              value={dateRange.endDate}
-              onChange={e => setDateRange(prev => ({ ...prev, endDate: e.target.value }))}
-            />
-          </div>
           <Button onClick={handlePrint} variant="outline" size="sm" className="flex items-center gap-2">
             <Printer className="h-4 w-4" />
-            Imprimir
+            Imprimir Reporte
           </Button>
         </div>
       </div>
 
+      {/* FILTROS DE FECHA */}
+      <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm print:hidden space-y-3">
+        <div className="flex flex-wrap items-center gap-4">
+          <div className="flex items-center gap-2 border border-gray-300 rounded-lg px-3 py-2 bg-gray-50">
+            <span className="text-xs text-gray-500 font-medium">Desde:</span>
+            <input
+              type="date"
+              className="text-sm border-none bg-transparent focus:ring-0 p-0 text-gray-700"
+              value={tempStartDate}
+              onChange={e => setTempStartDate(e.target.value)}
+            />
+          </div>
+          <div className="flex items-center gap-2 border border-gray-300 rounded-lg px-3 py-2 bg-gray-50">
+            <span className="text-xs text-gray-500 font-medium">Hasta:</span>
+            <input
+              type="date"
+              className="text-sm border-none bg-transparent focus:ring-0 p-0 text-gray-700"
+              value={tempEndDate}
+              onChange={e => setTempEndDate(e.target.value)}
+            />
+          </div>
+          <Button onClick={handleApplyFilters} size="sm" className="bg-primary-600 hover:bg-primary-700 text-white font-medium">
+            Aplicar filtros
+          </Button>
+          {(tempStartDate || tempEndDate || dateRange.startDate || dateRange.endDate) && (
+            <Button onClick={handleClearFilters} size="sm" variant="ghost" className="text-gray-500 hover:text-gray-700">
+              Limpiar
+            </Button>
+          )}
+        </div>
+
+        {dateError && (
+          <p className="text-xs text-red-600 font-medium flex items-center gap-1">
+            <AlertTriangle className="h-3.5 w-3.5 shrink-0 text-red-500" />
+            {dateError}
+          </p>
+        )}
+
+        <div className="text-xs text-gray-500 flex items-center gap-2">
+          <span className="font-semibold text-gray-700">Estado del filtro:</span>
+          {dateRange.startDate && dateRange.endDate ? (
+            <span className="bg-primary-50 text-primary-700 px-2 py-0.5 rounded-full font-medium">
+              Rango aplicado: {new Date(dateRange.startDate + 'T00:00:00').toLocaleDateString('es-EC')} — {new Date(dateRange.endDate + 'T00:00:00').toLocaleDateString('es-EC')}
+            </span>
+          ) : (
+            <span className="bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full font-medium">
+              Sin filtro de fechas aplicado (mostrando todo)
+            </span>
+          )}
+        </div>
+      </div>
+
       {/* PRINT-ONLY HEADER */}
-      <div className="hidden print:block mb-8 text-center">
-        <h1 className="text-3xl font-bold text-gray-900 border-b-2 border-gray-800 pb-2">
+      <div className="hidden print:block mb-8 text-center border-b-2 border-gray-800 pb-4">
+        <h1 className="text-2xl font-bold text-gray-900">
           SISTEMA DE GESTIÓN DE TRANSPORTE - INFORME GENERAL
         </h1>
-        <p className="text-sm text-gray-600 mt-2">
-          Generado el: {new Date().toLocaleDateString('es-EC')} | Rango Recaudaciones: {dateRange.startDate} a {dateRange.endDate}
+        <p className="text-xs text-gray-600 mt-2">
+          Generado el: {new Date().toLocaleDateString('es-EC')} | Rango: {dateRange.startDate && dateRange.endDate ? `${new Date(dateRange.startDate + 'T00:00:00').toLocaleDateString('es-EC')} a ${new Date(dateRange.endDate + 'T00:00:00').toLocaleDateString('es-EC')}` : 'Sin filtro aplicado (Histórico)'}
         </p>
       </div>
 

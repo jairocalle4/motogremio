@@ -7,7 +7,7 @@ export function exportToCsv<T>(
   columns: Array<{ key: keyof T | string; label: string; render?: (val: any, row: T) => string }>,
   data: T[]
 ) {
-  const headers = columns.map(col => `"${col.label.replace(/"/g, '""')}"`).join(',')
+  const headers = columns.map(col => `"${col.label.replace(/"/g, '""')}"`).join(';')
   
   const rows = data.map(row => {
     return columns
@@ -23,7 +23,7 @@ export function exportToCsv<T>(
         if (val === null || val === undefined) {
           val = ''
         } else if (Array.isArray(val)) {
-          val = val.join('; ')
+          val = val.join(', ') // Join array elements with comma instead of semicolon to prevent column split issues
         } else {
           val = String(val)
         }
@@ -31,10 +31,11 @@ export function exportToCsv<T>(
         // Escape quotes
         return `"${val.replace(/"/g, '""')}"`
       })
-      .join(',')
+      .join(';')
   })
 
-  const csvContent = '\uFEFF' + [headers, ...rows].join('\n')
+  // Prepend BOM and sep=; so Excel correctly reads Spanish accents and uses semicolon as separator
+  const csvContent = '\uFEFF' + 'sep=;\n' + [headers, ...rows].join('\n')
   const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
   const url = URL.createObjectURL(blob)
   
