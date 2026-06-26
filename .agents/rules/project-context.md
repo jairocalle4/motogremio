@@ -554,6 +554,8 @@ Antes de implementar funcionalidades importantes, el agente debe:
 9. Mantener documentación actualizada cuando se tomen nuevas decisiones.
 10. Priorizar un producto vendible, mantenible y profesional.
 11. El rol socio solo puede consultar información propia. A nivel RLS, no debe poder leer documentos institucionales de compañía ni documentos de otros socios/unidades. La UI nunca debe ser la única barrera de seguridad.
+12. Las alertas dinámicas por vencimientos deben calcularse en backend mediante RPC segura. El frontend no debe consultar masivamente tablas sensibles ni depender de la UI para filtrar información de socios.
+
 
 ---
 
