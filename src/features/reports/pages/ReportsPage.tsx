@@ -1,10 +1,10 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import {
   Printer, Users, Bike, UserCheck, FileText,
   DollarSign, AlertTriangle, Calendar, Search, TrendingUp,
   BarChart2, FileSpreadsheet, RefreshCw
 } from 'lucide-react'
-import { useReports } from '../hooks/useReports'
+import { useReports, useReportsSummary } from '../hooks/useReports'
 import { exportToCsv } from '../utils/exportCsv'
 import { Card, CardHeader, CardTitle, CardContent, Badge, Button, Input } from '@/components/ui'
 import { usePermissions } from '@/hooks/usePermissions'
@@ -12,7 +12,10 @@ import { usePermissions } from '@/hooks/usePermissions'
 type TabType = 'resumen' | 'socios' | 'unidades' | 'conductores' | 'documentos' | 'finanzas' | 'sanciones' | 'reuniones'
 
 export function ReportsPage() {
-  const { loading, error, data, dateRange, setDateRange } = useReports()
+  const [loadDetails, setLoadDetails] = useState(false)
+  const { loading: summaryLoading, error: summaryError, summary } = useReportsSummary()
+  const { loading: detailLoading, data: rawData, dateRange, setDateRange } = useReports({ enabled: loadDetails })
+  const data = rawData!
   const { canViewReports } = usePermissions()
   const [activeTab, setActiveTab] = useState<TabType>('resumen')
   const [searchTerm, setSearchTerm] = useState('')
@@ -107,7 +110,18 @@ export function ReportsPage() {
   const handleTabChange = (tab: TabType) => {
     setActiveTab(tab)
     setSearchTerm('')
+    if (tab !== 'resumen') {
+      setLoadDetails(true)
+    }
   }
+
+  // Carga en segundo plano al montar la página para que la exportación y la impresión estén listas
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setLoadDetails(true)
+    }, 1000)
+    return () => clearTimeout(timer)
+  }, [])
 
   if (!canViewReports) {
     return (
@@ -233,32 +247,32 @@ export function ReportsPage() {
     window.print()
   }
 
-  if (loading) {
+  if (summaryLoading) {
     return (
       <div className="flex h-[50vh] items-center justify-center">
         <div className="text-center">
           <RefreshCw className="mx-auto h-10 w-10 animate-spin text-primary-600 mb-4" />
-          <p className="text-gray-500 font-medium">Cargando y calculando métricas...</p>
+          <p className="text-gray-500 font-medium">Cargando resumen de reportes...</p>
         </div>
       </div>
     )
   }
 
-  if (error) {
+  if (summaryError) {
     return (
       <div className="page-container p-6">
         <div className="bg-red-50 border border-red-200 text-red-700 p-4 rounded-lg flex items-center gap-3">
           <AlertTriangle className="h-6 w-6 shrink-0" />
           <div>
             <h3 className="font-semibold">Error al cargar reportes</h3>
-            <p className="text-sm">{error}</p>
+            <p className="text-sm">{summaryError}</p>
           </div>
         </div>
       </div>
     )
   }
 
-  if (!data) return null
+  if (!summary) return null
 
   return (
     <div className="page-container p-6 space-y-6 max-w-7xl mx-auto print:p-0 print:m-0 print:max-w-none">
@@ -344,8 +358,8 @@ export function ReportsPage() {
               <CardContent className="p-5 flex items-center justify-between">
                 <div>
                   <p className="text-sm text-gray-500 font-medium">Socios Activos</p>
-                  <h3 className="text-2xl font-bold text-gray-900 mt-1">{data.socios.active}</h3>
-                  <p className="text-xs text-gray-400 mt-1">Total registrados: {data.socios.total}</p>
+                  <h3 className="text-2xl font-bold text-gray-900 mt-1">{summary.members_active}</h3>
+                  <p className="text-xs text-gray-400 mt-1">Total registrados: {summary.members_total}</p>
                 </div>
                 <div className="p-3 bg-blue-50 text-blue-600 rounded-xl">
                   <Users className="h-6 w-6" />
@@ -357,8 +371,8 @@ export function ReportsPage() {
               <CardContent className="p-5 flex items-center justify-between">
                 <div>
                   <p className="text-sm text-gray-500 font-medium">Unidades Operativas</p>
-                  <h3 className="text-2xl font-bold text-gray-900 mt-1">{data.unidades.active}</h3>
-                  <p className="text-xs text-gray-400 mt-1">Mantenimiento: {data.unidades.maintenance}</p>
+                  <h3 className="text-2xl font-bold text-gray-900 mt-1">{summary.vehicles_active}</h3>
+                  <p className="text-xs text-gray-400 mt-1">Mantenimiento: {data ? data.unidades.maintenance : (summary.vehicles_total - summary.vehicles_active)}</p>
                 </div>
                 <div className="p-3 bg-green-50 text-green-600 rounded-xl">
                   <Bike className="h-6 w-6" />
@@ -370,8 +384,8 @@ export function ReportsPage() {
               <CardContent className="p-5 flex items-center justify-between">
                 <div>
                   <p className="text-sm text-gray-500 font-medium">Por Recaudar</p>
-                  <h3 className="text-2xl font-bold text-red-600 mt-1">${data.financiero.totalPending.toFixed(2)}</h3>
-                  <p className="text-xs text-gray-400 mt-1">{data.financiero.debtorMembersCount} socios deudores</p>
+                  <h3 className="text-2xl font-bold text-red-600 mt-1">${summary.balance_pending.toFixed(2)}</h3>
+                  <p className="text-xs text-gray-400 mt-1">{data ? `${data.financiero.debtorMembersCount} socios deudores` : `${summary.charges_pending} cargos pendientes`}</p>
                 </div>
                 <div className="p-3 bg-red-50 text-red-600 rounded-xl">
                   <DollarSign className="h-6 w-6" />
@@ -382,9 +396,9 @@ export function ReportsPage() {
             <Card className="shadow-sm border border-gray-200">
               <CardContent className="p-5 flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-500 font-medium font-medium">Asistencia Promedio</p>
-                  <h3 className="text-2xl font-bold text-purple-600 mt-1">{data.reuniones.attendanceRate}%</h3>
-                  <p className="text-xs text-gray-400 mt-1">En {data.reuniones.total} reuniones</p>
+                  <p className="text-sm text-gray-500 font-medium">Asistencia Promedio</p>
+                  <h3 className="text-2xl font-bold text-purple-600 mt-1">{data ? `${data.reuniones.attendanceRate}%` : '—'}</h3>
+                  <p className="text-xs text-gray-400 mt-1">En {summary.meetings_total} reuniones</p>
                 </div>
                 <div className="p-3 bg-purple-50 text-purple-600 rounded-xl">
                   <Calendar className="h-6 w-6" />
@@ -405,23 +419,23 @@ export function ReportsPage() {
               <CardContent className="p-5 space-y-4">
                 <div className="flex justify-between items-center py-2 border-b border-gray-50">
                   <span className="text-gray-600 text-sm">Documentos Vencidos (Alerta)</span>
-                  <Badge variant="danger" className="font-semibold">{data.documentos.expired}</Badge>
+                  <Badge variant="danger" className="font-semibold">{summary.documents_expired}</Badge>
                 </div>
                 <div className="flex justify-between items-center py-2 border-b border-gray-50">
                   <span className="text-gray-600 text-sm">Documentos por vencer (próximos 30 días)</span>
-                  <Badge variant="warning" className="font-semibold">{data.documentos.upcoming30}</Badge>
+                  <Badge variant="warning" className="font-semibold">{summary.documents_expiring_soon}</Badge>
                 </div>
                 <div className="flex justify-between items-center py-2 border-b border-gray-50">
                   <span className="text-gray-600 text-sm">Documentos por vencer (próximos 30-60 días)</span>
-                  <Badge variant="warning" className="font-semibold">{data.documentos.upcoming60}</Badge>
+                  <Badge variant="warning" className="font-semibold">{data ? data.documentos.upcoming60 : '—'}</Badge>
                 </div>
                 <div className="flex justify-between items-center py-2 border-b border-gray-50">
                   <span className="text-gray-600 text-sm">Conductores sin licencia principal vigente</span>
-                  <Badge variant="danger" className="font-semibold">{data.conductores.licenseExpiredOrMissing}</Badge>
+                  <Badge variant="danger" className="font-semibold">{summary.licenses_expired}</Badge>
                 </div>
                 <div className="flex justify-between items-center py-2">
                   <span className="text-gray-600 text-sm">Unidades sin conductor asignado</span>
-                  <Badge variant="warning" className="font-semibold">{data.unidades.unassignedDrivers}</Badge>
+                  <Badge variant="warning" className="font-semibold">{data ? data.unidades.unassignedDrivers : '—'}</Badge>
                 </div>
               </CardContent>
             </Card>
@@ -436,19 +450,19 @@ export function ReportsPage() {
               <CardContent className="p-5 space-y-4">
                 <div className="flex justify-between items-center py-2 border-b border-gray-50">
                   <span className="text-gray-600 text-sm">Transacciones de pago registradas</span>
-                  <span className="font-semibold text-gray-800">{data.financiero.paymentsCount} transacciones</span>
+                  <span className="font-semibold text-gray-800">{data ? `${data.financiero.paymentsCount} transacciones` : '—'}</span>
                 </div>
                 <div className="flex justify-between items-center py-2 border-b border-gray-50">
                   <span className="text-gray-600 text-sm">Monto total recaudado en rango</span>
-                  <span className="font-bold text-green-600 text-lg">${data.financiero.paymentsSum.toFixed(2)}</span>
+                  <span className="font-bold text-green-600 text-lg">{data ? `$${data.financiero.paymentsSum.toFixed(2)}` : '—'}</span>
                 </div>
                 <div className="flex justify-between items-center py-2 border-b border-gray-50">
                   <span className="text-gray-600 text-sm">Multas de sanciones pendientes de pago</span>
-                  <span className="font-semibold text-amber-600">${data.sanciones.pendingFinesAmount.toFixed(2)}</span>
+                  <span className="font-semibold text-amber-600">{data ? `$${data.sanciones.pendingFinesAmount.toFixed(2)}` : '—'}</span>
                 </div>
                 <div className="flex justify-between items-center py-2">
                   <span className="text-gray-600 text-sm">Total histórico recaudado en multas</span>
-                  <span className="font-semibold text-green-600">${data.sanciones.paidFinesAmount.toFixed(2)}</span>
+                  <span className="font-semibold text-green-600">{data ? `$${data.sanciones.paidFinesAmount.toFixed(2)}` : '—'}</span>
                 </div>
               </CardContent>
             </Card>
@@ -456,7 +470,16 @@ export function ReportsPage() {
         </div>
       )}
 
-      {/* ─── TAB CONTENT: SOCIOS ───────────────────────────────────────────── */}
+      {activeTab !== 'resumen' && (detailLoading || !rawData) ? (
+        <div className="flex h-[40vh] items-center justify-center bg-white border border-gray-200 rounded-xl p-12 shadow-sm">
+          <div className="text-center">
+            <RefreshCw className="mx-auto h-8 w-8 animate-spin text-primary-600 mb-3" />
+            <p className="text-gray-500 font-medium">Cargando información detallada...</p>
+          </div>
+        </div>
+      ) : (
+        <>
+          {/* ─── TAB CONTENT: SOCIOS ───────────────────────────────────────────── */}
       {activeTab === 'socios' && (
         <div className="space-y-6">
           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 print:grid-cols-4">
@@ -1146,6 +1169,8 @@ export function ReportsPage() {
             </Card>
           </div>
         </div>
+      )}
+        </>
       )}
     </div>
   )
