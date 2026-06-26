@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react'
 import { Card, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Badge } from '@/components/ui/Badge'
-import { Bike, FileText, User as UserIcon, AlertTriangle } from 'lucide-react'
+import { Bike, FileText, User as UserIcon, AlertTriangle, Bell } from 'lucide-react'
 import { useAuth } from '@/context/useAuth'
 import { supabase } from '@/lib/supabaseClient'
 import { formatDate } from '@/lib/utils'
+import { useNotifications } from '@/features/notifications/hooks/useNotifications'
+import { Link } from 'react-router-dom'
 
 interface SocioInfo {
   member: any
@@ -16,6 +18,8 @@ export function SocioPortalPage() {
   const { user, profile } = useAuth()
   const [data, setData] = useState<SocioInfo | null>(null)
   const [loading, setLoading] = useState(true)
+  
+  const { alerts } = useNotifications()
 
   const companyId = profile?.company_id
   const firstName = profile?.first_name ?? 'Socio'
@@ -189,6 +193,60 @@ export function SocioPortalPage() {
                     </Badge>
                   </div>
                 ))}
+              </div>
+            )}
+          </div>
+        </Card>
+
+        {/* Mis Alertas y Pendientes */}
+        <Card className="md:col-span-2">
+          <CardHeader className="flex flex-row justify-between items-center">
+            <CardTitle className="flex items-center gap-2">
+              <Bell className="h-5 w-5 text-danger-500 animate-pulse" />
+              Alertas y Avisos Importantes
+            </CardTitle>
+            {alerts.length > 0 && (
+              <Badge variant="danger">
+                {alerts.length} pendiente{alerts.length > 1 ? 's' : ''}
+              </Badge>
+            )}
+          </CardHeader>
+          <div className="p-5 border-t border-gray-100">
+            {alerts.length === 0 ? (
+              <div className="text-center py-8 bg-gray-50 rounded-lg border border-dashed border-gray-200">
+                <p className="text-sm text-gray-500 font-medium">¡Excelente! No tienes alertas ni avisos pendientes de revisión.</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {alerts.slice(0, 3).map(alert => (
+                  <div key={alert.id} className="flex gap-3 items-start p-3 bg-gray-50/50 hover:bg-gray-50 rounded-lg border border-gray-100 transition-colors">
+                    <div className="mt-0.5 shrink-0">
+                      {alert.severity === 'critica' ? (
+                        <span className="flex h-2 w-2 relative mt-1.5">
+                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-danger-400 opacity-75"></span>
+                          <span className="relative inline-flex rounded-full h-2 w-2 bg-danger-500"></span>
+                        </span>
+                      ) : (
+                        <span className="block h-2 w-2 rounded-full bg-warning-500 mt-1.5" />
+                      )}
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-xs font-semibold text-gray-900 leading-tight">
+                        {alert.title}
+                      </p>
+                      <p className="text-xs text-gray-600 mt-0.5">
+                        {alert.message}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+                {alerts.length > 3 && (
+                  <div className="text-right mt-2">
+                    <Link to="/notificaciones" className="text-xs font-semibold text-primary-600 hover:text-primary-700 hover:underline">
+                      Ver las {alerts.length} alertas completas →
+                    </Link>
+                  </div>
+                )}
               </div>
             )}
           </div>

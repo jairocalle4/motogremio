@@ -56,7 +56,7 @@ export function usePermissions() {
   const canViewReports = hasRole('super_admin', 'admin', 'gerente', 'presidente', 'secretaria', 'tesorero', 'operador')
 
   /** Centro de Alertas y Notificaciones */
-  const canViewNotifications = hasRole('super_admin', 'admin', 'gerente', 'presidente', 'secretaria', 'tesorero', 'operador')
+  const canViewNotifications = hasRole('super_admin', 'admin', 'gerente', 'presidente', 'secretaria', 'tesorero', 'operador', 'socio')
 
   /** Gestión de configuraciones y usuarios */
   const canManageUsers = hasRole('super_admin', 'admin')
