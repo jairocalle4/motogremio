@@ -163,9 +163,69 @@ export interface ReportsData {
   }
 }
 
-export function useReports() {
+export interface ReportsSummaryData {
+  members_total: number
+  members_active: number
+  vehicles_total: number
+  vehicles_active: number
+  drivers_total: number
+  documents_expired: number
+  documents_expiring_soon: number
+  licenses_expired: number
+  licenses_expiring_soon: number
+  charges_pending: number
+  charges_overdue: number
+  balance_pending: number
+  sanctions_total: number
+  meetings_total: number
+}
+
+export function useReportsSummary() {
   const { profile } = useAuth()
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [summary, setSummary] = useState<ReportsSummaryData | null>(null)
+
+  const fetchSummary = useCallback(async () => {
+    if (!profile?.company_id) {
+      setLoading(false)
+      return
+    }
+    setLoading(true)
+    setError(null)
+    try {
+      const { data, error: rpcErr } = await (supabase.rpc as any)('get_company_reports_summary')
+      if (rpcErr) throw rpcErr
+      const resData = data as any
+      if (resData && resData.summary) {
+        setSummary(resData.summary)
+      } else {
+        setSummary(null)
+      }
+    } catch (err: any) {
+      console.error('Error fetching company reports summary:', err)
+      setError(err.message || 'Error al obtener resumen de reportes.')
+    } finally {
+      setLoading(false)
+    }
+  }, [profile?.company_id])
+
+  useEffect(() => {
+    fetchSummary()
+  }, [fetchSummary])
+
+  return {
+    loading,
+    error,
+    summary,
+    refetch: fetchSummary
+  }
+}
+
+export function useReports(options?: { enabled?: boolean }) {
+  const enabled = options?.enabled ?? true
+  const { profile } = useAuth()
+  const [loading, setLoading] = useState(enabled)
   const [error, setError] = useState<string | null>(null)
   const [data, setData] = useState<ReportsData | null>(null)
   const [dateRange, setDateRange] = useState<{ startDate: string; endDate: string }>({
@@ -696,8 +756,10 @@ export function useReports() {
   }, [profile?.company_id, dateRange.startDate, dateRange.endDate])
 
   useEffect(() => {
-    fetchReports()
-  }, [fetchReports])
+    if (enabled) {
+      fetchReports()
+    }
+  }, [fetchReports, enabled])
 
   return {
     loading,
