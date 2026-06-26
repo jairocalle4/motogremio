@@ -91,7 +91,7 @@ BEGIN
       AND d.expiry_date IS NOT NULL
       AND (d.expiry_date - CURRENT_DATE) <= 30
       AND (
-        v_role IN ('admin', 'secretaria', 'gerente', 'presidente', 'tesorero', 'operador')
+        v_role IN ('admin', 'secretaria')
         OR (v_role = 'socio' AND d.member_id = v_member_id)
         OR (v_role = 'socio' AND d.vehicle_id IN (SELECT id FROM public.vehicles WHERE member_id = v_member_id))
         OR (v_role = 'socio' AND d.driver_id IN (SELECT id FROM public.drivers WHERE member_id = v_member_id))
@@ -136,14 +136,14 @@ BEGIN
       AND l.expiry_date IS NOT NULL
       AND (l.expiry_date - CURRENT_DATE) <= 30
       AND (
-        v_role IN ('admin', 'secretaria', 'gerente', 'presidente', 'tesorero', 'operador')
+        v_role IN ('admin', 'secretaria')
         OR (v_role = 'socio' AND l.member_id = v_member_id)
         OR (v_role = 'socio' AND l.driver_id IN (SELECT id FROM public.drivers WHERE member_id = v_member_id))
       )
 
     UNION ALL
 
-    -- C) Active Drivers/Members without Licenses (only for Admin/Secretaria/Directiva)
+    -- C) Active Drivers/Members without Licenses (only for Admin/Secretaria)
     SELECT 
       'dri-sin-lic-' || dr.id::text AS id,
       'licencias' AS source,
@@ -159,7 +159,7 @@ BEGIN
     FROM public.drivers dr
     WHERE dr.company_id = v_company_id
       AND dr.status = 'activo'
-      AND v_role IN ('admin', 'secretaria', 'gerente', 'presidente', 'tesorero', 'operador')
+      AND v_role IN ('admin', 'secretaria')
       AND NOT EXISTS (SELECT 1 FROM public.licenses WHERE driver_id = dr.id)
 
     UNION ALL
@@ -179,7 +179,7 @@ BEGIN
     FROM public.members m
     WHERE m.company_id = v_company_id
       AND m.status = 'activo'
-      AND v_role IN ('admin', 'secretaria', 'gerente', 'presidente', 'tesorero', 'operador')
+      AND v_role IN ('admin', 'secretaria')
       AND NOT EXISTS (SELECT 1 FROM public.licenses WHERE member_id = m.id)
 
     UNION ALL
@@ -213,7 +213,7 @@ BEGIN
       AND c.balance > 0
       AND c.status <> 'anulada'
       AND (
-        v_role IN ('admin', 'secretaria', 'gerente', 'presidente', 'tesorero', 'operador')
+        v_role IN ('admin', 'secretaria')
         OR (v_role = 'socio' AND c.member_id = v_member_id)
       )
       AND (c.due_date < CURRENT_DATE OR (c.due_date - CURRENT_DATE) <= 7)
@@ -249,7 +249,7 @@ BEGIN
         (mt.status = 'programada' AND (mt.date - CURRENT_DATE) >= 0 AND (mt.date - CURRENT_DATE) <= 3)
         OR
         -- Passed without closing (only for Directiva)
-        (mt.date < CURRENT_DATE AND mt.status IN ('programada', 'en_curso') AND v_role IN ('admin', 'secretaria', 'gerente', 'presidente', 'tesorero', 'operador'))
+        (mt.date < CURRENT_DATE AND mt.status IN ('programada', 'en_curso') AND v_role IN ('admin', 'secretaria'))
       )
 
     UNION ALL
@@ -271,7 +271,7 @@ BEGIN
     WHERE v.company_id = v_company_id
       AND v.status = 'activa'
       AND v.driver_id IS NULL
-      AND v_role IN ('admin', 'secretaria', 'gerente', 'presidente', 'tesorero', 'operador')
+      AND v_role IN ('admin', 'secretaria')
 
     UNION ALL
 
@@ -354,7 +354,7 @@ USING (
     WHERE p.id = auth.uid()
       AND p.company_id = notifications.company_id
       AND p.is_active = true
-      AND p.role IN ('admin', 'secretaria', 'gerente', 'presidente', 'tesorero', 'operador')
+      AND p.role IN ('admin', 'secretaria')
   )
   OR (
     notifications.user_id = auth.uid()
