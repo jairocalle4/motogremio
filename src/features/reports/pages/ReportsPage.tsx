@@ -7,7 +7,8 @@ import {
 import { useReports, useReportsSummary } from '../hooks/useReports'
 import { exportToCsv } from '../utils/exportCsv'
 import { Card, CardHeader, CardTitle, CardContent, Badge, Button, Input } from '@/components/ui'
-import { usePermissions } from '@/hooks/usePermissions'
+import { usePermissions, useAuth } from '@/hooks/usePermissions'
+import { useBranding } from '@/context/BrandingContext'
 
 type TabType = 'resumen' | 'socios' | 'unidades' | 'conductores' | 'documentos' | 'finanzas' | 'sanciones' | 'reuniones'
 
@@ -17,6 +18,9 @@ export function ReportsPage() {
   const { loading: detailLoading, data: rawData, dateRange, setDateRange } = useReports(activeTab)
   const data = rawData!
   const { canViewReports } = usePermissions()
+  const { profile } = useAuth()
+  const { branding } = useBranding()
+  const companyName = profile?.company?.trade_name ?? profile?.company?.legal_name ?? 'Compañía'
   const [searchTerm, setSearchTerm] = useState('')
 
   // Local state for date filters
@@ -155,6 +159,14 @@ export function ReportsPage() {
   }
 
   // ─── CSV EXPORTS ───────────────────────────────────────────────────────────
+  const getExportMetadata = (reportName: string) => ({
+    companyName,
+    reportName,
+    dateRange: dateRange.startDate && dateRange.endDate
+      ? `${new Date(dateRange.startDate + 'T00:00:00').toLocaleDateString('es-EC')} - ${new Date(dateRange.endDate + 'T00:00:00').toLocaleDateString('es-EC')}`
+      : 'Histórico / Sin Filtro'
+  })
+
   const exportSocios = () => {
     if (!data) return
     exportToCsv('reporte_socios', [
@@ -166,7 +178,7 @@ export function ReportsPage() {
       { key: 'admission_date', label: 'Fecha Admisión' },
       { key: 'vehicle_count', label: 'Nº de Unidades' },
       { key: 'vehicles', label: 'Unidades (Discos)' },
-    ], filteredSocios)
+    ], filteredSocios, getExportMetadata('Reporte de Socios'))
   }
 
   const exportUnidades = () => {
@@ -182,7 +194,7 @@ export function ReportsPage() {
       { key: 'year', label: 'Año' },
       { key: 'expired_docs_count', label: 'Documentos Vencidos' },
       { key: 'upcoming_docs_count', label: 'Documentos Por Vencer' },
-    ], filteredUnidades)
+    ], filteredUnidades, getExportMetadata('Reporte de Unidades'))
   }
 
   const exportConductores = () => {
@@ -198,7 +210,7 @@ export function ReportsPage() {
       { key: 'license_type', label: 'Licencia' },
       { key: 'license_status', label: 'Estado Licencia' },
       { key: 'license_expiry', label: 'Vencimiento Licencia' },
-    ], filteredConductores)
+    ], filteredConductores, getExportMetadata('Reporte de Conductores'))
   }
 
   const exportDocumentos = () => {
@@ -211,7 +223,7 @@ export function ReportsPage() {
       { key: 'entity_identifier', label: 'Identificador Entidad' },
       { key: 'expiry_date', label: 'Fecha Vencimiento' },
       { key: 'status', label: 'Estado' },
-    ], filteredDocumentos)
+    ], filteredDocumentos, getExportMetadata('Reporte de Documentos'))
   }
 
   const exportFinanzas = () => {
@@ -225,7 +237,7 @@ export function ReportsPage() {
       { key: 'status', label: 'Estado' },
       { key: 'charge_type', label: 'Tipo de Cuota' },
       { key: 'vehicle_disk', label: 'Unidad (Disco)' },
-    ], filteredFinanzas)
+    ], filteredFinanzas, getExportMetadata('Reporte Financiero'))
   }
 
   const exportSanciones = () => {
@@ -240,7 +252,7 @@ export function ReportsPage() {
       { key: 'fine_amount', label: 'Valor Multa ($)' },
       { key: 'fine_balance', label: 'Saldo Multa ($)' },
       { key: 'fine_status', label: 'Estado de Pago' },
-    ], filteredSanciones)
+    ], filteredSanciones, getExportMetadata('Reporte de Sanciones'))
   }
 
   const exportReuniones = () => {
@@ -257,7 +269,7 @@ export function ReportsPage() {
       { key: 'justified', label: 'Justificados' },
       { key: 'tarde', label: 'Atrasados' },
       { key: 'total_invited', label: 'Total Convocados' },
-    ], filteredReuniones)
+    ], filteredReuniones, getExportMetadata('Reporte de Reuniones'))
   }
 
   const handlePrint = () => {
@@ -405,12 +417,22 @@ export function ReportsPage() {
       </div>
 
       {/* PRINT-ONLY HEADER */}
-      <div className="hidden print:block mb-8 text-center border-b-2 border-gray-800 pb-4">
-        <h1 className="text-2xl font-bold text-gray-900">
-          SISTEMA DE GESTIÓN DE TRANSPORTE - INFORME GENERAL
-        </h1>
-        <p className="text-xs text-gray-600 mt-2">
-          Generado el: {new Date().toLocaleDateString('es-EC')} | Rango: {dateRange.startDate && dateRange.endDate ? `${new Date(dateRange.startDate + 'T00:00:00').toLocaleDateString('es-EC')} a ${new Date(dateRange.endDate + 'T00:00:00').toLocaleDateString('es-EC')}` : 'Sin filtro aplicado (Histórico)'}
+      <div className="hidden print:flex flex-col items-center mb-8 text-center border-b-2 border-gray-800 pb-4">
+        {branding?.logo_url ? (
+          <img src={branding.logo_url} alt="Logo" className="h-12 w-auto mb-2" />
+        ) : (
+          <div className="w-12 h-12 rounded-full bg-primary-100 flex items-center justify-center mb-2">
+            <span className="text-primary-600 font-bold text-lg">
+              {companyName.charAt(0).toUpperCase()}
+            </span>
+          </div>
+        )}
+        <h1 className="text-xl font-bold text-gray-900">{companyName}</h1>
+        <h2 className="text-md font-semibold text-gray-700 mt-1">
+          {activeTab === 'resumen' ? 'Informe General de Resumen' : `Reporte Detallado de ${activeTab.charAt(0).toUpperCase() + activeTab.slice(1)}`}
+        </h2>
+        <p className="text-xs text-gray-500 mt-1">
+          Generado el: {new Date().toLocaleString('es-EC')} | Rango: {dateRange.startDate && dateRange.endDate ? `${new Date(dateRange.startDate + 'T00:00:00').toLocaleDateString('es-EC')} al ${new Date(dateRange.endDate + 'T00:00:00').toLocaleDateString('es-EC')}` : 'Sin filtro aplicado (Histórico)'}
         </p>
       </div>
 
@@ -615,10 +637,16 @@ export function ReportsPage() {
                 onChange={e => setSearchTerm(e.target.value)}
               />
             </div>
-            <Button onClick={exportSocios} className="flex items-center gap-2" variant="outline">
-              <FileSpreadsheet className="h-4 w-4 text-green-600" />
-              Exportar Excel (CSV)
-            </Button>
+            <div className="flex gap-2">
+              <Button onClick={handlePrint} className="flex items-center gap-2" variant="outline">
+                <Printer className="h-4 w-4 text-blue-600" />
+                Imprimir / PDF
+              </Button>
+              <Button onClick={exportSocios} className="flex items-center gap-2" variant="outline">
+                <FileSpreadsheet className="h-4 w-4 text-green-600" />
+                Exportar CSV (Excel)
+              </Button>
+            </div>
           </div>
 
           <div className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm">
@@ -709,10 +737,16 @@ export function ReportsPage() {
                 onChange={e => setSearchTerm(e.target.value)}
               />
             </div>
-            <Button onClick={exportUnidades} className="flex items-center gap-2" variant="outline">
-              <FileSpreadsheet className="h-4 w-4 text-green-600" />
-              Exportar Excel (CSV)
-            </Button>
+            <div className="flex gap-2">
+              <Button onClick={handlePrint} className="flex items-center gap-2" variant="outline">
+                <Printer className="h-4 w-4 text-blue-600" />
+                Imprimir / PDF
+              </Button>
+              <Button onClick={exportUnidades} className="flex items-center gap-2" variant="outline">
+                <FileSpreadsheet className="h-4 w-4 text-green-600" />
+                Exportar CSV (Excel)
+              </Button>
+            </div>
           </div>
 
           <div className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm">
@@ -810,10 +844,16 @@ export function ReportsPage() {
                 onChange={e => setSearchTerm(e.target.value)}
               />
             </div>
-            <Button onClick={exportConductores} className="flex items-center gap-2" variant="outline">
-              <FileSpreadsheet className="h-4 w-4 text-green-600" />
-              Exportar Excel (CSV)
-            </Button>
+            <div className="flex gap-2">
+              <Button onClick={handlePrint} className="flex items-center gap-2" variant="outline">
+                <Printer className="h-4 w-4 text-blue-600" />
+                Imprimir / PDF
+              </Button>
+              <Button onClick={exportConductores} className="flex items-center gap-2" variant="outline">
+                <FileSpreadsheet className="h-4 w-4 text-green-600" />
+                Exportar CSV (Excel)
+              </Button>
+            </div>
           </div>
 
           <div className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm">
@@ -911,10 +951,16 @@ export function ReportsPage() {
                 onChange={e => setSearchTerm(e.target.value)}
               />
             </div>
-            <Button onClick={exportDocumentos} className="flex items-center gap-2" variant="outline">
-              <FileSpreadsheet className="h-4 w-4 text-green-600" />
-              Exportar Excel (CSV)
-            </Button>
+            <div className="flex gap-2">
+              <Button onClick={handlePrint} className="flex items-center gap-2" variant="outline">
+                <Printer className="h-4 w-4 text-blue-600" />
+                Imprimir / PDF
+              </Button>
+              <Button onClick={exportDocumentos} className="flex items-center gap-2" variant="outline">
+                <FileSpreadsheet className="h-4 w-4 text-green-600" />
+                Exportar CSV (Excel)
+              </Button>
+            </div>
           </div>
 
           <div className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm">
@@ -1000,10 +1046,16 @@ export function ReportsPage() {
                 onChange={e => setSearchTerm(e.target.value)}
               />
             </div>
-            <Button onClick={exportFinanzas} className="flex items-center gap-2" variant="outline">
-              <FileSpreadsheet className="h-4 w-4 text-green-600" />
-              Exportar Excel (CSV)
-            </Button>
+            <div className="flex gap-2">
+              <Button onClick={handlePrint} className="flex items-center gap-2" variant="outline">
+                <Printer className="h-4 w-4 text-blue-600" />
+                Imprimir / PDF
+              </Button>
+              <Button onClick={exportFinanzas} className="flex items-center gap-2" variant="outline">
+                <FileSpreadsheet className="h-4 w-4 text-green-600" />
+                Exportar CSV (Excel)
+              </Button>
+            </div>
           </div>
 
           <div className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm">
@@ -1091,10 +1143,16 @@ export function ReportsPage() {
                 onChange={e => setSearchTerm(e.target.value)}
               />
             </div>
-            <Button onClick={exportSanciones} className="flex items-center gap-2" variant="outline">
-              <FileSpreadsheet className="h-4 w-4 text-green-600" />
-              Exportar Excel (CSV)
-            </Button>
+            <div className="flex gap-2">
+              <Button onClick={handlePrint} className="flex items-center gap-2" variant="outline">
+                <Printer className="h-4 w-4 text-blue-600" />
+                Imprimir / PDF
+              </Button>
+              <Button onClick={exportSanciones} className="flex items-center gap-2" variant="outline">
+                <FileSpreadsheet className="h-4 w-4 text-green-600" />
+                Exportar CSV (Excel)
+              </Button>
+            </div>
           </div>
 
           <div className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm">
@@ -1174,10 +1232,16 @@ export function ReportsPage() {
                   onChange={e => setSearchTerm(e.target.value)}
                 />
               </div>
-              <Button onClick={exportReuniones} className="flex items-center gap-2" variant="outline">
-                <FileSpreadsheet className="h-4 w-4 text-green-600" />
-                Exportar Excel (CSV)
-              </Button>
+              <div className="flex gap-2">
+                <Button onClick={handlePrint} className="flex items-center gap-2" variant="outline">
+                  <Printer className="h-4 w-4 text-blue-600" />
+                  Imprimir / PDF
+                </Button>
+                <Button onClick={exportReuniones} className="flex items-center gap-2" variant="outline">
+                  <FileSpreadsheet className="h-4 w-4 text-green-600" />
+                  Exportar CSV (Excel)
+                </Button>
+              </div>
             </div>
 
             <div className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm">

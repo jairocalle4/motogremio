@@ -5,7 +5,12 @@
 export function exportToCsv<T>(
   filename: string,
   columns: Array<{ key: keyof T | string; label: string; render?: (val: any, row: T) => string }>,
-  data: T[]
+  data: T[],
+  metadata?: {
+    companyName: string
+    reportName: string
+    dateRange: string
+  }
 ) {
   const headers = columns.map(col => `"${col.label.replace(/"/g, '""')}"`).join(';')
   
@@ -34,8 +39,16 @@ export function exportToCsv<T>(
       .join(';')
   })
 
+  const metaRows = metadata ? [
+    `"Compañía:";"${metadata.companyName.replace(/"/g, '""')}"`,
+    `"Reporte:";"${metadata.reportName.replace(/"/g, '""')}"`,
+    `"Rango:";"${metadata.dateRange.replace(/"/g, '""')}"`,
+    `"Generado:";"${new Date().toLocaleString('es-EC')}"`,
+    ''
+  ] : []
+
   // Prepend BOM and sep=; so Excel correctly reads Spanish accents and uses semicolon as separator
-  const csvContent = '\uFEFF' + 'sep=;\n' + [headers, ...rows].join('\n')
+  const csvContent = '\uFEFF' + 'sep=;\n' + [...metaRows, headers, ...rows].join('\n')
   const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
   const url = URL.createObjectURL(blob)
   
