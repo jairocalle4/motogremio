@@ -12,6 +12,31 @@ export type Database = {
   __InternalSupabase: {
     PostgrestVersion: "14.5"
   }
+  graphql_public: {
+    Tables: {
+      [_ in never]: never
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      graphql: {
+        Args: {
+          extensions?: Json
+          operationName?: string
+          query?: string
+          variables?: Json
+        }
+        Returns: Json
+      }
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
+  }
   public: {
     Tables: {
       audit_logs: {
@@ -408,6 +433,7 @@ export type Database = {
         Row: {
           company_id: string
           created_at: string | null
+          created_by_id: string | null
           document_number: string | null
           document_type_id: string
           driver_id: string | null
@@ -419,11 +445,13 @@ export type Database = {
           notes: string | null
           status: Database["public"]["Enums"]["document_status"] | null
           updated_at: string | null
+          updated_by_id: string | null
           vehicle_id: string | null
         }
         Insert: {
           company_id: string
           created_at?: string | null
+          created_by_id?: string | null
           document_number?: string | null
           document_type_id: string
           driver_id?: string | null
@@ -435,11 +463,13 @@ export type Database = {
           notes?: string | null
           status?: Database["public"]["Enums"]["document_status"] | null
           updated_at?: string | null
+          updated_by_id?: string | null
           vehicle_id?: string | null
         }
         Update: {
           company_id?: string
           created_at?: string | null
+          created_by_id?: string | null
           document_number?: string | null
           document_type_id?: string
           driver_id?: string | null
@@ -451,6 +481,7 @@ export type Database = {
           notes?: string | null
           status?: Database["public"]["Enums"]["document_status"] | null
           updated_at?: string | null
+          updated_by_id?: string | null
           vehicle_id?: string | null
         }
         Relationships: [
@@ -494,6 +525,7 @@ export type Database = {
       drivers: {
         Row: {
           address: string | null
+          admission_date: string | null
           company_id: string
           created_at: string | null
           document_id: string
@@ -505,10 +537,10 @@ export type Database = {
           phone: string | null
           status: Database["public"]["Enums"]["driver_status"] | null
           updated_at: string | null
-          admission_date: string | null
         }
         Insert: {
           address?: string | null
+          admission_date?: string | null
           company_id: string
           created_at?: string | null
           document_id: string
@@ -520,10 +552,10 @@ export type Database = {
           phone?: string | null
           status?: Database["public"]["Enums"]["driver_status"] | null
           updated_at?: string | null
-          admission_date?: string | null
         }
         Update: {
           address?: string | null
+          admission_date?: string | null
           company_id?: string
           created_at?: string | null
           document_id?: string
@@ -535,7 +567,6 @@ export type Database = {
           phone?: string | null
           status?: Database["public"]["Enums"]["driver_status"] | null
           updated_at?: string | null
-          admission_date?: string | null
         }
         Relationships: [
           {
@@ -1051,6 +1082,7 @@ export type Database = {
           first_name: string
           id: string
           last_name: string
+          member_id: string | null
           role: Database["public"]["Enums"]["user_role"]
           status: string
           token: string
@@ -1067,6 +1099,7 @@ export type Database = {
           first_name: string
           id?: string
           last_name: string
+          member_id?: string | null
           role: Database["public"]["Enums"]["user_role"]
           status?: string
           token: string
@@ -1083,6 +1116,7 @@ export type Database = {
           first_name?: string
           id?: string
           last_name?: string
+          member_id?: string | null
           role?: Database["public"]["Enums"]["user_role"]
           status?: string
           token?: string
@@ -1108,6 +1142,13 @@ export type Database = {
             columns: ["created_by"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pending_invitations_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "members"
             referencedColumns: ["id"]
           },
         ]
@@ -1487,12 +1528,12 @@ export type Database = {
           model: string | null
           motor_number: string | null
           observations: string | null
-           plate: string
+          plate: string
+          registration_date: string | null
           status: Database["public"]["Enums"]["vehicle_status"] | null
           updated_at: string | null
           vehicle_type: string | null
           year: number | null
-          registration_date: string | null
         }
         Insert: {
           brand?: string | null
@@ -1509,11 +1550,11 @@ export type Database = {
           motor_number?: string | null
           observations?: string | null
           plate: string
+          registration_date?: string | null
           status?: Database["public"]["Enums"]["vehicle_status"] | null
           updated_at?: string | null
           vehicle_type?: string | null
           year?: number | null
-          registration_date?: string | null
         }
         Update: {
           brand?: string | null
@@ -1530,11 +1571,11 @@ export type Database = {
           motor_number?: string | null
           observations?: string | null
           plate?: string
+          registration_date?: string | null
           status?: Database["public"]["Enums"]["vehicle_status"] | null
           updated_at?: string | null
           vehicle_type?: string | null
           year?: number | null
-          registration_date?: string | null
         }
         Relationships: [
           {
@@ -1581,20 +1622,28 @@ export type Database = {
         Args: { p_invitation_id: string }
         Returns: boolean
       }
-      get_invitation_info: {
-        Args: { p_token: string }
-        Returns: Json
-      }
-      create_pending_invitation: {
-        Args: {
-          p_company_id: string
-          p_email: string
-          p_first_name: string
-          p_last_name: string
-          p_role: Database["public"]["Enums"]["user_role"]
-        }
-        Returns: string
-      }
+      create_pending_invitation:
+        | {
+            Args: {
+              p_company_id: string
+              p_email: string
+              p_first_name: string
+              p_last_name: string
+              p_role: Database["public"]["Enums"]["user_role"]
+            }
+            Returns: string
+          }
+        | {
+            Args: {
+              p_company_id: string
+              p_email: string
+              p_first_name: string
+              p_last_name: string
+              p_member_id?: string
+              p_role: Database["public"]["Enums"]["user_role"]
+            }
+            Returns: string
+          }
       create_super_admin_company: {
         Args: {
           p_admin_email: string
@@ -1622,10 +1671,13 @@ export type Database = {
         }
         Returns: Json
       }
+      get_alerts_summary: { Args: never; Returns: Json }
       get_companies_with_stats: { Args: never; Returns: Json }
       get_company_invitations: { Args: { p_company_id: string }; Returns: Json }
       get_company_plan_usage: { Args: { p_company_id: string }; Returns: Json }
+      get_company_reports_summary: { Args: never; Returns: Json }
       get_company_users: { Args: { p_company_id: string }; Returns: Json }
+      get_invitation_info: { Args: { p_token: string }; Returns: Json }
       get_my_company_branding: { Args: never; Returns: Json }
       get_my_company_id: { Args: never; Returns: string }
       get_my_company_plan_usage: { Args: never; Returns: Json }
@@ -1668,6 +1720,19 @@ export type Database = {
           p_max_members: number
           p_max_vehicles: number
           p_plan_id: string
+        }
+        Returns: Json
+      }
+      register_payment_atomic: {
+        Args: {
+          p_amount: number
+          p_charge_ids: string[]
+          p_member_id: string
+          p_notes?: string
+          p_payment_date?: string
+          p_payment_method: Database["public"]["Enums"]["payment_method"]
+          p_receipt_url?: string
+          p_reference_number?: string
         }
         Returns: Json
       }
@@ -1890,6 +1955,9 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
+  graphql_public: {
+    Enums: {},
+  },
   public: {
     Enums: {
       attendance_status: ["asistio", "ausente", "justificado", "tarde"],

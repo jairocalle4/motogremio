@@ -317,63 +317,30 @@ export function usePayments() {
     if (!companyId || !profile?.id) return null
     setLoading(true)
     try {
-      // 1. Crear registro de pago
-      const { data: payment, error: payErr } = await supabase
-        .from('payments')
-        .insert({
-          company_id: companyId,
-          member_id: params.memberId,
-          amount: params.amount,
-          payment_date: params.paymentDate ?? new Date().toISOString().split('T')[0],
-          payment_method: params.paymentMethod,
-          reference_number: params.referenceNumber ?? null,
-          receipt_url: params.receiptUrl ?? null,
-          notes: params.notes ?? null,
-          created_by: profile.id,
-        })
-        .select()
-        .single()
+      const { data, error: payErr } = await supabase.rpc('register_payment_atomic', {
+        p_member_id: params.memberId,
+        p_charge_ids: params.chargeIds,
+        p_amount: params.amount,
+        p_payment_method: params.paymentMethod,
+        p_reference_number: params.referenceNumber ?? undefined,
+        p_receipt_url: params.receiptUrl ?? undefined,
+        p_notes: params.notes ?? undefined,
+        p_payment_date: params.paymentDate ?? new Date().toISOString().split('T')[0]
+      })
+
       if (payErr) throw payErr
 
-      // 2. Crear allocations para cada cuota seleccionada
-      // Cargar cuotas para obtener los balances reales
-      const { data: chargesToPay, error: cErr } = await supabase
-        .from('charges')
-        .select('id, balance, amount')
-        .in('id', params.chargeIds)
-        .eq('company_id', companyId)
-      if (cErr) throw cErr
-
-      // Distribuir el monto pagado entre las cuotas (orden de inserción)
-      let remaining = params.amount
-      const allocations: { payment_id: string; charge_id: string; amount_allocated: number }[] = []
-
-      for (const charge of (chargesToPay ?? [])) {
-        if (remaining <= 0) break
-        const allocAmount = Math.min(remaining, charge.balance)
-        if (allocAmount > 0) {
-          allocations.push({
-            payment_id: (payment as Payment).id,
-            charge_id: charge.id,
-            amount_allocated: Number(allocAmount.toFixed(2)),
-          })
-          remaining -= allocAmount
-        }
-      }
-
-      if (allocations.length > 0) {
-        const { error: allocErr } = await supabase
-          .from('payment_allocations')
-          .insert(allocations)
-        if (allocErr) throw allocErr
-      }
-
       toast.success('Pago registrado correctamente')
-      return payment as Payment
+      // Retornar estructura compatible mapeando el resultado JSON de la RPC
+      const resultObj = typeof data === 'string' ? JSON.parse(data) : data
+      return { id: resultObj?.payment_id, amount: params.amount } as Payment
     } catch (e) {
-      const msg = e instanceof Error ? e.message : 'Error al registrar el pago'
+      let msg = e instanceof Error ? e.message : 'Error al registrar el pago'
+      if (msg.includes('Monto excesivo') || msg.includes('excesivo') || msg.includes('supera el saldo')) {
+        msg = 'Monto excesivo: el abono ingresado supera el saldo total pendiente de las cuotas seleccionadas.'
+      }
       toast.error(msg)
-      throw e
+      throw new Error(msg)
     } finally {
       setLoading(false)
     }
