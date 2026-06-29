@@ -5,7 +5,8 @@ import {
   BarChart2, FileSpreadsheet, RefreshCw
 } from 'lucide-react'
 import { useReports, useReportsSummary } from '../hooks/useReports'
-import { exportToCsv } from '../utils/exportCsv'
+import { exportToExcel } from '../utils/exportExcel'
+import { printReport } from '../utils/printReport'
 import { Card, CardHeader, CardTitle, CardContent, Badge, Button, Input } from '@/components/ui'
 import { usePermissions, useAuth } from '@/hooks/usePermissions'
 import { useBranding } from '@/context/BrandingContext'
@@ -158,122 +159,318 @@ export function ReportsPage() {
     )
   }
 
-  // ─── CSV EXPORTS ───────────────────────────────────────────────────────────
-  const getExportMetadata = (reportName: string) => ({
+  // ─── METADATA HELPERS ──────────────────────────────────────────────────────
+  const getDateRangeLabel = () =>
+    dateRange.startDate && dateRange.endDate
+      ? `${new Date(dateRange.startDate + 'T00:00:00').toLocaleDateString('es-EC')} — ${new Date(dateRange.endDate + 'T00:00:00').toLocaleDateString('es-EC')}`
+      : 'Histórico / Sin Filtro'
+
+  const getExportMeta = (reportName: string) => ({
     companyName,
     reportName,
-    dateRange: dateRange.startDate && dateRange.endDate
-      ? `${new Date(dateRange.startDate + 'T00:00:00').toLocaleDateString('es-EC')} - ${new Date(dateRange.endDate + 'T00:00:00').toLocaleDateString('es-EC')}`
-      : 'Histórico / Sin Filtro'
+    dateRange: getDateRangeLabel(),
   })
 
+  const getPrintMeta = (reportName: string) => ({
+    companyName,
+    reportName,
+    dateRange: getDateRangeLabel(),
+    logoUrl: branding?.logo_url ?? null,
+  })
+
+  // ─── EXCEL EXPORTS ─────────────────────────────────────────────────────────
   const exportSocios = () => {
     if (!data) return
-    exportToCsv('reporte_socios', [
-      { key: 'document_id', label: 'Cédula/RUC' },
-      { key: 'last_name', label: 'Apellidos' },
-      { key: 'first_name', label: 'Nombres' },
-      { key: 'phone', label: 'Teléfono' },
-      { key: 'status', label: 'Estado' },
-      { key: 'admission_date', label: 'Fecha Admisión' },
-      { key: 'vehicle_count', label: 'Nº de Unidades' },
-      { key: 'vehicles', label: 'Unidades (Discos)' },
-    ], filteredSocios, getExportMetadata('Reporte de Socios'))
+    exportToExcel('reporte_socios', [
+      { key: 'document_id', label: 'Cédula/RUC', width: 16 },
+      { key: 'last_name', label: 'Apellidos', width: 22 },
+      { key: 'first_name', label: 'Nombres', width: 22 },
+      { key: 'phone', label: 'Teléfono', width: 14 },
+      { key: 'status', label: 'Estado', width: 12 },
+      { key: 'admission_date', label: 'Fecha Admisión', width: 16 },
+      { key: 'vehicle_count', label: 'Nº Unidades', width: 12 },
+      { key: 'vehicles', label: 'Discos', width: 18 },
+    ], filteredSocios, getExportMeta('Reporte de Socios'))
   }
 
   const exportUnidades = () => {
     if (!data) return
-    exportToCsv('reporte_unidades', [
-      { key: 'disk_number', label: 'Disco' },
-      { key: 'plate', label: 'Placa' },
-      { key: 'status', label: 'Estado' },
-      { key: 'member_name', label: 'Socio Propietario' },
-      { key: 'driver_name', label: 'Conductor Asignado' },
-      { key: 'brand', label: 'Marca' },
-      { key: 'model', label: 'Modelo' },
-      { key: 'year', label: 'Año' },
-      { key: 'expired_docs_count', label: 'Documentos Vencidos' },
-      { key: 'upcoming_docs_count', label: 'Documentos Por Vencer' },
-    ], filteredUnidades, getExportMetadata('Reporte de Unidades'))
+    exportToExcel('reporte_unidades', [
+      { key: 'disk_number', label: 'Disco', width: 10 },
+      { key: 'plate', label: 'Placa', width: 14 },
+      { key: 'status', label: 'Estado', width: 14 },
+      { key: 'member_name', label: 'Socio Propietario', width: 26 },
+      { key: 'driver_name', label: 'Conductor Asignado', width: 26 },
+      { key: 'brand', label: 'Marca', width: 12 },
+      { key: 'model', label: 'Modelo', width: 14 },
+      { key: 'year', label: 'Año', width: 8 },
+      { key: 'expired_docs_count', label: 'Docs. Vencidos', width: 14 },
+      { key: 'upcoming_docs_count', label: 'Docs. Por Vencer', width: 16 },
+    ], filteredUnidades, getExportMeta('Reporte de Unidades'))
   }
 
   const exportConductores = () => {
     if (!data) return
-    exportToCsv('reporte_conductores', [
-      { key: 'document_id', label: 'Cédula' },
-      { key: 'last_name', label: 'Apellidos' },
-      { key: 'first_name', label: 'Nombres' },
-      { key: 'phone', label: 'Teléfono' },
-      { key: 'status', label: 'Estado' },
-      { key: 'type', label: 'Tipo Conductor' },
-      { key: 'socio_name', label: 'Socio Relacionado' },
-      { key: 'license_type', label: 'Licencia' },
-      { key: 'license_status', label: 'Estado Licencia' },
-      { key: 'license_expiry', label: 'Vencimiento Licencia' },
-    ], filteredConductores, getExportMetadata('Reporte de Conductores'))
+    exportToExcel('reporte_conductores', [
+      { key: 'document_id', label: 'Cédula', width: 16 },
+      { key: 'last_name', label: 'Apellidos', width: 22 },
+      { key: 'first_name', label: 'Nombres', width: 22 },
+      { key: 'phone', label: 'Teléfono', width: 14 },
+      { key: 'status', label: 'Estado', width: 12 },
+      { key: 'type', label: 'Tipo Conductor', width: 14 },
+      { key: 'socio_name', label: 'Socio Relacionado', width: 24 },
+      { key: 'license_type', label: 'Tipo Licencia', width: 14 },
+      { key: 'license_status', label: 'Estado Licencia', width: 16 },
+      { key: 'license_expiry', label: 'Vencimiento', width: 16 },
+    ], filteredConductores, getExportMeta('Reporte de Conductores'))
   }
 
   const exportDocumentos = () => {
     if (!data) return
-    exportToCsv('reporte_documentos', [
-      { key: 'title', label: 'Documento' },
-      { key: 'type_name', label: 'Tipo' },
-      { key: 'entity_type', label: 'Entidad Relacionada' },
-      { key: 'entity_name', label: 'Nombre Entidad' },
-      { key: 'entity_identifier', label: 'Identificador Entidad' },
-      { key: 'expiry_date', label: 'Fecha Vencimiento' },
-      { key: 'status', label: 'Estado' },
-    ], filteredDocumentos, getExportMetadata('Reporte de Documentos'))
+    exportToExcel('reporte_documentos', [
+      { key: 'title', label: 'Documento', width: 28 },
+      { key: 'type_name', label: 'Tipo', width: 18 },
+      { key: 'entity_type', label: 'Entidad', width: 12 },
+      { key: 'entity_name', label: 'Nombre Entidad', width: 26 },
+      { key: 'entity_identifier', label: 'Identificador', width: 16 },
+      { key: 'expiry_date', label: 'Fecha Vencimiento', width: 18 },
+      { key: 'status', label: 'Estado', width: 14 },
+    ], filteredDocumentos, getExportMeta('Reporte de Documentos'))
   }
 
   const exportFinanzas = () => {
     if (!data) return
-    exportToCsv('reporte_financiero', [
-      { key: 'member_name', label: 'Socio' },
-      { key: 'description', label: 'Descripción de Cuota' },
-      { key: 'amount', label: 'Monto ($)' },
-      { key: 'balance', label: 'Saldo Pendiente ($)' },
-      { key: 'due_date', label: 'Fecha Vencimiento' },
-      { key: 'status', label: 'Estado' },
-      { key: 'charge_type', label: 'Tipo de Cuota' },
-      { key: 'vehicle_disk', label: 'Unidad (Disco)' },
-    ], filteredFinanzas, getExportMetadata('Reporte Financiero'))
+    exportToExcel('reporte_financiero', [
+      { key: 'member_name', label: 'Socio', width: 28 },
+      { key: 'description', label: 'Descripción de Cuota', width: 32 },
+      { key: 'amount', label: 'Monto ($)', width: 14 },
+      { key: 'balance', label: 'Saldo Pendiente ($)', width: 18 },
+      { key: 'due_date', label: 'Fecha Vencimiento', width: 18 },
+      { key: 'status', label: 'Estado', width: 14 },
+      { key: 'charge_type', label: 'Tipo de Cuota', width: 18 },
+      { key: 'vehicle_disk', label: 'Unidad (Disco)', width: 14 },
+    ], filteredFinanzas, getExportMeta('Reporte Financiero'))
   }
 
   const exportSanciones = () => {
     if (!data) return
-    exportToCsv('reporte_sanciones', [
-      { key: 'member_name', label: 'Socio' },
-      { key: 'sanction_type', label: 'Infracción/Tipo' },
-      { key: 'date', label: 'Fecha Sanción' },
-      { key: 'reason', label: 'Razón' },
-      { key: 'severity', label: 'Gravedad' },
-      { key: 'status', label: 'Estado' },
-      { key: 'fine_amount', label: 'Valor Multa ($)' },
-      { key: 'fine_balance', label: 'Saldo Multa ($)' },
-      { key: 'fine_status', label: 'Estado de Pago' },
-    ], filteredSanciones, getExportMetadata('Reporte de Sanciones'))
+    exportToExcel('reporte_sanciones', [
+      { key: 'member_name', label: 'Socio', width: 28 },
+      { key: 'sanction_type', label: 'Infracción/Tipo', width: 22 },
+      { key: 'date', label: 'Fecha Sanción', width: 14 },
+      { key: 'reason', label: 'Razón', width: 32 },
+      { key: 'severity', label: 'Gravedad', width: 12 },
+      { key: 'status', label: 'Estado', width: 14 },
+      { key: 'fine_amount', label: 'Valor Multa ($)', width: 16 },
+      { key: 'fine_balance', label: 'Saldo Multa ($)', width: 16 },
+      { key: 'fine_status', label: 'Estado de Pago', width: 16 },
+    ], filteredSanciones, getExportMeta('Reporte de Sanciones'))
   }
 
   const exportReuniones = () => {
     if (!data) return
-    exportToCsv('reporte_reuniones', [
-      { key: 'title', label: 'Reunión' },
-      { key: 'meeting_type', label: 'Tipo' },
-      { key: 'date', label: 'Fecha' },
-      { key: 'time', label: 'Hora' },
-      { key: 'status', label: 'Estado' },
-      { key: 'is_mandatory', label: 'Obligatoria', render: val => val ? 'SÍ' : 'NO' },
-      { key: 'attended', label: 'Asistieron' },
-      { key: 'absent', label: 'Ausentes' },
-      { key: 'justified', label: 'Justificados' },
-      { key: 'tarde', label: 'Atrasados' },
-      { key: 'total_invited', label: 'Total Convocados' },
-    ], filteredReuniones, getExportMetadata('Reporte de Reuniones'))
+    exportToExcel('reporte_reuniones', [
+      { key: 'title', label: 'Reunión', width: 30 },
+      { key: 'meeting_type', label: 'Tipo', width: 14 },
+      { key: 'date', label: 'Fecha', width: 14 },
+      { key: 'time', label: 'Hora', width: 10 },
+      { key: 'status', label: 'Estado', width: 14 },
+      { key: 'is_mandatory', label: 'Obligatoria', width: 12, render: val => val ? 'SÍ' : 'NO' },
+      { key: 'attended', label: 'Asistieron', width: 12 },
+      { key: 'absent', label: 'Ausentes', width: 12 },
+      { key: 'justified', label: 'Justificados', width: 12 },
+      { key: 'tarde', label: 'Atrasados', width: 12 },
+      { key: 'total_invited', label: 'Total Convocados', width: 16 },
+    ], filteredReuniones, getExportMeta('Reporte de Reuniones'))
   }
 
-  const handlePrint = () => {
-    window.print()
+  // ─── PDF / PRINT HANDLERS ──────────────────────────────────────────────────
+  const handlePrintSocios = () => {
+    if (!data) return
+    printReport(
+      [
+        { key: 'document_id', label: 'Cédula', width: '110px' },
+        { key: 'last_name', label: 'Apellidos' },
+        { key: 'first_name', label: 'Nombres' },
+        { key: 'phone', label: 'Teléfono', width: '110px' },
+        { key: 'admission_date', label: 'Admisión', width: '100px', align: 'center' },
+        { key: 'vehicle_count', label: 'Unidades', width: '70px', align: 'center' },
+        { key: 'status', label: 'Estado', width: '80px', align: 'center' },
+      ],
+      filteredSocios,
+      getPrintMeta('Reporte de Socios'),
+      [
+        { label: 'Total socios', value: data.socios.total },
+        { label: 'Activos', value: data.socios.active, highlight: 'success' },
+        { label: 'Inactivos', value: data.socios.inactive },
+        { label: 'Suspendidos', value: data.socios.suspended, highlight: 'danger' },
+      ]
+    )
+  }
+
+  const handlePrintUnidades = () => {
+    if (!data) return
+    printReport(
+      [
+        { key: 'disk_number', label: 'Disco', width: '60px', align: 'center' },
+        { key: 'plate', label: 'Placa', width: '90px' },
+        { key: 'member_name', label: 'Socio Propietario' },
+        { key: 'driver_name', label: 'Conductor' },
+        { key: 'brand', label: 'Marca/Modelo', width: '120px', render: (_, row: any) => `${row.brand || ''} ${row.model || ''} (${row.year || '-'})` },
+        { key: 'expired_docs_count', label: 'Docs Vencidos', width: '80px', align: 'center' },
+        { key: 'status', label: 'Estado', width: '80px', align: 'center' },
+      ],
+      filteredUnidades,
+      getPrintMeta('Reporte de Unidades'),
+      [
+        { label: 'Total unidades', value: data.unidades.total },
+        { label: 'Activas', value: data.unidades.active, highlight: 'success' },
+        { label: 'En mantenimiento', value: data.unidades.maintenance, highlight: 'warning' },
+        { label: 'Sin conductor', value: data.unidades.unassignedDrivers, highlight: 'warning' },
+        { label: 'Con docs. vencidos', value: data.unidades.expiredDocs, highlight: 'danger' },
+      ]
+    )
+  }
+
+  const handlePrintConductores = () => {
+    if (!data) return
+    printReport(
+      [
+        { key: 'document_id', label: 'Cédula', width: '110px' },
+        { key: 'last_name', label: 'Apellidos' },
+        { key: 'first_name', label: 'Nombres' },
+        { key: 'phone', label: 'Teléfono', width: '110px' },
+        { key: 'type', label: 'Tipo', width: '80px', align: 'center' },
+        { key: 'license_status', label: 'Estado Licencia', width: '100px', align: 'center' },
+        { key: 'license_expiry', label: 'Vence', width: '100px', align: 'center' },
+        { key: 'status', label: 'Estado', width: '80px', align: 'center' },
+      ],
+      filteredConductores,
+      getPrintMeta('Reporte de Conductores'),
+      [
+        { label: 'Total conductores', value: data.conductores.total },
+        { label: 'Activos', value: data.conductores.active, highlight: 'success' },
+        { label: 'Licencia vencida o faltante', value: data.conductores.licenseExpiredOrMissing, highlight: 'danger' },
+      ]
+    )
+  }
+
+  const handlePrintDocumentos = () => {
+    if (!data) return
+    printReport(
+      [
+        { key: 'title', label: 'Documento' },
+        { key: 'type_name', label: 'Tipo', width: '120px' },
+        { key: 'entity_name', label: 'Relacionado a' },
+        { key: 'entity_identifier', label: 'Identificador', width: '110px' },
+        { key: 'expiry_date', label: 'Vencimiento', width: '110px', align: 'center' },
+        { key: 'status', label: 'Estado', width: '90px', align: 'center' },
+      ],
+      filteredDocumentos,
+      getPrintMeta('Reporte de Documentos'),
+      [
+        { label: 'Total documentos', value: data.documentos.total },
+        { label: 'Vencidos', value: data.documentos.expired, highlight: 'danger' },
+        { label: 'Por vencer (30 días)', value: data.documentos.upcoming30, highlight: 'warning' },
+        { label: 'Por vencer (30-60 días)', value: data.documentos.upcoming60 },
+      ]
+    )
+  }
+
+  const handlePrintFinanzas = () => {
+    if (!data) return
+    printReport(
+      [
+        { key: 'member_name', label: 'Socio', width: '160px' },
+        { key: 'description', label: 'Descripción de Cuota' },
+        { key: 'amount', label: 'Monto ($)', width: '90px', align: 'right', render: val => val != null ? `$${Number(val).toFixed(2)}` : '-' },
+        { key: 'balance', label: 'Saldo ($)', width: '90px', align: 'right', render: val => val != null ? `$${Number(val).toFixed(2)}` : '-' },
+        { key: 'due_date', label: 'Vencimiento', width: '110px', align: 'center' },
+        { key: 'status', label: 'Estado', width: '90px', align: 'center' },
+        { key: 'charge_type', label: 'Tipo', width: '100px' },
+      ],
+      filteredFinanzas,
+      getPrintMeta('Reporte Financiero'),
+      [
+        { label: 'Deuda total pendiente', value: `$${data.financiero.totalPending.toFixed(2)}`, highlight: 'danger' },
+        { label: 'Socios deudores', value: data.financiero.debtorMembersCount, highlight: 'warning' },
+        { label: 'Recaudado en período', value: `$${data.financiero.paymentsSum.toFixed(2)}`, highlight: 'success' },
+      ]
+    )
+  }
+
+  const handlePrintSanciones = () => {
+    if (!data) return
+    printReport(
+      [
+        { key: 'member_name', label: 'Socio', width: '160px' },
+        { key: 'sanction_type', label: 'Tipo Infracción', width: '130px' },
+        { key: 'reason', label: 'Razón' },
+        { key: 'date', label: 'Fecha', width: '100px', align: 'center' },
+        { key: 'severity', label: 'Gravedad', width: '80px', align: 'center' },
+        { key: 'fine_amount', label: 'Multa ($)', width: '90px', align: 'right', render: val => val ? `$${Number(val).toFixed(2)}` : '-' },
+        { key: 'fine_balance', label: 'Saldo ($)', width: '90px', align: 'right', render: val => val ? `$${Number(val).toFixed(2)}` : '-' },
+        { key: 'status', label: 'Estado', width: '90px', align: 'center' },
+      ],
+      filteredSanciones,
+      getPrintMeta('Reporte de Sanciones'),
+      [
+        { label: 'Total sanciones', value: data.sanciones.total },
+        { label: 'Pendientes', value: data.sanciones.byStatus.pendiente, highlight: 'warning' },
+        { label: 'Multas pendientes', value: `$${data.sanciones.pendingFinesAmount.toFixed(2)}`, highlight: 'danger' },
+        { label: 'Multas recaudadas', value: `$${data.sanciones.paidFinesAmount.toFixed(2)}`, highlight: 'success' },
+      ]
+    )
+  }
+
+  const handlePrintReuniones = () => {
+    if (!data) return
+    printReport(
+      [
+        { key: 'title', label: 'Reunión' },
+        { key: 'meeting_type', label: 'Tipo', width: '100px' },
+        { key: 'date', label: 'Fecha', width: '100px', align: 'center' },
+        { key: 'is_mandatory', label: 'Oblig.', width: '60px', align: 'center', render: val => val ? 'SÍ' : 'NO' },
+        { key: 'attended', label: 'Asist.', width: '60px', align: 'center' },
+        { key: 'absent', label: 'Ausen.', width: '60px', align: 'center' },
+        { key: 'justified', label: 'Justif.', width: '60px', align: 'center' },
+        { key: 'tarde', label: 'Tarde', width: '60px', align: 'center' },
+        { key: 'total_invited', label: 'Total', width: '60px', align: 'center' },
+        { key: 'status', label: 'Estado', width: '90px', align: 'center' },
+      ],
+      filteredReuniones,
+      getPrintMeta('Reporte de Reuniones — Asistencia'),
+      [
+        { label: 'Total reuniones', value: data.reuniones.total },
+        { label: 'Asistencia promedio', value: `${data.reuniones.attendanceRate}%`, highlight: data.reuniones.attendanceRate >= 80 ? 'success' : data.reuniones.attendanceRate >= 60 ? 'warning' : 'danger' },
+      ]
+    )
+  }
+
+  const handlePrintResumen = () => {
+    // Para el resumen, imprimimos un documento con KPIs
+    if (!summary) return
+    const summaryData = [
+      { indicador: 'Socios Activos', valor: summary.members_active, total: `de ${summary.members_total} registrados` },
+      { indicador: 'Unidades Operativas', valor: summary.vehicles_active, total: `de ${summary.vehicles_total} registradas` },
+      { indicador: 'Conductores', valor: summary.drivers_total, total: '' },
+      { indicador: 'Documentos Vencidos', valor: summary.documents_expired, total: '⚠ Requieren atención inmediata' },
+      { indicador: 'Documentos por Vencer (30 días)', valor: summary.documents_expiring_soon, total: '' },
+      { indicador: 'Licencias Vencidas', valor: summary.licenses_expired, total: '' },
+      { indicador: 'Balance Pendiente de Cobro', valor: `$${summary.balance_pending.toFixed(2)}`, total: `${summary.charges_pending} cuotas pendientes` },
+      { indicador: 'Cuotas Vencidas (Morosas)', valor: summary.charges_overdue, total: '' },
+      { indicador: 'Sanciones Totales', valor: summary.sanctions_total, total: '' },
+      { indicador: 'Reuniones Registradas', valor: summary.meetings_total, total: '' },
+    ]
+    printReport(
+      [
+        { key: 'indicador', label: 'Indicador', width: '55%' },
+        { key: 'valor', label: 'Valor', width: '15%', align: 'center' },
+        { key: 'total', label: 'Observación', width: '30%' },
+      ],
+      summaryData as any,
+      getPrintMeta('Informe General de Resumen')
+    )
   }
 
   if (summaryLoading) {
@@ -349,19 +546,21 @@ export function ReportsPage() {
       `}</style>
 
       {/* HEADER */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-gray-200 pb-5 print:hidden">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-gray-200 pb-5">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Centro de Reportes e Indicadores</h1>
           <p className="text-sm text-gray-500">
             Analiza el estado general de socios, unidades, documentación, finanzas, sanciones y asistencia.
           </p>
         </div>
-        <div className="flex flex-wrap items-center gap-3">
-          <Button onClick={handlePrint} variant="outline" size="sm" className="flex items-center gap-2">
-            <Printer className="h-4 w-4" />
-            Imprimir Reporte
-          </Button>
-        </div>
+        {activeTab === 'resumen' && (
+          <div className="flex flex-wrap items-center gap-3">
+            <Button onClick={handlePrintResumen} variant="outline" size="sm" className="flex items-center gap-2">
+              <Printer className="h-4 w-4 text-blue-600" />
+              Imprimir Resumen PDF
+            </Button>
+          </div>
+        )}
       </div>
 
       {/* FILTROS DE FECHA */}
@@ -416,25 +615,7 @@ export function ReportsPage() {
         </div>
       </div>
 
-      {/* PRINT-ONLY HEADER */}
-      <div className="hidden print:flex flex-col items-center mb-8 text-center border-b-2 border-gray-800 pb-4">
-        {branding?.logo_url ? (
-          <img src={branding.logo_url} alt="Logo" className="h-12 w-auto mb-2" />
-        ) : (
-          <div className="w-12 h-12 rounded-full bg-primary-100 flex items-center justify-center mb-2">
-            <span className="text-primary-600 font-bold text-lg">
-              {companyName.charAt(0).toUpperCase()}
-            </span>
-          </div>
-        )}
-        <h1 className="text-xl font-bold text-gray-900">{companyName}</h1>
-        <h2 className="text-md font-semibold text-gray-700 mt-1">
-          {activeTab === 'resumen' ? 'Informe General de Resumen' : `Reporte Detallado de ${activeTab.charAt(0).toUpperCase() + activeTab.slice(1)}`}
-        </h2>
-        <p className="text-xs text-gray-500 mt-1">
-          Generado el: {new Date().toLocaleString('es-EC')} | Rango: {dateRange.startDate && dateRange.endDate ? `${new Date(dateRange.startDate + 'T00:00:00').toLocaleDateString('es-EC')} al ${new Date(dateRange.endDate + 'T00:00:00').toLocaleDateString('es-EC')}` : 'Sin filtro aplicado (Histórico)'}
-        </p>
-      </div>
+      {/* NOTA: El encabezado de impresión ahora se gestiona en la ventana emergente de printReport.ts */}
 
       {/* TABS NAVIGATION */}
       <div className="flex flex-wrap gap-2 border-b border-gray-200 print:hidden">
@@ -638,13 +819,13 @@ export function ReportsPage() {
               />
             </div>
             <div className="flex gap-2">
-              <Button onClick={handlePrint} className="flex items-center gap-2" variant="outline">
+              <Button onClick={handlePrintSocios} className="flex items-center gap-2" variant="outline">
                 <Printer className="h-4 w-4 text-blue-600" />
                 Imprimir / PDF
               </Button>
               <Button onClick={exportSocios} className="flex items-center gap-2" variant="outline">
                 <FileSpreadsheet className="h-4 w-4 text-green-600" />
-                Exportar CSV (Excel)
+                Exportar Excel
               </Button>
             </div>
           </div>
@@ -738,13 +919,13 @@ export function ReportsPage() {
               />
             </div>
             <div className="flex gap-2">
-              <Button onClick={handlePrint} className="flex items-center gap-2" variant="outline">
+              <Button onClick={handlePrintUnidades} className="flex items-center gap-2" variant="outline">
                 <Printer className="h-4 w-4 text-blue-600" />
                 Imprimir / PDF
               </Button>
               <Button onClick={exportUnidades} className="flex items-center gap-2" variant="outline">
                 <FileSpreadsheet className="h-4 w-4 text-green-600" />
-                Exportar CSV (Excel)
+                Exportar Excel
               </Button>
             </div>
           </div>
@@ -845,13 +1026,13 @@ export function ReportsPage() {
               />
             </div>
             <div className="flex gap-2">
-              <Button onClick={handlePrint} className="flex items-center gap-2" variant="outline">
+              <Button onClick={handlePrintConductores} className="flex items-center gap-2" variant="outline">
                 <Printer className="h-4 w-4 text-blue-600" />
                 Imprimir / PDF
               </Button>
               <Button onClick={exportConductores} className="flex items-center gap-2" variant="outline">
                 <FileSpreadsheet className="h-4 w-4 text-green-600" />
-                Exportar CSV (Excel)
+                Exportar Excel
               </Button>
             </div>
           </div>
@@ -952,13 +1133,13 @@ export function ReportsPage() {
               />
             </div>
             <div className="flex gap-2">
-              <Button onClick={handlePrint} className="flex items-center gap-2" variant="outline">
+              <Button onClick={handlePrintDocumentos} className="flex items-center gap-2" variant="outline">
                 <Printer className="h-4 w-4 text-blue-600" />
                 Imprimir / PDF
               </Button>
               <Button onClick={exportDocumentos} className="flex items-center gap-2" variant="outline">
                 <FileSpreadsheet className="h-4 w-4 text-green-600" />
-                Exportar CSV (Excel)
+                Exportar Excel
               </Button>
             </div>
           </div>
@@ -1047,13 +1228,13 @@ export function ReportsPage() {
               />
             </div>
             <div className="flex gap-2">
-              <Button onClick={handlePrint} className="flex items-center gap-2" variant="outline">
+              <Button onClick={handlePrintFinanzas} className="flex items-center gap-2" variant="outline">
                 <Printer className="h-4 w-4 text-blue-600" />
                 Imprimir / PDF
               </Button>
               <Button onClick={exportFinanzas} className="flex items-center gap-2" variant="outline">
                 <FileSpreadsheet className="h-4 w-4 text-green-600" />
-                Exportar CSV (Excel)
+                Exportar Excel
               </Button>
             </div>
           </div>
@@ -1144,13 +1325,13 @@ export function ReportsPage() {
               />
             </div>
             <div className="flex gap-2">
-              <Button onClick={handlePrint} className="flex items-center gap-2" variant="outline">
+              <Button onClick={handlePrintSanciones} className="flex items-center gap-2" variant="outline">
                 <Printer className="h-4 w-4 text-blue-600" />
                 Imprimir / PDF
               </Button>
               <Button onClick={exportSanciones} className="flex items-center gap-2" variant="outline">
                 <FileSpreadsheet className="h-4 w-4 text-green-600" />
-                Exportar CSV (Excel)
+                Exportar Excel
               </Button>
             </div>
           </div>
@@ -1233,13 +1414,13 @@ export function ReportsPage() {
                 />
               </div>
               <div className="flex gap-2">
-                <Button onClick={handlePrint} className="flex items-center gap-2" variant="outline">
+                <Button onClick={handlePrintReuniones} className="flex items-center gap-2" variant="outline">
                   <Printer className="h-4 w-4 text-blue-600" />
                   Imprimir / PDF
                 </Button>
                 <Button onClick={exportReuniones} className="flex items-center gap-2" variant="outline">
                   <FileSpreadsheet className="h-4 w-4 text-green-600" />
-                  Exportar CSV (Excel)
+                  Exportar Excel
                 </Button>
               </div>
             </div>
