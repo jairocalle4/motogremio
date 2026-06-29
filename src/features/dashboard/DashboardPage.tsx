@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import {
-  Users, Bike, Wallet, ShieldAlert, Calendar, AlertTriangle,
+  Users, Car, Wallet, ShieldAlert, Calendar, AlertTriangle,
   CheckCircle, ArrowRight, DollarSign, PlusCircle, FileText,
   Clock, TrendingUp, AlertOctagon, Info, ArrowUpRight
 } from 'lucide-react'
@@ -183,7 +183,7 @@ export function DashboardPage() {
             </span>
             <span className="text-slate-400 text-xs">• Panel de Operaciones</span>
           </div>
-          <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight">
+          <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight text-white">
             {greeting}, {firstName}
           </h1>
           <p className="text-slate-300 text-sm mt-1">
@@ -215,7 +215,7 @@ export function DashboardPage() {
           title="Unidades activas"
           value={loading ? '—' : metrics.activeVehicles}
           subtitle={`Total: ${metrics.totalVehicles}`}
-          icon={<Bike className="h-5 w-5 text-indigo-600" />}
+          icon={<Car className="h-5 w-5 text-indigo-600" />}
           iconBg="bg-indigo-50"
           loading={loading}
         />
@@ -272,7 +272,7 @@ export function DashboardPage() {
           </Link>
           <Link to="/unidades?new=true" className="group">
             <div className="flex flex-col items-center justify-center p-4 rounded-xl border border-gray-100 bg-slate-50 hover:bg-indigo-50 hover:border-indigo-200 transition-all text-center h-24">
-              <Bike className="h-6 w-6 text-indigo-600 group-hover:scale-110 transition-transform" />
+              <Car className="h-6 w-6 text-indigo-600 group-hover:scale-110 transition-transform" />
               <span className="text-xs font-semibold text-gray-700 mt-2">Registrar Unidad</span>
             </div>
           </Link>
