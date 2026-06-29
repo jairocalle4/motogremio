@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react'
 import {
-  Printer, Users, Bike, UserCheck, FileText,
+  Printer, Users, Car, UserCheck, FileText,
   DollarSign, AlertTriangle, Calendar, Search, TrendingUp,
   BarChart2, FileSpreadsheet, RefreshCw
 } from 'lucide-react'
@@ -639,7 +639,7 @@ export function ReportsPage() {
         {[
           { id: 'resumen', label: 'Resumen General', icon: BarChart2 },
           { id: 'socios', label: 'Socios', icon: Users },
-          { id: 'unidades', label: 'Unidades', icon: Bike },
+          { id: 'unidades', label: 'Unidades', icon: Car },
           { id: 'conductores', label: 'Conductores', icon: UserCheck },
           { id: 'documentos', label: 'Documentos', icon: FileText },
           { id: 'finanzas', label: 'Finanzas y Pagos', icon: DollarSign },
@@ -669,11 +669,11 @@ export function ReportsPage() {
       {activeTab === 'resumen' && (
         <div className="space-y-6">
           {/* STATS CARDS */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+          <div className="grid grid-grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 print:grid-cols-4">
             <Card className="shadow-sm border border-gray-200">
               <CardContent className="p-5 flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-500 font-medium">Socios Activos</p>
+                  <p className="text-sm text-gray-500 font-medium">Socios Habilitados</p>
                   <h3 className="text-2xl font-bold text-gray-900 mt-1">{summary.members_active}</h3>
                   <p className="text-xs text-gray-400 mt-1">Total registrados: {summary.members_total}</p>
                 </div>
@@ -691,7 +691,7 @@ export function ReportsPage() {
                   <p className="text-xs text-gray-400 mt-1">Mantenimiento: {data ? data.unidades.maintenance : (summary.vehicles_total - summary.vehicles_active)}</p>
                 </div>
                 <div className="p-3 bg-green-50 text-green-600 rounded-xl">
-                  <Bike className="h-6 w-6" />
+                  <Car className="h-6 w-6" />
                 </div>
               </CardContent>
             </Card>

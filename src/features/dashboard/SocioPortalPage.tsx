@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Card, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Badge } from '@/components/ui/Badge'
-import { Bike, FileText, User as UserIcon, AlertTriangle, Bell } from 'lucide-react'
+import { Car, FileText, User as UserIcon, AlertTriangle, Bell } from 'lucide-react'
 import { useAuth } from '@/context/useAuth'
 import { supabase } from '@/lib/supabaseClient'
 import { formatDate } from '@/lib/utils'
@@ -168,7 +168,7 @@ export function SocioPortalPage() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Bike className="h-5 w-5 text-indigo-600" />
+              <Car className="h-5 w-5 text-indigo-600" />
               Mis Unidades
             </CardTitle>
           </CardHeader>

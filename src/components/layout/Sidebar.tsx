@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
 import {
-  LayoutDashboard, Users, UserCheck, Bike, Wallet,
+  LayoutDashboard, Users, UserCheck, Car, Wallet,
   ShieldAlert, BarChart3, FileText,
   Settings, Activity, Building2, Package,
   LogOut,
@@ -34,7 +34,7 @@ const companyNav: NavSection[] = [
       { to: '/dashboard',    label: 'Dashboard',      icon: LayoutDashboard },
       { to: '/socios',       label: 'Socios',         icon: Users },
       { to: '/conductores',  label: 'Conductores',    icon: UserCheck },
-      { to: '/unidades',     label: 'Unidades',       icon: Bike },
+      { to: '/unidades',     label: 'Unidades',       icon: Car },
       { to: '/pagos',        label: 'Pagos',          icon: Wallet },
       { to: '/documentos',   label: 'Documentos',     icon: FileText },
       { to: '/sanciones',    label: 'Sanciones',      icon: ShieldAlert },
