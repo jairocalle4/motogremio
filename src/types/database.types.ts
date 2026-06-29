@@ -505,6 +505,7 @@ export type Database = {
           phone: string | null
           status: Database["public"]["Enums"]["driver_status"] | null
           updated_at: string | null
+          admission_date: string | null
         }
         Insert: {
           address?: string | null
@@ -519,6 +520,7 @@ export type Database = {
           phone?: string | null
           status?: Database["public"]["Enums"]["driver_status"] | null
           updated_at?: string | null
+          admission_date?: string | null
         }
         Update: {
           address?: string | null
@@ -533,6 +535,7 @@ export type Database = {
           phone?: string | null
           status?: Database["public"]["Enums"]["driver_status"] | null
           updated_at?: string | null
+          admission_date?: string | null
         }
         Relationships: [
           {
@@ -1484,11 +1487,12 @@ export type Database = {
           model: string | null
           motor_number: string | null
           observations: string | null
-          plate: string
+           plate: string
           status: Database["public"]["Enums"]["vehicle_status"] | null
           updated_at: string | null
           vehicle_type: string | null
           year: number | null
+          registration_date: string | null
         }
         Insert: {
           brand?: string | null
@@ -1509,6 +1513,7 @@ export type Database = {
           updated_at?: string | null
           vehicle_type?: string | null
           year?: number | null
+          registration_date?: string | null
         }
         Update: {
           brand?: string | null
@@ -1529,6 +1534,7 @@ export type Database = {
           updated_at?: string | null
           vehicle_type?: string | null
           year?: number | null
+          registration_date?: string | null
         }
         Relationships: [
           {

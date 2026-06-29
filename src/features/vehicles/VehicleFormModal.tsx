@@ -84,6 +84,17 @@ const vehicleSchema = z.object({
 
   // Conductor de la unidad (opcional)
   driver_id: z.string().optional().or(z.literal('')),
+
+  // Fecha de habilitación en la cooperativa (opcional)
+  registration_date: z
+    .string()
+    .optional()
+    .or(z.literal(''))
+    .refine((val) => {
+      if (!val || val === '') return true
+      const d = new Date(val)
+      return !isNaN(d.getTime())
+    }, 'Fecha inválida'),
 })
 
 export type VehicleFormData = z.infer<typeof vehicleSchema>
@@ -92,7 +103,7 @@ interface VehicleFormModalProps {
   isOpen: boolean
   onClose: () => void
   onSubmit: (data: VehicleFormData) => Promise<void>
-  vehicle?: VehicleWithMember | null
+  vehicle?: (VehicleWithMember & { registration_date?: string | null }) | null
   members: Pick<Member, 'id' | 'first_name' | 'last_name' | 'document_id' | 'phone' | 'address'>[]
   drivers?: Pick<Driver, 'id' | 'first_name' | 'last_name' | 'document_id' | 'status' | 'member_id'>[]
   loading?: boolean
@@ -116,6 +127,7 @@ const defaultValues: VehicleFormData = {
   driver_id: '',
   vehicle_type: '',
   custom_vehicle_type: '',
+  registration_date: '',
 }
 
 export function VehicleFormModal({
@@ -137,7 +149,7 @@ export function VehicleFormModal({
     pendingData: VehicleFormData | null
   }>({ open: false, pendingData: null })
 
-  // Confirmación de descarte de borrador
+  // Confirmación de descartar cambios
   const [discardConfirm, setDiscardConfirm] = useState(false)
 
   const {
@@ -146,7 +158,7 @@ export function VehicleFormModal({
     reset,
     watch,
     setValue,
-    formState: { errors, isSubmitting, isDirty },
+    formState: { errors, isDirty, isSubmitting },
   } = useForm<VehicleFormData>({
     resolver: zodResolver(vehicleSchema),
     defaultValues,
@@ -176,6 +188,7 @@ export function VehicleFormModal({
           driver_id: vehicle.driver_id || '',
           vehicle_type: (vehicle.vehicle_type || '') as any,
           custom_vehicle_type: vehicle.custom_vehicle_type || '',
+          registration_date: vehicle.registration_date || '',
         })
 
         // Determinar driverType inicial
@@ -335,6 +348,16 @@ export function VehicleFormModal({
                 {...register('plate')}
                 error={errors.plate?.message}
               />
+
+              <div className="md:col-span-2">
+                <Input
+                  type="date"
+                  label="Fecha de Ingreso / Habilitación"
+                  hint="Fecha en la que la unidad fue integrada formalmente a las operaciones de la cooperativa"
+                  {...register('registration_date')}
+                  error={errors.registration_date?.message}
+                />
+              </div>
             </div>
           </div>
 

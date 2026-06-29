@@ -35,6 +35,15 @@ const driverSchema = z
     address:          z.string().max(200, 'Máximo 200 caracteres').optional().or(z.literal('')),
     status:           z.enum(['activo', 'inactivo'] as const),
     notes:            z.string().max(500, 'Máximo 500 caracteres').optional().or(z.literal('')),
+    admission_date:   z
+      .string()
+      .optional()
+      .or(z.literal(''))
+      .refine((val) => {
+        if (!val || val === '') return true
+        const d = new Date(val)
+        return !isNaN(d.getTime())
+      }, 'Fecha inválida'),
     // Licencia
     register_license: z.boolean(),
     license_number:   z.string().max(50, 'Máximo 50 caracteres').optional().or(z.literal('')),
@@ -74,7 +83,7 @@ interface DriverFormModalProps {
   isOpen: boolean
   onClose: () => void
   onCreated: (driverId: string) => void
-  driver?: DriverWithRelations | null
+  driver?: (DriverWithRelations & { admission_date?: string | null }) | null
   members: Pick<Member, 'id' | 'first_name' | 'last_name' | 'document_id' | 'phone' | 'address'>[]
   /** Borrador en memoria del padre */
   draft?: Partial<DriverFormData> | null
@@ -91,6 +100,7 @@ const defaultValues: DriverFormData = {
   address:          '',
   status:           'activo',
   notes:            '',
+  admission_date:   '',
   register_license: false,
   license_number:   '',
   license_type:     '',
@@ -151,6 +161,7 @@ export function DriverFormModal({
         address:          driver.address || '',
         status:           driver.status || 'activo',
         notes:            driver.notes || '',
+        admission_date:   driver.admission_date || '',
         register_license: false,
         license_number:   '',
         license_type:     'A1',
@@ -461,6 +472,16 @@ export function DriverFormModal({
                   ]}
                   {...register('status')}
                   error={errors.status?.message as string | undefined}
+                />
+              </div>
+
+              <div className="md:col-span-2">
+                <Input
+                  type="date"
+                  label="Fecha de Admisión / Ingreso"
+                  hint="Fecha en la que el conductor ingresó formalmente a la cooperativa"
+                  {...register('admission_date')}
+                  error={errors.admission_date?.message as string | undefined}
                 />
               </div>
 

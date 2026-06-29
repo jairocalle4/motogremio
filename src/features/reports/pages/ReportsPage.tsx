@@ -204,6 +204,7 @@ export function ReportsPage() {
       { key: 'brand', label: 'Marca', width: 12 },
       { key: 'model', label: 'Modelo', width: 14 },
       { key: 'year', label: 'Año', width: 8 },
+      { key: 'registration_date', label: 'Fecha Ingreso', width: 16 },
       { key: 'expired_docs_count', label: 'Docs. Vencidos', width: 14 },
       { key: 'upcoming_docs_count', label: 'Docs. Por Vencer', width: 16 },
     ], filteredUnidades, getExportMeta('Reporte de Unidades'))
@@ -217,6 +218,7 @@ export function ReportsPage() {
       { key: 'first_name', label: 'Nombres', width: 22 },
       { key: 'phone', label: 'Teléfono', width: 14 },
       { key: 'status', label: 'Estado', width: 12 },
+      { key: 'admission_date', label: 'Fecha Ingreso', width: 16 },
       { key: 'type', label: 'Tipo Conductor', width: 14 },
       { key: 'socio_name', label: 'Socio Relacionado', width: 24 },
       { key: 'license_type', label: 'Tipo Licencia', width: 14 },
@@ -564,56 +566,71 @@ export function ReportsPage() {
       </div>
 
       {/* FILTROS DE FECHA */}
-      <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm print:hidden space-y-3">
-        <div className="flex flex-wrap items-center gap-4">
-          <div className="flex items-center gap-2 border border-gray-300 rounded-lg px-3 py-2 bg-gray-50">
-            <span className="text-xs text-gray-500 font-medium">Desde:</span>
-            <input
-              type="date"
-              className="text-sm border-none bg-transparent focus:ring-0 p-0 text-gray-700"
-              value={tempStartDate}
-              onChange={e => setTempStartDate(e.target.value)}
-            />
-          </div>
-          <div className="flex items-center gap-2 border border-gray-300 rounded-lg px-3 py-2 bg-gray-50">
-            <span className="text-xs text-gray-500 font-medium">Hasta:</span>
-            <input
-              type="date"
-              className="text-sm border-none bg-transparent focus:ring-0 p-0 text-gray-700"
-              value={tempEndDate}
-              onChange={e => setTempEndDate(e.target.value)}
-            />
-          </div>
-          <Button onClick={handleApplyFilters} size="sm" className="bg-primary-600 hover:bg-primary-700 text-white font-medium">
-            Aplicar filtros
-          </Button>
-          {(tempStartDate || tempEndDate || dateRange.startDate || dateRange.endDate) && (
-            <Button onClick={handleClearFilters} size="sm" variant="ghost" className="text-gray-500 hover:text-gray-700">
-              Limpiar
-            </Button>
-          )}
-        </div>
+      {activeTab !== 'resumen' && (
+        <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm print:hidden space-y-3">
+          <div className="flex flex-col gap-2">
+            <div className="flex flex-wrap items-center gap-4">
+              <div className="flex items-center gap-2 border border-gray-300 rounded-lg px-3 py-2 bg-gray-50">
+                <span className="text-xs text-gray-500 font-medium">Desde:</span>
+                <input
+                  type="date"
+                  className="text-sm border-none bg-transparent focus:ring-0 p-0 text-gray-700"
+                  value={tempStartDate}
+                  onChange={e => setTempStartDate(e.target.value)}
+                />
+              </div>
+              <div className="flex items-center gap-2 border border-gray-300 rounded-lg px-3 py-2 bg-gray-50">
+                <span className="text-xs text-gray-500 font-medium">Hasta:</span>
+                <input
+                  type="date"
+                  className="text-sm border-none bg-transparent focus:ring-0 p-0 text-gray-700"
+                  value={tempEndDate}
+                  onChange={e => setTempEndDate(e.target.value)}
+                />
+              </div>
+              <Button onClick={handleApplyFilters} size="sm" className="bg-primary-600 hover:bg-primary-700 text-white font-medium">
+                Aplicar filtros
+              </Button>
+              {(tempStartDate || tempEndDate || dateRange.startDate || dateRange.endDate) && (
+                <Button onClick={handleClearFilters} size="sm" variant="ghost" className="text-gray-500 hover:text-gray-700">
+                  Limpiar
+                </Button>
+              )}
+            </div>
 
-        {dateError && (
-          <p className="text-xs text-red-600 font-medium flex items-center gap-1">
-            <AlertTriangle className="h-3.5 w-3.5 shrink-0 text-red-500" />
-            {dateError}
-          </p>
-        )}
+            {/* Mensaje descriptivo contextual */}
+            <p className="text-xs text-gray-400 italic">
+              {activeTab === 'socios' && 'ℹ️ Este rango filtra los socios según su fecha de admisión a la cooperativa.'}
+              {activeTab === 'unidades' && 'ℹ️ Este rango filtra las unidades según su fecha de habilitación / ingreso.'}
+              {activeTab === 'conductores' && 'ℹ️ Este rango filtra los conductores según su fecha de admisión / ingreso.'}
+              {activeTab === 'documentos' && 'ℹ️ Este rango filtra los documentos según su fecha de vencimiento.'}
+              {activeTab === 'finanzas' && 'ℹ️ Este rango filtra las cuotas según su fecha de vencimiento y los pagos registrados.'}
+              {activeTab === 'sanciones' && 'ℹ️ Este rango filtra las infracciones según la fecha en que ocurrieron.'}
+              {activeTab === 'reuniones' && 'ℹ️ Este rango filtra las reuniones según la fecha de su convocatoria.'}
+            </p>
+          </div>
 
-        <div className="text-xs text-gray-500 flex items-center gap-2">
-          <span className="font-semibold text-gray-700">Estado del filtro:</span>
-          {dateRange.startDate && dateRange.endDate ? (
-            <span className="bg-primary-50 text-primary-700 px-2 py-0.5 rounded-full font-medium">
-              Rango aplicado: {new Date(dateRange.startDate + 'T00:00:00').toLocaleDateString('es-EC')} — {new Date(dateRange.endDate + 'T00:00:00').toLocaleDateString('es-EC')}
-            </span>
-          ) : (
-            <span className="bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full font-medium">
-              Sin filtro de fechas aplicado (mostrando todo)
-            </span>
+          {dateError && (
+            <p className="text-xs text-red-600 font-medium flex items-center gap-1">
+              <AlertTriangle className="h-3.5 w-3.5 shrink-0 text-red-500" />
+              {dateError}
+            </p>
           )}
+
+          <div className="text-xs text-gray-500 flex items-center gap-2 pt-1 border-t border-gray-100">
+            <span className="font-semibold text-gray-700">Estado del filtro:</span>
+            {dateRange.startDate && dateRange.endDate ? (
+              <span className="bg-primary-50 text-primary-700 px-2 py-0.5 rounded-full font-medium">
+                Rango aplicado: {new Date(dateRange.startDate + 'T00:00:00').toLocaleDateString('es-EC')} — {new Date(dateRange.endDate + 'T00:00:00').toLocaleDateString('es-EC')}
+              </span>
+            ) : (
+              <span className="bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full font-medium">
+                Sin filtro de fechas aplicado (mostrando todo)
+              </span>
+            )}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* NOTA: El encabezado de impresión ahora se gestiona en la ventana emergente de printReport.ts */}
 

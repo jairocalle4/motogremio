@@ -338,6 +338,28 @@ export function useReports(activeTab: string = 'resumen') {
     try {
       const today = startOfDay(new Date())
 
+      // Helper de filtrado por rango de fechas
+      const filterByDate = (dateVal: string | null | undefined) => {
+        if (!dateRange.startDate || !dateRange.endDate) return true
+        if (!dateVal) return false
+        try {
+          const startRange = startOfDay(parseISO(dateRange.startDate))
+          const endRange = startOfDay(parseISO(dateRange.endDate))
+          const current = startOfDay(parseISO(dateVal))
+          return isWithinInterval(current, { start: startRange, end: endRange })
+        } catch (e) {
+          return true
+        }
+      }
+
+      // ─── FILTRADO DE ARRAYS BASE SEGÚN EL RANGO ──────────────────────────────
+      const filteredMembers = (members || []).filter(m => filterByDate(m.admission_date))
+      const filteredVehicles = (vehicles || []).filter(v => filterByDate((v as any).registration_date))
+      const filteredDrivers = (drivers || []).filter(d => filterByDate((d as any).admission_date))
+      const filteredDocuments = (documents || []).filter(d => filterByDate(d.expiry_date))
+      const filteredSanctions = (sanctions || []).filter(s => filterByDate(s.date))
+      const filteredMeetings = (meetings || []).filter(m => filterByDate(m.date))
+
       // ─── COMPUTACIONES / METRICAS DE SOCIOS ─────────────────────────────────
       const memberVehicleMap = new Map<string, string[]>()
       vehicles?.forEach(v => {
@@ -353,7 +375,7 @@ export function useReports(activeTab: string = 'resumen') {
       let multiUnit = 0
       let noneUnit = 0
 
-      const sociosList = (members || []).map(m => {
+      const sociosList = filteredMembers.map(m => {
         if (m.status === 'activo') activeMembers++
         else if (m.status === 'inactivo') inactiveMembers++
         else if (m.status === 'suspendido') suspendedMembers++
@@ -377,14 +399,14 @@ export function useReports(activeTab: string = 'resumen') {
         }
       })
 
-      // ─── COMPUTACIONES / METRICAS DE VEHICOS ─────────────────────────────────
+      // ─── COMPUTACIONES / METRICAS DE VEHICULOS ─────────────────────────────────
       let activeVehicles = 0
       let inactiveVehicles = 0
       let maintenanceVehicles = 0
       let unassignedDrivers = 0
 
       const vehicleDocs = new Map<string, { expired: number; upcoming: number }>()
-      documents?.forEach(d => {
+      filteredDocuments.forEach(d => {
         if (d.vehicle_id) {
           const stats = vehicleDocs.get(d.vehicle_id) || { expired: 0, upcoming: 0 }
           const status = calculateDocumentStatus(d.expiry_date)
@@ -394,7 +416,7 @@ export function useReports(activeTab: string = 'resumen') {
         }
       })
 
-      const unidadesList = (vehicles || []).map(v => {
+      const unidadesList = filteredVehicles.map(v => {
         if (v.status === 'activa') activeVehicles++
         else if (v.status === 'inactiva') inactiveVehicles++
         else if (v.status === 'mantenimiento') maintenanceVehicles++
@@ -420,6 +442,7 @@ export function useReports(activeTab: string = 'resumen') {
           year: v.year,
           expired_docs_count: stats.expired,
           upcoming_docs_count: stats.upcoming,
+          registration_date: (v as any).registration_date || null,
         }
       })
 
@@ -430,7 +453,7 @@ export function useReports(activeTab: string = 'resumen') {
       let socioDrivers = 0
       let licenseExpiredOrMissing = 0
 
-      const conductoresList = (drivers || []).map(d => {
+      const conductoresList = filteredDrivers.map(d => {
         if (d.status === 'activo') activeDrivers++
         else if (d.status === 'inactivo') inactiveDrivers++
 
@@ -488,7 +511,7 @@ export function useReports(activeTab: string = 'resumen') {
       let byDriverCount = 0
       let byVehicleCount = 0
 
-      const documentosList = (documents || []).map(d => {
+      const documentosList = filteredDocuments.map(d => {
         const status = calculateDocumentStatus(d.expiry_date)
         if (status === 'vencido') expDocs++
         else if (status === 'por_vencer') up30Docs++
@@ -541,7 +564,10 @@ export function useReports(activeTab: string = 'resumen') {
       let overdueSum = 0
       let finesSum = 0
 
-      const financieroList = (charges || []).map(c => {
+      // Filtrar cuotas (charges) por rango de fechas
+      const filteredCharges = (charges || []).filter(c => filterByDate(c.due_date))
+
+      const financieroList = filteredCharges.map(c => {
         const isPending = c.status === 'pendiente' || c.status === 'parcial'
         if (isPending) {
           totalPending += Number(c.balance)
@@ -608,7 +634,7 @@ export function useReports(activeTab: string = 'resumen') {
       let paidFinesAmount = 0
       let pendingFinesAmount = 0
 
-      const sancionesList = (sanctions || []).map(s => {
+      const sancionesList = filteredSanctions.map(s => {
         if (s.status === 'pendiente') pendingSanc++
         else if (s.status === 'apelacion') apelacionSanc++
         else if (s.status === 'resuelta') resueltaSanc++
@@ -653,7 +679,7 @@ export function useReports(activeTab: string = 'resumen') {
       let totalAttEnded = 0
       let totalInvitedAll = 0
 
-      const reunionesList = (meetings || []).map(m => {
+      const reunionesList = filteredMeetings.map(m => {
         let attended = 0
         let absent = 0
         let justified = 0

@@ -148,6 +148,7 @@ export interface Vehicle {
   status: VehicleStatus
   created_at: string
   updated_at: string
+  registration_date?: string | null
   // Relaciones cargadas con JOIN
   member?: {
     id: string
@@ -205,6 +206,7 @@ export interface Driver {
   notes: string | null            // migración 15
   created_at: string
   updated_at: string
+  admission_date?: string | null
   // Relaciones cargadas con JOIN
   member?: Pick<Member, 'id' | 'first_name' | 'last_name' | 'document_id'> | null
   licenses?: DriverLicense[]
