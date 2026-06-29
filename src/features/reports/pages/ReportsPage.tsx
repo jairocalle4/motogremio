@@ -179,9 +179,9 @@ export function ReportsPage() {
   })
 
   // ─── EXCEL EXPORTS ─────────────────────────────────────────────────────────
-  const exportSocios = () => {
+  const exportSocios = async () => {
     if (!data) return
-    exportToExcel('reporte_socios', [
+    await exportToExcel('reporte_socios', [
       { key: 'document_id', label: 'Cédula/RUC', width: 16 },
       { key: 'last_name', label: 'Apellidos', width: 22 },
       { key: 'first_name', label: 'Nombres', width: 22 },
@@ -193,9 +193,9 @@ export function ReportsPage() {
     ], filteredSocios, getExportMeta('Reporte de Socios'))
   }
 
-  const exportUnidades = () => {
+  const exportUnidades = async () => {
     if (!data) return
-    exportToExcel('reporte_unidades', [
+    await exportToExcel('reporte_unidades', [
       { key: 'disk_number', label: 'Disco', width: 10 },
       { key: 'plate', label: 'Placa', width: 14 },
       { key: 'status', label: 'Estado', width: 14 },
@@ -209,9 +209,9 @@ export function ReportsPage() {
     ], filteredUnidades, getExportMeta('Reporte de Unidades'))
   }
 
-  const exportConductores = () => {
+  const exportConductores = async () => {
     if (!data) return
-    exportToExcel('reporte_conductores', [
+    await exportToExcel('reporte_conductores', [
       { key: 'document_id', label: 'Cédula', width: 16 },
       { key: 'last_name', label: 'Apellidos', width: 22 },
       { key: 'first_name', label: 'Nombres', width: 22 },
@@ -225,9 +225,9 @@ export function ReportsPage() {
     ], filteredConductores, getExportMeta('Reporte de Conductores'))
   }
 
-  const exportDocumentos = () => {
+  const exportDocumentos = async () => {
     if (!data) return
-    exportToExcel('reporte_documentos', [
+    await exportToExcel('reporte_documentos', [
       { key: 'title', label: 'Documento', width: 28 },
       { key: 'type_name', label: 'Tipo', width: 18 },
       { key: 'entity_type', label: 'Entidad', width: 12 },
@@ -238,9 +238,9 @@ export function ReportsPage() {
     ], filteredDocumentos, getExportMeta('Reporte de Documentos'))
   }
 
-  const exportFinanzas = () => {
+  const exportFinanzas = async () => {
     if (!data) return
-    exportToExcel('reporte_financiero', [
+    await exportToExcel('reporte_financiero', [
       { key: 'member_name', label: 'Socio', width: 28 },
       { key: 'description', label: 'Descripción de Cuota', width: 32 },
       { key: 'amount', label: 'Monto ($)', width: 14 },
@@ -252,9 +252,9 @@ export function ReportsPage() {
     ], filteredFinanzas, getExportMeta('Reporte Financiero'))
   }
 
-  const exportSanciones = () => {
+  const exportSanciones = async () => {
     if (!data) return
-    exportToExcel('reporte_sanciones', [
+    await exportToExcel('reporte_sanciones', [
       { key: 'member_name', label: 'Socio', width: 28 },
       { key: 'sanction_type', label: 'Infracción/Tipo', width: 22 },
       { key: 'date', label: 'Fecha Sanción', width: 14 },
@@ -267,9 +267,9 @@ export function ReportsPage() {
     ], filteredSanciones, getExportMeta('Reporte de Sanciones'))
   }
 
-  const exportReuniones = () => {
+  const exportReuniones = async () => {
     if (!data) return
-    exportToExcel('reporte_reuniones', [
+    await exportToExcel('reporte_reuniones', [
       { key: 'title', label: 'Reunión', width: 30 },
       { key: 'meeting_type', label: 'Tipo', width: 14 },
       { key: 'date', label: 'Fecha', width: 14 },
