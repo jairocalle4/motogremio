@@ -1,0 +1,2 @@
+-- Duplicate migration placeholder
+-- The actual legacy function cleanup logic was applied in 20260630151800_cleanup_old_sanction_atomic_rpc.sql
