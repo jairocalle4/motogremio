@@ -56,7 +56,7 @@ export function CompanyBrandingTab({ userRole }: CompanyBrandingTabProps) {
   const { reload: reloadBrandingContext } = useBranding()
 
   // check if user has edit permissions
-  const canEdit = userRole && ['admin', 'gerente', 'presidente', 'secretaria', 'tesorero'].includes(userRole)
+  const canEdit = userRole && ['super_admin', 'admin'].includes(userRole)
 
   const {
     register,
