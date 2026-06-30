@@ -134,12 +134,12 @@ export function SuperAdminDashboard() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Panel Global</h1>
+            <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Panel Global Super Admin</h1>
             <span className="bg-primary-50 text-primary-700 text-[10px] font-bold px-2 py-0.5 rounded-full border border-primary-200">
               SaaS Admin
             </span>
           </div>
-          <p className="text-sm text-slate-500 mt-1">Supervisión operativa, límites y auditoría del ecosistema MotoGremio.</p>
+          <p className="text-sm text-slate-500 mt-1">Visión ejecutiva de compañías, planes, uso y actividad de la plataforma.</p>
         </div>
         <div className="text-right">
           <p className="text-xs text-slate-400 font-semibold uppercase tracking-wider">Hoy</p>
@@ -156,8 +156,8 @@ export function SuperAdminDashboard() {
           { label: 'Usuarios Registrados', val: stats.total_users, icon: Users, color: 'text-purple-600 bg-purple-50 border-l-purple-500' },
           { label: 'Socios Totales', val: stats.total_members, icon: Users, color: 'text-indigo-600 bg-indigo-50 border-l-indigo-500' },
           { label: 'Unidades Conectadas', val: stats.total_vehicles, icon: FileText, color: 'text-sky-600 bg-sky-50 border-l-sky-500' },
-          { label: 'Deuda Consolidada', val: `$${stats.total_debt.toFixed(2)}`, icon: AlertCircle, color: 'text-orange-600 bg-orange-50 border-l-orange-500' },
-          { label: 'Pagos Procesados', val: stats.total_payments, icon: ShieldCheck, color: 'text-emerald-600 bg-emerald-50 border-l-emerald-500' }
+          { label: 'Movimientos Internos', val: `$${stats.total_debt.toFixed(2)}`, desc: 'Deuda registrada de socios a compañías', icon: AlertCircle, color: 'text-orange-600 bg-orange-50 border-l-orange-500' },
+          { label: 'Ingresos SaaS', val: '-', desc: 'Requiere módulo de Suscripciones SaaS', icon: DollarSign, color: 'text-emerald-600 bg-emerald-50 border-l-emerald-500' }
         ].map((item, idx) => (
           <motion.div
             key={idx}
@@ -165,13 +165,14 @@ export function SuperAdminDashboard() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3, delay: idx * 0.05 }}
           >
-            <Card className={`p-5 flex items-center gap-4 border-l-4 ${item.color} shadow-sm hover:shadow-md transition-shadow`}>
-              <div className={`p-3 rounded-xl bg-white/70 shadow-sm text-slate-800`}>
+            <Card className={`p-5 flex items-center gap-4 border-l-4 ${item.color} shadow-sm hover:shadow-md transition-shadow h-full`}>
+              <div className={`p-3 rounded-xl bg-white/70 shadow-sm text-slate-800 shrink-0`}>
                 <item.icon className="h-6 w-6" />
               </div>
-              <div>
-                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">{item.label}</p>
+              <div className="min-w-0 flex-1">
+                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider truncate">{item.label}</p>
                 <p className="text-2xl font-black text-slate-900 mt-0.5">{item.val}</p>
+                {item.desc && <p className="text-[9px] text-slate-400 mt-1 leading-tight">{item.desc}</p>}
               </div>
             </Card>
           </motion.div>
@@ -287,15 +288,19 @@ export function SuperAdminDashboard() {
         </Card>
       </div>
 
-      {/* ─── MÓDULOS SaaS ADICIONALES (Placeholder) ─────────────────────────── */}
+      {/* ─── MÓDULOS SaaS ADICIONALES (Roadmap) ─────────────────────────── */}
       <div>
-        <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider mb-4">Módulos en Espera / Roadmap SaaS</h3>
+        <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider mb-4">Roadmap ejecutivo del SaaS</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {[
-            { label: 'Facturación / Suscripciones', desc: 'Control de pasarelas de pago recurrentes para las compañías', icon: DollarSign, badge: 'SA-2C' },
-            { label: 'Métricas Consolidadas', desc: 'Análisis global de finanzas y comportamiento de uso del gremio', icon: TrendingUp, badge: 'SA-2B' },
-            { label: 'Configuración Global', desc: 'Variables del entorno SaaS y parámetros por defecto de la app', icon: Settings, badge: 'SA-2D' },
-            { label: 'Centro de Seguridad', desc: 'Bypass del sistema y auditoría de tokens de API del servidor', icon: Lock, badge: 'SA-2D' }
+            { label: 'Suscripciones SaaS', desc: 'Gestión de planes y control de acceso', icon: DollarSign, badge: 'SA-2C', status: 'Planificado' },
+            { label: 'Facturación SaaS', desc: 'Emisión de cobros recurrentes a compañías', icon: FileText, badge: 'SA-2C', status: 'Planificado' },
+            { label: 'Métricas Globales', desc: 'Análisis global de finanzas y comportamiento', icon: TrendingUp, badge: 'SA-2B', status: 'En desarrollo' },
+            { label: 'Configuración Global', desc: 'Variables del entorno SaaS y parámetros base', icon: Settings, badge: 'SA-2D', status: 'Planificado' },
+            { label: 'Seguridad Global', desc: 'Auditoría avanzada y control de acceso', icon: Lock, badge: 'SA-2D', status: 'Requiere SA-2D' },
+            { label: 'Alertas Globales', desc: 'Notificaciones sobre incidentes en la plataforma', icon: AlertCircle, badge: 'SA-2E', status: 'Planificado' },
+            { label: 'Salud de Compañías', desc: 'Métricas de retención y actividad', icon: Activity, badge: 'SA-2B', status: 'Planificado' },
+            { label: 'Uso de Límites por Plan', desc: 'Reportes detallados de sobrecapacidad', icon: ShieldCheck, badge: 'SA-2B', status: 'Requiere SA-2B' }
           ].map((m, idx) => (
             <Card key={idx} className="p-5 border border-dashed border-slate-200 bg-slate-50/50 flex flex-col justify-between h-40">
               <div>
@@ -311,7 +316,7 @@ export function SuperAdminDashboard() {
                 <p className="text-[11px] text-slate-500 leading-normal mt-1">{m.desc}</p>
               </div>
               <span className="text-[10px] text-primary-600 font-bold block pt-2 border-t border-slate-100">
-                Próximamente en demo
+                {m.status}
               </span>
             </Card>
           ))}
