@@ -305,6 +305,17 @@ export function MeetingDetailPage() {
         </CardContent>
       </Card>
 
+      {/* ── Advertencia Reunión Finalizada ────────────────────────────────────── */}
+      {currentMeeting.status === 'finalizada' && (
+        <div className="p-4 bg-blue-50 text-blue-800 text-sm rounded-2xl border border-blue-100 flex items-start gap-2.5">
+          <span className="text-lg">ℹ️</span>
+          <div>
+            <p className="font-semibold">Esta reunión ya está finalizada.</p>
+            <p>La asistencia queda bloqueada para conservar el historial.</p>
+          </div>
+        </div>
+      )}
+
       {/* ── KPIs Asistencia ───────────────────────────────────────────────────── */}
       <div className="grid grid-cols-2 sm:grid-cols-6 gap-4">
         <div className="p-4 bg-gray-50 border border-gray-100 rounded-2xl text-center">
@@ -404,11 +415,11 @@ export function MeetingDetailPage() {
                      const status = currentAtt?.status || null
                      const isSaving = savingAttendanceId === member.id
 
-                     // La toma de asistencia solo está habilitada si la reunión está "en_curso" o "finalizada",
+                     // La toma de asistencia solo está habilitada si la reunión está "en_curso" (no "finalizada" ni "cancelada"),
                      // y el usuario tiene permisos.
                      const isEditable =
                        canManageMeetings &&
-                       (currentMeeting.status === 'en_curso' || currentMeeting.status === 'finalizada')
+                       currentMeeting.status === 'en_curso'
 
                      // Buscar sanción activa para este socio y esta asistencia
                      const activeSanction = sanctions.find(
@@ -489,7 +500,7 @@ export function MeetingDetailPage() {
                                )}
                              </div>
                            ) : (
-                             (status === 'ausente' || status === 'tarde') && currentAtt && canManageSanctions && (
+                             (status === 'ausente' || status === 'tarde') && currentMeeting.status !== 'finalizada' && currentAtt && canManageSanctions && (
                                <Button
                                  variant="outline"
                                  size="sm"
