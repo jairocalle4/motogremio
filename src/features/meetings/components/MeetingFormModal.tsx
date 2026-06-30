@@ -136,6 +136,16 @@ export function MeetingFormModal({ isOpen, onClose, onSubmit, meeting }: Meeting
           />
         </div>
 
+        {date && date < new Date().toISOString().split('T')[0] && (
+          <div className="p-3 bg-amber-50 text-amber-800 text-xs rounded-lg border border-amber-100 flex items-start gap-2">
+            <span className="text-base">⚠️</span>
+            <div>
+              <p className="font-semibold">Estás registrando una reunión con fecha pasada.</p>
+              <p>Verifica que sea correcto antes de guardar.</p>
+            </div>
+          </div>
+        )}
+
         <Textarea
           label="Orden del día / Descripción"
           value={description}
