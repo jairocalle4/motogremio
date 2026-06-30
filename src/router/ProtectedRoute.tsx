@@ -4,6 +4,7 @@ import { usePermissions } from '@/hooks/usePermissions'
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
 import type { UserRole } from '@/types'
 import { AccountDisabledPage } from '@/features/auth/AccountDisabledPage'
+import { CompanySuspendedPage } from '@/features/auth/CompanySuspendedPage'
 
 interface ProtectedRouteProps {
   allowedRoles?: UserRole[]
@@ -39,6 +40,11 @@ export function ProtectedRoute({ allowedRoles }: ProtectedRouteProps) {
         <LoadingSpinner size="lg" label="Cargando perfil..." />
       </div>
     )
+  }
+
+  // Si la compañía está suspendida / inactiva (y no es super_admin)
+  if (profile && profile.company && profile.company.status !== 'activa' && role !== 'super_admin') {
+    return <CompanySuspendedPage />
   }
 
   // Si el perfil ya cargó y está inactivo

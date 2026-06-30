@@ -10,6 +10,7 @@ import { SuperAdminCompanies } from '@/features/super-admin/SuperAdminCompanies'
 import { SuperAdminCompanyDetail } from '@/features/super-admin/SuperAdminCompanyDetail'
 import { SuperAdminPlans } from '@/features/super-admin/SuperAdminPlans'
 import { SuperAdminAuditLogs } from '@/features/super-admin/SuperAdminAuditLogs'
+import { SuperAdminSubscriptions } from '@/features/super-admin/SuperAdminSubscriptions'
 import { SuperAdminPlaceholder } from '@/features/super-admin/SuperAdminPlaceholder'
 import { LoginPage } from '@/features/auth/LoginPage'
 import { RegisterPage } from '@/features/auth/RegisterPage'
@@ -103,7 +104,7 @@ export function AppRouter() {
                 <Route path="companies" element={<SuperAdminCompanies />} />
                 <Route path="companies/:id" element={<SuperAdminCompanyDetail />} />
                 <Route path="plans" element={<SuperAdminPlans />} />
-                <Route path="subscriptions" element={<SuperAdminPlaceholder title="Suscripciones" description="Gestión de pagos y renovaciones SaaS" />} />
+                <Route path="subscriptions" element={<SuperAdminSubscriptions />} />
                 <Route path="metrics" element={<SuperAdminPlaceholder title="Métricas" description="Estadísticas de uso y crecimiento" />} />
                 <Route path="settings" element={<SuperAdminPlaceholder title="Configuración" description="Ajustes globales de la plataforma SaaS" />} />
                 <Route path="security" element={<SuperAdminPlaceholder title="Seguridad" description="Configuración de seguridad global" />} />

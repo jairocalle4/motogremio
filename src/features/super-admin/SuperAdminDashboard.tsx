@@ -3,7 +3,7 @@ import { Card } from '@/components/ui/Card'
 import { supabase } from '@/lib/supabaseClient'
 import { motion } from 'framer-motion'
 import {
-  Building2, Users, FileText, CheckCircle, XCircle,
+  Building2, Users, FileText, CheckCircle,
   AlertCircle, TrendingUp, Activity, ArrowUpRight,
   Lock, Settings, ShieldCheck, DollarSign
 } from 'lucide-react'
@@ -50,26 +50,30 @@ export function SuperAdminDashboard() {
   const [companies, setCompanies] = useState<CompanyStats[]>([])
   const [planOverview, setPlanOverview] = useState<SuperAdminPlanOverview[]>([])
   const [recentLogs, setRecentLogs] = useState<AuditLogItem[]>([])
+  const [billingOverview, setBillingOverview] = useState<any>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     async function loadDashboardData() {
       setLoading(true)
       try {
-        const [statsRes, companiesRes, overviewRes, logsRes] = await Promise.all([
+        const [statsRes, companiesRes, overviewRes, logsRes, billingRes] = await Promise.all([
           supabase.rpc('get_super_admin_dashboard_stats'),
           supabase.rpc('get_companies_with_stats'),
           getSuperAdminPlanUsageOverview(),
-          getAuditLogs({ limit: 5 })
+          getAuditLogs({ limit: 5 }),
+          supabase.rpc('get_saas_billing_overview')
         ])
 
         if (statsRes.error) throw statsRes.error
         if (companiesRes.error) throw companiesRes.error
+        if (billingRes.error) throw billingRes.error
 
         setStats(statsRes.data as unknown as GlobalStats)
         setCompanies((companiesRes.data as unknown as CompanyStats[]) || [])
         setPlanOverview(overviewRes)
         setRecentLogs(logsRes.data || [])
+        setBillingOverview(billingRes.data)
       } catch (err: any) {
         toast.error('Error al cargar datos del panel: ' + err.message)
       } finally {
@@ -152,12 +156,12 @@ export function SuperAdminDashboard() {
         {[
           { label: 'Total Compañías', val: stats.total_companies, icon: Building2, color: 'text-blue-600 bg-blue-50 border-l-blue-500' },
           { label: 'Compañías Activas', val: stats.active_companies, icon: CheckCircle, color: 'text-green-600 bg-green-50 border-l-green-500' },
-          { label: 'Compañías Inactivas', val: stats.inactive_companies, icon: XCircle, color: 'text-red-600 bg-red-50 border-l-red-500' },
-          { label: 'Usuarios Registrados', val: stats.total_users, icon: Users, color: 'text-purple-600 bg-purple-50 border-l-purple-500' },
+          { label: 'MRR Estimado', val: billingOverview ? `$${Number(billingOverview.mrr).toFixed(2)}` : '-', desc: 'Suma de suscripciones activas', icon: DollarSign, color: 'text-purple-600 bg-purple-50 border-l-purple-500' },
+          { label: 'Ingresos SaaS (Mes)', val: billingOverview ? `$${Number(billingOverview.collected_month).toFixed(2)}` : '-', desc: 'Cobros SaaS recaudados en el mes', icon: ShieldCheck, color: 'text-emerald-600 bg-emerald-50 border-l-emerald-500' },
+          { label: 'Pendiente SaaS', val: billingOverview ? `$${Number(billingOverview.pending_total).toFixed(2)}` : '-', desc: 'Facturas SaaS pendientes de pago', icon: Activity, color: 'text-orange-600 bg-orange-50 border-l-orange-500' },
+          { label: 'Vencido SaaS', val: billingOverview ? `$${Number(billingOverview.overdue_total).toFixed(2)}` : '-', desc: 'Facturas SaaS vencidas', icon: AlertCircle, color: 'text-red-600 bg-red-50 border-l-red-500' },
           { label: 'Socios Totales', val: stats.total_members, icon: Users, color: 'text-indigo-600 bg-indigo-50 border-l-indigo-500' },
-          { label: 'Unidades Conectadas', val: stats.total_vehicles, icon: FileText, color: 'text-sky-600 bg-sky-50 border-l-sky-500' },
-          { label: 'Movimientos Internos', val: `$${stats.total_debt.toFixed(2)}`, desc: 'Deuda registrada de socios a compañías', icon: AlertCircle, color: 'text-orange-600 bg-orange-50 border-l-orange-500' },
-          { label: 'Ingresos SaaS', val: '-', desc: 'Requiere módulo de Suscripciones SaaS', icon: DollarSign, color: 'text-emerald-600 bg-emerald-50 border-l-emerald-500' }
+          { label: 'Unidades Conectadas', val: stats.total_vehicles, icon: FileText, color: 'text-sky-600 bg-sky-50 border-l-sky-500' }
         ].map((item, idx) => (
           <motion.div
             key={idx}

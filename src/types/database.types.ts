@@ -388,6 +388,81 @@ export type Database = {
           },
         ]
       }
+      company_subscriptions: {
+        Row: {
+          billing_cycle: string
+          cancelled_at: string | null
+          company_id: string
+          created_at: string | null
+          currency: string | null
+          current_period_end: string
+          current_period_start: string
+          grace_until: string | null
+          id: string
+          next_due_date: string
+          notes: string | null
+          plan_id: string
+          price_amount: number
+          starts_at: string
+          status: string
+          suspended_at: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          billing_cycle: string
+          cancelled_at?: string | null
+          company_id: string
+          created_at?: string | null
+          currency?: string | null
+          current_period_end: string
+          current_period_start?: string
+          grace_until?: string | null
+          id?: string
+          next_due_date: string
+          notes?: string | null
+          plan_id: string
+          price_amount: number
+          starts_at?: string
+          status?: string
+          suspended_at?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          billing_cycle?: string
+          cancelled_at?: string | null
+          company_id?: string
+          created_at?: string | null
+          currency?: string | null
+          current_period_end?: string
+          current_period_start?: string
+          grace_until?: string | null
+          id?: string
+          next_due_date?: string
+          notes?: string | null
+          plan_id?: string
+          price_amount?: number
+          starts_at?: string
+          status?: string
+          suspended_at?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "company_subscriptions_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "company_subscriptions_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       document_types: {
         Row: {
           company_id: string
@@ -1239,6 +1314,162 @@ export type Database = {
           },
         ]
       }
+      saas_invoices: {
+        Row: {
+          amount: number
+          amount_paid: number | null
+          balance: number
+          company_id: string
+          created_at: string | null
+          created_by: string | null
+          due_date: string
+          id: string
+          invoice_number: string
+          issue_date: string
+          notes: string | null
+          paid_at: string | null
+          period_end: string
+          period_start: string
+          plan_id: string
+          status: string
+          subscription_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          amount: number
+          amount_paid?: number | null
+          balance: number
+          company_id: string
+          created_at?: string | null
+          created_by?: string | null
+          due_date: string
+          id?: string
+          invoice_number?: string
+          issue_date?: string
+          notes?: string | null
+          paid_at?: string | null
+          period_end: string
+          period_start: string
+          plan_id: string
+          status?: string
+          subscription_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          amount?: number
+          amount_paid?: number | null
+          balance?: number
+          company_id?: string
+          created_at?: string | null
+          created_by?: string | null
+          due_date?: string
+          id?: string
+          invoice_number?: string
+          issue_date?: string
+          notes?: string | null
+          paid_at?: string | null
+          period_end?: string
+          period_start?: string
+          plan_id?: string
+          status?: string
+          subscription_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "saas_invoices_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "saas_invoices_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "saas_invoices_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "plans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "saas_invoices_subscription_id_fkey"
+            columns: ["subscription_id"]
+            isOneToOne: false
+            referencedRelation: "company_subscriptions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      saas_payments: {
+        Row: {
+          amount: number
+          company_id: string
+          confirmed_by: string
+          created_at: string | null
+          id: string
+          invoice_id: string
+          notes: string | null
+          paid_at: string
+          payment_method: string
+          receipt_url: string | null
+          reference: string | null
+        }
+        Insert: {
+          amount: number
+          company_id: string
+          confirmed_by: string
+          created_at?: string | null
+          id?: string
+          invoice_id: string
+          notes?: string | null
+          paid_at?: string
+          payment_method: string
+          receipt_url?: string | null
+          reference?: string | null
+        }
+        Update: {
+          amount?: number
+          company_id?: string
+          confirmed_by?: string
+          created_at?: string | null
+          id?: string
+          invoice_id?: string
+          notes?: string | null
+          paid_at?: string
+          payment_method?: string
+          receipt_url?: string | null
+          reference?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "saas_payments_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "saas_payments_confirmed_by_fkey"
+            columns: ["confirmed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "saas_payments_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "saas_invoices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sanction_types: {
         Row: {
           company_id: string
@@ -1622,6 +1853,17 @@ export type Database = {
         Args: { p_invitation_id: string }
         Returns: boolean
       }
+      create_or_update_company_subscription: {
+        Args: {
+          p_billing_cycle: string
+          p_company_id: string
+          p_notes: string
+          p_plan_id: string
+          p_price_amount: number
+          p_starts_at: string
+        }
+        Returns: string
+      }
       create_pending_invitation:
         | {
             Args: {
@@ -1687,16 +1929,50 @@ export type Database = {
         }
         Returns: Json
       }
+      generate_next_saas_invoice_number: { Args: never; Returns: string }
+      generate_saas_invoice: {
+        Args: {
+          p_amount: number
+          p_company_id: string
+          p_due_date: string
+          p_notes: string
+          p_period_end: string
+          p_period_start: string
+          p_plan_id: string
+          p_subscription_id: string
+        }
+        Returns: string
+      }
       get_alerts_summary: { Args: never; Returns: Json }
       get_companies_with_stats: { Args: never; Returns: Json }
       get_company_invitations: { Args: { p_company_id: string }; Returns: Json }
       get_company_plan_usage: { Args: { p_company_id: string }; Returns: Json }
       get_company_reports_summary: { Args: never; Returns: Json }
+      get_company_subscriptions: {
+        Args: never
+        Returns: {
+          billing_cycle: string
+          company_id: string
+          company_status: string
+          last_payment_date: string
+          legal_name: string
+          next_due_date: string
+          outstanding_balance: number
+          plan_id: string
+          plan_name: Database["public"]["Enums"]["plan_name"]
+          price_amount: number
+          ruc: string
+          sub_id: string
+          sub_status: string
+          trade_name: string
+        }[]
+      }
       get_company_users: { Args: { p_company_id: string }; Returns: Json }
       get_invitation_info: { Args: { p_token: string }; Returns: Json }
       get_my_company_branding: { Args: never; Returns: Json }
       get_my_company_id: { Args: never; Returns: string }
       get_my_company_plan_usage: { Args: never; Returns: Json }
+      get_saas_billing_overview: { Args: never; Returns: Json }
       get_super_admin_audit_filters: { Args: never; Returns: Json }
       get_super_admin_audit_log_detail: {
         Args: { p_audit_log_id: string }
@@ -1727,6 +2003,11 @@ export type Database = {
       get_super_admin_plan_usage_overview: { Args: never; Returns: Json }
       get_super_admin_plans: { Args: never; Returns: Json }
       is_super_admin: { Args: never; Returns: boolean }
+      mark_overdue_saas_invoices: { Args: never; Returns: number }
+      mark_saas_invoice_void: {
+        Args: { p_invoice_id: string; p_notes: string }
+        Returns: boolean
+      }
       preview_company_plan_change: {
         Args: { p_company_id: string; p_new_plan_id: string }
         Returns: Json
@@ -1738,6 +2019,10 @@ export type Database = {
           p_plan_id: string
         }
         Returns: Json
+      }
+      reactivate_company_after_payment: {
+        Args: { p_company_id: string }
+        Returns: boolean
       }
       register_payment_atomic: {
         Args: {
@@ -1752,9 +2037,24 @@ export type Database = {
         }
         Returns: Json
       }
+      register_saas_payment: {
+        Args: {
+          p_amount: number
+          p_invoice_id: string
+          p_notes: string
+          p_payment_method: string
+          p_receipt_url: string
+          p_reference: string
+        }
+        Returns: string
+      }
       seed_default_charge_type_for_company: {
         Args: { p_company_id: string }
         Returns: undefined
+      }
+      suspend_company_for_nonpayment: {
+        Args: { p_company_id: string }
+        Returns: boolean
       }
       update_company_plan: {
         Args: { p_company_id: string; p_force?: boolean; p_new_plan_id: string }
