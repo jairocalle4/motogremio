@@ -1,4 +1,4 @@
-export type Json =
+﻿export type Json =
   | string
   | number
   | boolean
@@ -1644,6 +1644,38 @@ export type Database = {
             }
             Returns: string
           }
+      create_sanction_atomic: {
+        Args: {
+          p_date: string
+          p_due_date?: string
+          p_fine_amount: number
+          p_meeting_attendance_id?: string
+          p_meeting_id?: string
+          p_member_id: string
+          p_reason: string
+          p_resolution_notes?: string
+          p_sanction_type_id: string
+          p_severity: string
+          p_vehicle_id: string
+        }
+        Returns: Json
+      }
+      create_sanction_atomic_v2: {
+        Args: {
+          p_date: string
+          p_due_date?: string
+          p_fine_amount: number
+          p_meeting_attendance_id?: string
+          p_meeting_id?: string
+          p_member_id: string
+          p_reason: string
+          p_resolution_notes?: string
+          p_sanction_type_id: string
+          p_severity?: string
+          p_vehicle_id?: string
+        }
+        Returns: Json
+      }
       create_super_admin_company: {
         Args: {
           p_admin_email: string

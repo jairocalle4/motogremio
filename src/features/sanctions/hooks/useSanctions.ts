@@ -276,102 +276,32 @@ export function useSanctions() {
         }
       }
 
-      let createdChargeId: string | null = null
+      // Llamar a la RPC atómica v2 de base de datos
+      const { data, error: sanctionErr } = await supabase.rpc('create_sanction_atomic_v2', {
+        p_member_id: params.memberId,
+        p_sanction_type_id: params.sanctionTypeId,
+        p_reason: params.reason,
+        p_date: params.date,
+        p_fine_amount: params.fineAmount,
+        p_vehicle_id: params.vehicleId ?? undefined,
+        p_severity: params.severity ?? undefined,
+        p_due_date: params.dueDate ?? undefined,
+        p_resolution_notes: params.resolutionNotes ?? undefined,
+        p_meeting_id: params.meetingId ?? undefined,
+        p_meeting_attendance_id: params.meetingAttendanceId ?? undefined
+      })
 
-      if (params.fineAmount > 0) {
-        if (!params.dueDate) {
-          throw new Error('La fecha de vencimiento es requerida para sanciones con multa.')
-        }
-
-        // 1. Asegurar tipo de cobro para Multas
-        const { data: ctData, error: ctErr } = await supabase
-          .from('charge_types')
-          .select('id')
-          .eq('company_id', companyId)
-          .eq('name', 'Multa')
-          .maybeSingle()
-
-        if (ctErr) throw ctErr
-
-        let chargeType = ctData
-
-        if (!chargeType) {
-          const { data: newCt, error: createCtErr } = await supabase
-            .from('charge_types')
-            .insert({
-              company_id: companyId,
-              name: 'Multa',
-              description: 'Cargos generados por sanciones y multas disciplinarias',
-              default_amount: null,
-              is_recurring: false,
-            })
-            .select('id')
-            .single()
-
-          if (createCtErr) throw createCtErr
-          chargeType = newCt
-        }
-
-        // Obtener el nombre del tipo de sanción para la descripción del cobro
-        const { data: sType } = await supabase
-          .from('sanction_types')
-          .select('name')
-          .eq('id', params.sanctionTypeId)
-          .single()
-
-        const sanctionTypeName = sType?.name || 'Sanción'
-
-        // 2. Crear el cargo (charge)
-        const { data: charge, error: chargeErr } = await supabase
-          .from('charges')
-          .insert({
-            company_id: companyId,
-            member_id: params.memberId,
-            vehicle_id: params.vehicleId ?? null,
-            charge_type_id: chargeType.id,
-            description: `Multa por Sanción: ${sanctionTypeName} - ${params.reason}`,
-            amount: params.fineAmount,
-            balance: params.fineAmount,
-            due_date: params.dueDate,
-            status: 'pendiente',
-          })
-          .select('id')
-          .single()
-
-        if (chargeErr) throw chargeErr
-        createdChargeId = charge.id
-      }
-
-      // 3. Crear la sanción
-      const { data: sanction, error: sanctionErr } = await supabase
-        .from('sanctions')
-        .insert({
-          company_id: companyId,
-          member_id: params.memberId,
-          vehicle_id: params.vehicleId ?? null,
-          sanction_type_id: params.sanctionTypeId,
-          charge_id: createdChargeId,
-          date: params.date,
-          reason: params.reason,
-          severity: params.severity ?? null,
-          status: 'pendiente',
-          resolution_notes: params.resolutionNotes ?? null,
-          meeting_id: params.meetingId ?? null,
-          meeting_attendance_id: params.meetingAttendanceId ?? null,
-        })
-        .select()
-        .single()
-
-      if (sanctionErr) {
-        // Rollback del cargo si la sanción falla
-        if (createdChargeId) {
-          await supabase.from('charges').delete().eq('id', createdChargeId)
-        }
-        throw sanctionErr
-      }
+      if (sanctionErr) throw sanctionErr
 
       toast.success('Sanción registrada correctamente')
-      return sanction as Sanction
+      const resultObj = typeof data === 'string' ? JSON.parse(data) : data
+      
+      // Retornar estructura compatible con el resto de la aplicación
+      return { 
+        id: resultObj?.sanction_id, 
+        charge_id: resultObj?.charge_id,
+        status: resultObj?.status || 'pendiente'
+      } as unknown as Sanction
     } catch (e) {
       const msg = e instanceof Error ? e.message : 'Error al registrar la sanción'
       toast.error(msg)
