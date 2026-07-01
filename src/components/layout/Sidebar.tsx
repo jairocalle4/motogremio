@@ -65,6 +65,7 @@ const adminNav: NavSection[] = [
   {
     separator: true,
     items: [
+      { to: '/super-admin/settings',     label: 'Configuración Global', icon: Settings },
       { to: '/super-admin/auditoria',    label: 'Auditoría',        icon: Activity },
     ],
   },

@@ -367,7 +367,7 @@ export function SuperAdminDashboard() {
             { label: 'Seguridad Global', desc: 'Auditoría base disponible; pendiente controles avanzados de seguridad.', icon: Lock, badge: 'SA-2D', status: 'Parcial' },
             { label: 'Alertas Globales', desc: 'Alertas financieras, vencimientos y límites críticos disponibles; pendientes notificaciones automáticas.', icon: AlertCircle, badge: 'SA-2E', status: 'Parcial' },
             { label: 'Salud de Compañías', desc: 'Indicadores de riesgo, baja actividad, deuda y oportunidades de upgrade.', icon: Activity, badge: 'SA-2B', status: 'Pendiente' },
-            { label: 'Configuración Global', desc: 'Parámetros globales del SaaS como días de gracia, textos y reglas generales.', icon: Settings, badge: 'SA-2D', status: 'Pendiente' }
+            { label: 'Configuración Global', desc: 'Parámetros de cobro, alertas y datos de pago configurables; pendientes reglas avanzadas.', icon: Settings, badge: 'SA-2D', status: 'Parcial' }
           ].map((m, idx) => (
             <Card key={idx} className="p-5 border border-dashed border-slate-200 bg-slate-50/50 flex flex-col justify-between h-40">
               <div>
