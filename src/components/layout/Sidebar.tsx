@@ -183,6 +183,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                   key={item.to}
                   to={item.to}
                   onClick={onClose}
+                  end={item.to === '/super-admin' || item.to === '/dashboard'}
                   className={({ isActive }) =>
                     cn('nav-item', isActive && 'active')
                   }
