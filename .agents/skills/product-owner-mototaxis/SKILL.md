@@ -49,3 +49,11 @@ Para que el sistema sea amigable y profesional, utiliza los términos correctos 
 * **Aislamiento absoluto:** Ningún socio o directivo de una compañía puede tener acceso o visualizar datos de otra.
 * **Planes SaaS:** El sistema se monetiza mediante suscripción. Los límites de uso (máximo de socios o unidades permitidas) deben validarse a nivel de base de datos (PostgreSQL triggers) según el plan (Básico, Estándar, Premium).
 * **Bravo Peralta como Demo:** La compañía "Bravo Peralta" es una compañía demo inicial creada en el semillero. No debe existir ningún hardcodeo de su ID, correos de administrador u otros datos en la lógica operativa del código; el sistema debe funcionar dinámicamente con cualquier compañía inquilina.
+
+### 7. Facturación y Cobros del SaaS (Super Admin)
+* **Cobro Emitido (`saas_invoices`):** Es una cuenta por cobrar, una obligación de pago generada previamente para la cooperativa por un ciclo de servicio. Su estado puede ser pendiente, vencido, pagado o anulado.
+* **Pago Registrado (`saas_payments`):** Es el dinero real recibido de la cooperativa. Siempre se asocia a un Cobro Emitido existente (`saas_invoices`), pudiendo ser total (saldando el cobro completo) o parcial (dejando un saldo pendiente).
+* **Flujo Operativo:** Un cobro se genera antes de recibir el dinero. Al recibir un abono, se registra el pago y se disminuye el saldo (`balance`) del cobro incrementando `amount_paid` de la factura correspondiente.
+* **Documentación y Recibos:**
+  * El documento asociado a un **Cobro Emitido** representa el estado de cuenta o factura proforma del SaaS (aviso de cobro).
+  * El documento asociado a un **Pago Registrado** representa el comprobante de caja/recibo definitivo de dinero recibido.
