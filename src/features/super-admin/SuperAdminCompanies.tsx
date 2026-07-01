@@ -4,6 +4,7 @@ import { supabase } from '@/lib/supabaseClient'
 import { Card } from '@/components/ui/Card'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
+import { Tooltip } from '@/components/ui/Tooltip'
 import { Input } from '@/components/ui/Input'
 import { Select } from '@/components/ui/Select'
 import { Modal } from '@/components/ui/Modal'
@@ -325,20 +326,22 @@ export function SuperAdminCompanies() {
                     </td>
                     <td className="px-4 py-3 text-right">
                       <div className="flex justify-end gap-2">
-                        <Link 
-                          to={`/super-admin/companies/${c.id}`}
-                          className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded transition-colors"
-                          title="Ver detalles"
-                        >
-                          <Eye className="h-4 w-4" />
-                        </Link>
-                        <button
-                          onClick={() => toggleStatus(c.id, c.status)}
-                          className="p-2 text-orange-400 hover:text-orange-600 hover:bg-orange-50 rounded transition-colors"
-                          title={(c.status === 'activa' || c.status === 'activo') ? 'Desactivar compañía' : 'Activar compañía'}
-                        >
-                          <ShieldAlert className="h-4 w-4" />
-                        </button>
+                        <Tooltip content="Ver detalles">
+                          <Link 
+                            to={`/super-admin/companies/${c.id}`}
+                            className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded transition-colors"
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Link>
+                        </Tooltip>
+                        <Tooltip content={(c.status === 'activa' || c.status === 'activo') ? 'Desactivar compañía' : 'Activar compañía'}>
+                          <button
+                            onClick={() => toggleStatus(c.id, c.status)}
+                            className="p-2 text-orange-400 hover:text-orange-600 hover:bg-orange-50 rounded transition-colors"
+                          >
+                            <ShieldAlert className="h-4 w-4" />
+                          </button>
+                        </Tooltip>
                       </div>
                     </td>
                   </tr>
@@ -507,13 +510,14 @@ export function SuperAdminCompanies() {
               value={inviteLink}
               className="flex-1 bg-transparent border-none text-xs font-mono text-slate-700 focus:outline-none"
             />
-            <button
-              onClick={copyToClipboard}
-              className="p-2 bg-white border border-slate-200 rounded-md text-slate-600 hover:bg-slate-50 transition-colors"
-              title="Copiar enlace"
-            >
-              {copied ? <Check className="h-4 w-4 text-green-600" /> : <Copy className="h-4 w-4" />}
-            </button>
+            <Tooltip content="Copiar enlace">
+              <button
+                onClick={copyToClipboard}
+                className="p-2 bg-white border border-slate-200 rounded-md text-slate-600 hover:bg-slate-50 transition-colors"
+              >
+                {copied ? <Check className="h-4 w-4 text-green-600" /> : <Copy className="h-4 w-4" />}
+              </button>
+            </Tooltip>
           </div>
 
           <p className="text-xs text-red-600 font-semibold leading-relaxed">

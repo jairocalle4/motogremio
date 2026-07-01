@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { Plus, Edit2, Trash2, Tag, RefreshCw, AlertCircle, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
+import { Tooltip } from '@/components/ui/Tooltip'
 import { Input } from '@/components/ui/Input'
 import { Textarea } from '@/components/ui/Textarea'
 import { ConfirmModal } from '@/components/ui/ConfirmModal'
@@ -145,20 +146,22 @@ export function SanctionTypesTab({ canManage }: SanctionTypesTabProps) {
               </div>
               {canManage && (
                 <div className="flex items-center gap-1">
-                  <button
-                    onClick={() => handleOpenEdit(st)}
-                    className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
-                    title="Editar"
-                  >
-                    <Edit2 className="h-4 w-4 text-gray-500" />
-                  </button>
-                  <button
-                    onClick={() => setConfirmDelete(st)}
-                    className="p-2 rounded-lg hover:bg-red-50 transition-colors"
-                    title="Eliminar"
-                  >
-                    <Trash2 className="h-4 w-4 text-red-400" />
-                  </button>
+                  <Tooltip content="Editar tipo de sanción">
+                    <button
+                      onClick={() => handleOpenEdit(st)}
+                      className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
+                    >
+                      <Edit2 className="h-4 w-4 text-gray-500" />
+                    </button>
+                  </Tooltip>
+                  <Tooltip content="Eliminar tipo de sanción">
+                    <button
+                      onClick={() => setConfirmDelete(st)}
+                      className="p-2 rounded-lg hover:bg-red-50 transition-colors"
+                    >
+                      <Trash2 className="h-4 w-4 text-red-400" />
+                    </button>
+                  </Tooltip>
                 </div>
               )}
             </div>

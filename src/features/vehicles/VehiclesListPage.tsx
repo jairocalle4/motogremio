@@ -7,6 +7,7 @@ import { useDrivers } from '@/hooks/useDrivers'
 import { usePermissions } from '@/hooks/usePermissions'
 import { Card, CardContent } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
+import { Tooltip } from '@/components/ui/Tooltip'
 import { Input } from '@/components/ui/Input'
 import { Select } from '@/components/ui/Select'
 import { Badge } from '@/components/ui/Badge'
@@ -448,28 +449,30 @@ export function VehiclesListPage() {
                     <td className="px-6 py-4 text-right">
                       <div className="flex items-center justify-end gap-2">
                         {/* Ver ficha */}
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="p-1.5"
-                          title="Ver Ficha de Unidad"
-                          onClick={() => navigate(`/unidades/${vehicle.id}`)}
-                        >
-                          <Eye className="w-4 h-4 text-gray-500" />
-                        </Button>
+                        <Tooltip content="Ver Ficha de Unidad">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="p-1.5"
+                            onClick={() => navigate(`/unidades/${vehicle.id}`)}
+                          >
+                            <Eye className="w-4 h-4 text-gray-500" />
+                          </Button>
+                        </Tooltip>
 
                         {canManageVehicles && (
                           <>
                             {/* Editar */}
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="p-1.5"
-                              title="Editar Unidad"
-                              onClick={() => { setSelectedVehicle(vehicle); setIsFormOpen(true) }}
-                            >
-                              <Edit2 className="w-4 h-4 text-primary-500" />
-                            </Button>
+                            <Tooltip content="Editar Unidad">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="p-1.5"
+                                onClick={() => { setSelectedVehicle(vehicle); setIsFormOpen(true) }}
+                              >
+                                <Edit2 className="w-4 h-4 text-primary-500" />
+                              </Button>
+                            </Tooltip>
 
                             {/* Activar / Desactivar */}
                             <Button

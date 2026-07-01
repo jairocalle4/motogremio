@@ -4,6 +4,7 @@ import { useAuth } from '@/context/useAuth'
 import { Card } from '@/components/ui/Card'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
+import { Tooltip } from '@/components/ui/Tooltip'
 import { Input } from '@/components/ui/Input'
 import { Select } from '@/components/ui/Select'
 import { Modal } from '@/components/ui/Modal'
@@ -265,16 +266,17 @@ export function CompanyUsersPage() {
                         <td className="px-4 py-3 text-slate-500">{u.created_at ? new Date(u.created_at).toLocaleDateString() : '—'}</td>
                         <td className="px-4 py-3 text-right">
                           <div className="flex justify-end gap-1">
-                            <button
-                              onClick={() => updateUserStatus(u.id, u.is_active)}
-                              disabled={!canEdit}
-                              className={`p-1.5 rounded disabled:opacity-30 disabled:cursor-not-allowed ${
-                                u.is_active ? 'text-danger-500 hover:bg-danger-50' : 'text-success-600 hover:bg-success-50'
-                              }`}
-                              title={u.is_active ? 'Desactivar usuario' : 'Activar usuario'}
-                            >
-                              {u.is_active ? <ToggleRight className="h-4 w-4" /> : <ToggleLeft className="h-4 w-4" />}
-                            </button>
+                            <Tooltip content={u.is_active ? 'Desactivar usuario' : 'Activar usuario'}>
+                              <button
+                                onClick={() => updateUserStatus(u.id, u.is_active)}
+                                disabled={!canEdit}
+                                className={`p-1.5 rounded disabled:opacity-30 disabled:cursor-not-allowed ${
+                                  u.is_active ? 'text-danger-500 hover:bg-danger-50' : 'text-success-600 hover:bg-success-50'
+                                }`}
+                              >
+                                {u.is_active ? <ToggleRight className="h-4 w-4" /> : <ToggleLeft className="h-4 w-4" />}
+                              </button>
+                            </Tooltip>
                           </div>
                         </td>
                       </tr>
@@ -337,17 +339,18 @@ export function CompanyUsersPage() {
                       </td>
                       <td className="px-4 py-3 text-right">
                         {inv.status === 'pending' ? (
-                          <button
-                            onClick={() => {
-                              if (window.confirm('¿Seguro que deseas cancelar esta invitación?')) {
-                                cancelInvitation(inv.id)
-                              }
-                            }}
-                            className="p-1.5 text-danger-500 hover:bg-danger-50 rounded"
-                            title="Cancelar invitación"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </button>
+                          <Tooltip content="Cancelar invitación">
+                            <button
+                              onClick={() => {
+                                if (window.confirm('¿Seguro que deseas cancelar esta invitación?')) {
+                                  cancelInvitation(inv.id)
+                                }
+                              }}
+                              className="p-1.5 text-danger-500 hover:bg-danger-50 rounded"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                          </Tooltip>
                         ) : (
                           <span className="text-slate-300">—</span>
                         )}
@@ -429,9 +432,11 @@ export function CompanyUsersPage() {
 
           <div className="flex gap-2">
             <Input value={inviteLink} readOnly className="font-mono text-xs" />
-            <Button variant="outline" onClick={copyToClipboard} title="Copiar enlace">
-              {copied ? <Check className="h-4 w-4 text-green-600" /> : <Copy className="h-4 w-4" />}
-            </Button>
+            <Tooltip content="Copiar enlace">
+              <Button variant="outline" onClick={copyToClipboard}>
+                {copied ? <Check className="h-4 w-4 text-green-600" /> : <Copy className="h-4 w-4" />}
+              </Button>
+            </Tooltip>
           </div>
 
           <div className="pt-4 flex justify-end">

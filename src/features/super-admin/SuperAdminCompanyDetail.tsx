@@ -5,6 +5,7 @@ import { useAuth } from '@/context/useAuth'
 import { Card } from '@/components/ui/Card'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
+import { Tooltip } from '@/components/ui/Tooltip'
 import { Input } from '@/components/ui/Input'
 import { Select } from '@/components/ui/Select'
 import { Textarea } from '@/components/ui/Textarea'
@@ -751,24 +752,26 @@ export function SuperAdminCompanyDetail() {
                           <td className="px-4 py-3 text-slate-500">{u.created_at ? new Date(u.created_at).toLocaleDateString() : '—'}</td>
                           <td className="px-4 py-3 text-right">
                             <div className="flex justify-end gap-1">
-                              <button
-                                onClick={() => setEditingUser(u)}
-                                disabled={isSelf}
-                                className="p-1.5 text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded disabled:opacity-30 disabled:cursor-not-allowed"
-                                title="Cambiar Rol"
-                              >
-                                <UserCog className="h-4 w-4" />
-                              </button>
-                              <button
-                                onClick={() => updateUserStatus(u.id, u.is_active)}
-                                disabled={isSelf}
-                                className={`p-1.5 rounded disabled:opacity-30 disabled:cursor-not-allowed ${
-                                  u.is_active ? 'text-danger-500 hover:bg-danger-50' : 'text-success-600 hover:bg-success-50'
-                                }`}
-                                title={u.is_active ? 'Desactivar usuario' : 'Activar usuario'}
-                              >
-                                {u.is_active ? <ToggleRight className="h-4 w-4" /> : <ToggleLeft className="h-4 w-4" />}
-                              </button>
+                              <Tooltip content="Cambiar Rol">
+                                <button
+                                  onClick={() => setEditingUser(u)}
+                                  disabled={isSelf}
+                                  className="p-1.5 text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded disabled:opacity-30 disabled:cursor-not-allowed"
+                                >
+                                  <UserCog className="h-4 w-4" />
+                                </button>
+                              </Tooltip>
+                              <Tooltip content={u.is_active ? 'Desactivar usuario' : 'Activar usuario'}>
+                                <button
+                                  onClick={() => updateUserStatus(u.id, u.is_active)}
+                                  disabled={isSelf}
+                                  className={`p-1.5 rounded disabled:opacity-30 disabled:cursor-not-allowed ${
+                                    u.is_active ? 'text-danger-500 hover:bg-danger-50' : 'text-success-600 hover:bg-success-50'
+                                  }`}
+                                >
+                                  {u.is_active ? <ToggleRight className="h-4 w-4" /> : <ToggleLeft className="h-4 w-4" />}
+                                </button>
+                              </Tooltip>
                             </div>
                           </td>
                         </tr>
@@ -940,13 +943,14 @@ export function SuperAdminCompanyDetail() {
               value={inviteLink}
               className="flex-1 bg-transparent border-none text-xs font-mono text-slate-700 focus:outline-none"
             />
-            <button
-              onClick={copyToClipboard}
-              className="p-2 bg-white border border-slate-200 rounded-md text-slate-600 hover:bg-slate-50 transition-colors"
-              title="Copiar enlace"
-            >
-              {copied ? <Check className="h-4 w-4 text-green-600" /> : <Copy className="h-4 w-4" />}
-            </button>
+            <Tooltip content="Copiar enlace">
+              <button
+                onClick={copyToClipboard}
+                className="p-2 bg-white border border-slate-200 rounded-md text-slate-600 hover:bg-slate-50 transition-colors"
+              >
+                {copied ? <Check className="h-4 w-4 text-green-600" /> : <Copy className="h-4 w-4" />}
+              </button>
+            </Tooltip>
           </div>
 
           <p className="text-xs text-red-650 font-semibold leading-relaxed">

@@ -4,6 +4,7 @@ import { useMembers } from '@/hooks/useMembers'
 import { Select } from '@/components/ui/Select'
 import { Input } from '@/components/ui/Input'
 import { Badge } from '@/components/ui/Badge'
+import { Tooltip } from '@/components/ui/Tooltip'
 import { Search, Filter, Eye, RefreshCw, X, Ban } from 'lucide-react'
 import { SanctionDetailModal } from './SanctionDetailModal'
 import { ConfirmModal } from '@/components/ui/ConfirmModal'
@@ -296,21 +297,23 @@ export function SanctionsList({ canManage, memberId }: SanctionsListProps) {
                       </td>
                       <td className="px-6 py-4 text-center whitespace-nowrap">
                         <div className="flex items-center justify-center gap-1.5">
-                          <button
-                            onClick={() => handleOpenDetail(sanction)}
-                            className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-500 transition-colors"
-                            title="Ver detalle"
-                          >
-                            <Eye className="h-4 w-4" />
-                          </button>
-                          {canManage && (sanction.status === 'pendiente' || sanction.status === 'apelacion') && (
+                          <Tooltip content="Ver detalle">
                             <button
-                              onClick={() => setConfirmNullify(sanction)}
-                              className="p-1.5 rounded-lg hover:bg-red-50 text-red-500 transition-colors"
-                              title="Anular Sanción"
+                              onClick={() => handleOpenDetail(sanction)}
+                              className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-500 transition-colors"
                             >
-                              <Ban className="h-4 w-4" />
+                              <Eye className="h-4 w-4" />
                             </button>
+                          </Tooltip>
+                          {canManage && (sanction.status === 'pendiente' || sanction.status === 'apelacion') && (
+                            <Tooltip content="Anular Sanción">
+                              <button
+                                onClick={() => setConfirmNullify(sanction)}
+                                className="p-1.5 rounded-lg hover:bg-red-50 text-red-500 transition-colors"
+                              >
+                                <Ban className="h-4 w-4" />
+                              </button>
+                            </Tooltip>
                           )}
                         </div>
                       </td>

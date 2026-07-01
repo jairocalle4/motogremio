@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Plus, FileText, Trash2, Edit } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
+import { Tooltip } from '@/components/ui/Tooltip'
 import { Card } from '@/components/ui/Card'
 import { DocumentBadge } from '@/components/ui/DocumentBadge'
 import { DocumentFormModal } from './DocumentFormModal'
@@ -119,20 +120,22 @@ export function DocumentsList({ targetEntity, entityId, title = 'Documentos' }: 
               </div>
 
               <div className="mt-auto pt-3 flex items-center justify-end gap-2 border-t border-gray-100">
-                <button
-                  onClick={() => handleOpenEdit(doc)}
-                  className="p-1.5 text-gray-400 hover:text-brand-600 rounded-md hover:bg-brand-50"
-                  title="Editar documento"
-                >
-                  <Edit className="w-4 h-4" />
-                </button>
-                <button
-                  onClick={() => handleDelete(doc.id)}
-                  className="p-1.5 text-gray-400 hover:text-danger-600 rounded-md hover:bg-danger-50"
-                  title="Eliminar documento"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
+                <Tooltip content="Editar documento">
+                  <button
+                    onClick={() => handleOpenEdit(doc)}
+                    className="p-1.5 text-gray-400 hover:text-brand-600 rounded-md hover:bg-brand-50"
+                  >
+                    <Edit className="w-4 h-4" />
+                  </button>
+                </Tooltip>
+                <Tooltip content="Eliminar documento">
+                  <button
+                    onClick={() => handleDelete(doc.id)}
+                    className="p-1.5 text-gray-400 hover:text-danger-600 rounded-md hover:bg-danger-50"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </Tooltip>
               </div>
             </Card>
           ))}

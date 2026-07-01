@@ -6,6 +6,7 @@ import {
   UserX, Eye, Edit2, ToggleLeft, ToggleRight, AlertTriangle,
 } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
+import { Tooltip } from '@/components/ui/Tooltip'
 import { Select } from '@/components/ui/Select'
 import { ConfirmModal } from '@/components/ui/ConfirmModal'
 import { LicenseBadge } from '@/components/ui/LicenseBadge'
@@ -324,36 +325,39 @@ export function DriversListPage() {
 
                       <td className="px-4 py-3">
                         <div className="flex items-center justify-end gap-1">
-                          <button
-                            onClick={() => navigate(`/conductores/${driver.id}`)}
-                            title="Ver ficha"
-                            className="p-1.5 rounded-lg text-gray-500 hover:text-primary-600 hover:bg-primary-50 transition-colors"
-                          >
-                            <Eye className="w-4 h-4" />
-                          </button>
+                          <Tooltip content="Ver ficha">
+                            <button
+                              onClick={() => navigate(`/conductores/${driver.id}`)}
+                              className="p-1.5 rounded-lg text-gray-500 hover:text-primary-600 hover:bg-primary-50 transition-colors"
+                            >
+                              <Eye className="w-4 h-4" />
+                            </button>
+                          </Tooltip>
                           {canManageDrivers && (
                             <>
-                              <button
-                                onClick={() => openEdit(driver)}
-                                title="Editar"
-                                className="p-1.5 rounded-lg text-gray-500 hover:text-primary-600 hover:bg-primary-50 transition-colors"
-                              >
-                                <Edit2 className="w-4 h-4" />
-                              </button>
-                              <button
-                                onClick={() => setToggleConfirm({ open: true, driver })}
-                                title={driver.status === 'activo' ? 'Desactivar' : 'Activar'}
-                                className={cn(
-                                  'p-1.5 rounded-lg transition-colors',
-                                  driver.status === 'activo'
-                                    ? 'text-gray-500 hover:text-warning-600 hover:bg-warning-50'
-                                    : 'text-gray-500 hover:text-success-600 hover:bg-success-50'
-                                )}
-                              >
-                                {driver.status === 'activo'
-                                  ? <ToggleRight className="w-4 h-4" />
-                                  : <ToggleLeft className="w-4 h-4" />}
-                              </button>
+                              <Tooltip content="Editar Conductor">
+                                <button
+                                  onClick={() => openEdit(driver)}
+                                  className="p-1.5 rounded-lg text-gray-500 hover:text-primary-600 hover:bg-primary-50 transition-colors"
+                                >
+                                  <Edit2 className="w-4 h-4" />
+                                </button>
+                              </Tooltip>
+                              <Tooltip content={driver.status === 'activo' ? 'Desactivar Conductor' : 'Activar Conductor'}>
+                                <button
+                                  onClick={() => setToggleConfirm({ open: true, driver })}
+                                  className={cn(
+                                    'p-1.5 rounded-lg transition-colors',
+                                    driver.status === 'activo'
+                                      ? 'text-gray-500 hover:text-warning-600 hover:bg-warning-50'
+                                      : 'text-gray-500 hover:text-success-600 hover:bg-success-50'
+                                  )}
+                                >
+                                  {driver.status === 'activo'
+                                    ? <ToggleRight className="w-4 h-4" />
+                                    : <ToggleLeft className="w-4 h-4" />}
+                                </button>
+                              </Tooltip>
                             </>
                           )}
                         </div>

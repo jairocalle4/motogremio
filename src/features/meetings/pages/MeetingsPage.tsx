@@ -5,6 +5,7 @@ import { useMeetings } from '../hooks/useMeetings'
 import { usePermissions } from '@/hooks/usePermissions'
 import { Card, CardContent } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
+import { Tooltip } from '@/components/ui/Tooltip'
 import { Input } from '@/components/ui/Input'
 import { Select } from '@/components/ui/Select'
 import { ConfirmModal } from '@/components/ui/ConfirmModal'
@@ -359,31 +360,33 @@ export function MeetingsPage() {
                     <td className="px-6 py-4 text-right">
                       <div className="flex items-center justify-end gap-2">
                         {/* Ver Detalle */}
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="p-1.5"
-                          title="Ver Detalle y Tomar Asistencia"
-                          onClick={() => navigate(`/reuniones/${meeting.id}`)}
-                        >
-                          <Eye className="w-4 h-4 text-gray-500" />
-                        </Button>
+                        <Tooltip content="Ver Detalle y Tomar Asistencia">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="p-1.5"
+                            onClick={() => navigate(`/reuniones/${meeting.id}`)}
+                          >
+                            <Eye className="w-4 h-4 text-gray-500" />
+                          </Button>
+                        </Tooltip>
 
                         {canManageMeetings && meeting.status !== 'cancelada' && (
                           <>
                             {/* Editar */}
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="p-1.5"
-                              title="Editar"
-                              onClick={() => {
-                                setSelectedMeeting(meeting)
-                                setIsFormOpen(true)
-                              }}
-                            >
-                              <Plus className="w-4 h-4 text-primary-500" />
-                            </Button>
+                            <Tooltip content="Editar Reunión">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="p-1.5"
+                                onClick={() => {
+                                  setSelectedMeeting(meeting)
+                                  setIsFormOpen(true)
+                                }}
+                              >
+                                <Plus className="w-4 h-4 text-primary-500" />
+                              </Button>
+                            </Tooltip>
 
                             {/* Cancelar */}
                             {meeting.status !== 'finalizada' && (

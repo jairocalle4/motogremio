@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { DollarSign, Search, Eye, AlertCircle, CheckCircle2 } from 'lucide-react'
 import { Badge } from '@/components/ui/Badge'
+import { Tooltip } from '@/components/ui/Tooltip'
 import { Select } from '@/components/ui/Select'
 import { RegisterPaymentModal } from '../RegisterPaymentModal'
 import { usePayments } from '@/hooks/usePayments'
@@ -180,13 +181,14 @@ export function DebtorsTab({ canManage }: DebtorsTabProps) {
                     <td className="px-4 py-3">
                       <div className="flex items-center justify-end gap-2">
                         {charge.member?.id && (
-                          <button
-                            onClick={() => navigate(`/socios/${charge.member_id}`)}
-                            className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
-                            title="Ver socio"
-                          >
-                            <Eye className="h-3.5 w-3.5 text-gray-500" />
-                          </button>
+                          <Tooltip content="Ver socio">
+                            <button
+                              onClick={() => navigate(`/socios/${charge.member_id}`)}
+                              className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
+                            >
+                              <Eye className="h-3.5 w-3.5 text-gray-500" />
+                            </button>
+                          </Tooltip>
                         )}
                         {canManage && (charge.status === 'pendiente' || charge.status === 'parcial') && (
                           <button

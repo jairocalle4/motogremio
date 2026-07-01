@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Modal } from '@/components/ui/Modal'
 import { Button } from '@/components/ui/Button'
+import { Tooltip } from '@/components/ui/Tooltip'
 import { Input } from '@/components/ui/Input'
 import { supabase } from '@/lib/supabaseClient'
 import { toast } from 'react-hot-toast'
@@ -98,9 +99,11 @@ export function InviteMemberModal({ isOpen, onClose, member, onSuccess }: Invite
 
           <div className="flex gap-2">
             <Input value={inviteLink} readOnly className="font-mono text-xs" />
-            <Button type="button" variant="outline" onClick={copyToClipboard} title="Copiar enlace">
-              {copied ? <Check className="h-4 w-4 text-green-600" /> : <Copy className="h-4 w-4" />}
-            </Button>
+            <Tooltip content="Copiar enlace">
+              <Button type="button" variant="outline" onClick={copyToClipboard}>
+                {copied ? <Check className="h-4 w-4 text-green-600" /> : <Copy className="h-4 w-4" />}
+              </Button>
+            </Tooltip>
           </div>
 
           <div className="pt-4 flex justify-end">
