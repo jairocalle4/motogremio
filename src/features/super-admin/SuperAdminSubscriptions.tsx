@@ -57,6 +57,10 @@ export function SuperAdminSubscriptions() {
   const [subscriptions, setSubscriptions] = useState<CompanySubscriptionRow[]>([])
   const [plans, setPlans] = useState<Plan[]>([])
   const [loading, setLoading] = useState(true)
+  const [globalSettings, setGlobalSettings] = useState<any>(null)
+
+  const currencySymbol = globalSettings?.currency_symbol || '$'
+  const receiptNote = globalSettings?.internal_receipt_note || 'Este documento es un comprobante interno de cobro del SaaS. No corresponde a una factura electrónica SRI.'
 
   // Modales
   const [showSubModal, setShowSubModal] = useState(false)
@@ -109,7 +113,7 @@ export function SuperAdminSubscriptions() {
     
     const start = startStr ? formatDate(startStr) : '—'
     const end = endStr ? formatDate(endStr) : '—'
-    return `${start} - ${end} · ${invoiceNumber} · Saldo $${Number(balance).toFixed(2)}`
+    return `${start} - ${end} · ${invoiceNumber} · Saldo ${currencySymbol}${Number(balance).toFixed(2)}`
   }
 
   useEffect(() => {
@@ -119,10 +123,11 @@ export function SuperAdminSubscriptions() {
   const loadData = async () => {
     setLoading(true)
     try {
-      const [overviewRes, subsRes, plansRes] = await Promise.all([
+      const [overviewRes, subsRes, plansRes, settingsRes] = await Promise.all([
         supabase.rpc('get_saas_billing_overview'),
         supabase.rpc('get_company_subscriptions'),
-        supabase.from('plans').select('id, name, price_monthly').eq('is_active', true)
+        supabase.from('plans').select('id, name, price_monthly').eq('is_active', true),
+        supabase.rpc('get_saas_settings')
       ])
 
       if (overviewRes.error) throw overviewRes.error
@@ -132,6 +137,9 @@ export function SuperAdminSubscriptions() {
       setOverview(overviewRes.data as unknown as BillingOverview)
       setSubscriptions((subsRes.data as unknown as CompanySubscriptionRow[]) || [])
       setPlans((plansRes.data as unknown as Plan[]) || [])
+      if (settingsRes.data && settingsRes.data.length > 0) {
+        setGlobalSettings(settingsRes.data[0])
+      }
     } catch (err: any) {
       toast.error('Error al cargar datos de cobros: ' + err.message)
     } finally {
@@ -453,10 +461,10 @@ export function SuperAdminSubscriptions() {
       {overview && (
         <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
           {[
-            { label: 'MRR Estimado', val: `$${Number(overview.mrr).toFixed(2)}`, icon: DollarSign, color: 'text-blue-600 bg-blue-50 border-l-blue-500' },
-            { label: 'Cobrado del Mes', val: `$${Number(overview.collected_month).toFixed(2)}`, icon: ShieldCheck, color: 'text-green-600 bg-green-50 border-l-green-500' },
-            { label: 'Pendiente Cobro', val: `$${Number(overview.pending_total).toFixed(2)}`, icon: Activity, color: 'text-orange-600 bg-orange-50 border-l-orange-500' },
-            { label: 'Facturas Vencidas', val: `$${Number(overview.overdue_total).toFixed(2)}`, icon: AlertCircle, color: 'text-red-600 bg-red-50 border-l-red-500' },
+            { label: 'MRR Estimado', val: `${currencySymbol}${Number(overview.mrr).toFixed(2)}`, icon: DollarSign, color: 'text-blue-600 bg-blue-50 border-l-blue-500' },
+            { label: 'Cobrado del Mes', val: `${currencySymbol}${Number(overview.collected_month).toFixed(2)}`, icon: ShieldCheck, color: 'text-green-600 bg-green-50 border-l-green-500' },
+            { label: 'Pendiente Cobro', val: `${currencySymbol}${Number(overview.pending_total).toFixed(2)}`, icon: Activity, color: 'text-orange-600 bg-orange-50 border-l-orange-500' },
+            { label: 'Facturas Vencidas', val: `${currencySymbol}${Number(overview.overdue_total).toFixed(2)}`, icon: AlertCircle, color: 'text-red-600 bg-red-50 border-l-red-500' },
             { label: 'Suspendidas', val: overview.suspended_companies, icon: ShieldAlert, color: 'text-purple-600 bg-purple-50 border-l-purple-500' }
           ].map((item, idx) => (
             <Card key={idx} className={`p-4 border-l-4 ${item.color} shadow-sm`}>
@@ -503,7 +511,7 @@ export function SuperAdminSubscriptions() {
                     <td className="px-4 py-3 font-semibold">{row.plan_name || <span className="text-slate-400">Sin Plan</span>}</td>
                     <td className="px-4 py-3">{row.billing_cycle === 'annual' ? 'Anual' : row.billing_cycle === 'monthly' ? 'Mensual' : '—'}</td>
                     <td className="px-4 py-3 text-right font-semibold">
-                      {row.price_amount !== null ? `$${Number(row.price_amount).toFixed(2)}` : '—'}
+                      {row.price_amount !== null ? `${currencySymbol}${Number(row.price_amount).toFixed(2)}` : '—'}
                     </td>
                     <td className="px-4 py-3 text-center">
                       <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
@@ -517,9 +525,9 @@ export function SuperAdminSubscriptions() {
                     <td className="px-4 py-3 text-center text-slate-500">{row.next_due_date || '—'}</td>
                     <td className="px-4 py-3 text-right font-black text-slate-800">
                       {row.outstanding_balance > 0 ? (
-                        <span className="text-red-600">${Number(row.outstanding_balance).toFixed(2)}</span>
+                        <span className="text-red-600">{currencySymbol}${Number(row.outstanding_balance).toFixed(2)}</span>
                       ) : (
-                        <span className="text-green-600">$0.00</span>
+                        <span className="text-green-600">{currencySymbol}0.00</span>
                       )}
                     </td>
                     <td className="px-4 py-3 text-center">
@@ -819,9 +827,9 @@ export function SuperAdminSubscriptions() {
                         </td>
                         <td className="px-3 py-2 whitespace-nowrap">{inv.created_at ? new Date(inv.created_at).toLocaleDateString() : '—'}</td>
                         <td className="px-3 py-2 whitespace-nowrap">{inv.due_date}</td>
-                        <td className="px-3 py-2 text-right font-semibold">${Number(inv.amount).toFixed(2)}</td>
-                        <td className="px-3 py-2 text-right text-green-600">${Number(inv.amount_paid || 0).toFixed(2)}</td>
-                        <td className="px-3 py-2 text-right font-black text-slate-800">${Number(inv.balance).toFixed(2)}</td>
+                        <td className="px-3 py-2 text-right font-semibold">{currencySymbol}${Number(inv.amount).toFixed(2)}</td>
+                        <td className="px-3 py-2 text-right text-green-600">{currencySymbol}${Number(inv.amount_paid || 0).toFixed(2)}</td>
+                        <td className="px-3 py-2 text-right font-black text-slate-800">{currencySymbol}${Number(inv.balance).toFixed(2)}</td>
                         <td className="px-3 py-2 text-center whitespace-nowrap">
                           <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold border ${
                             inv.status === 'paid' ? 'bg-green-50 text-green-700 border-green-200' :
@@ -865,7 +873,7 @@ export function SuperAdminSubscriptions() {
                         <td className="px-3 py-2 font-semibold text-slate-800">
                           {pay.saas_invoices?.invoice_number || '—'}
                         </td>
-                        <td className="px-3 py-2 font-bold text-green-700">${Number(pay.amount).toFixed(2)}</td>
+                        <td className="px-3 py-2 font-bold text-green-700">{currencySymbol}${Number(pay.amount).toFixed(2)}</td>
                         <td className="px-3 py-2 capitalize">
                           {pay.payment_method === 'transfer' ? 'Transferencia' :
                            pay.payment_method === 'deposit' ? 'Depósito' :
@@ -886,9 +894,38 @@ export function SuperAdminSubscriptions() {
               </div>
             )}
 
-            <div className="bg-slate-50 border border-slate-100 rounded-lg p-3 text-[10px] text-slate-500 mt-2">
+            {/* Datos de Transferencia SaaS */}
+            {globalSettings && (globalSettings.payment_bank_name || globalSettings.payment_instructions) && (
+              <div className="bg-purple-50/50 border border-purple-100 rounded-lg p-3 text-[11px] text-slate-700 mt-3 text-left">
+                <p className="font-bold text-purple-800 uppercase tracking-wider text-[10px]">Datos de Pago para Renovación SaaS:</p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mt-1">
+                  {globalSettings.payment_bank_name && (
+                    <p>
+                      <strong>Banco:</strong> {globalSettings.payment_bank_name} {globalSettings.payment_account_type ? `(${globalSettings.payment_account_type})` : ''}
+                    </p>
+                  )}
+                  {globalSettings.payment_account_number && (
+                    <p>
+                      <strong>Cuenta:</strong> {globalSettings.payment_account_number}
+                    </p>
+                  )}
+                  {globalSettings.payment_account_holder && (
+                    <p>
+                      <strong>Titular:</strong> {globalSettings.payment_account_holder} {globalSettings.payment_account_holder_id ? `· RUC/CI: ${globalSettings.payment_account_holder_id}` : ''}
+                    </p>
+                  )}
+                  {globalSettings.payment_instructions && (
+                    <p className="md:col-span-2 text-slate-650 italic">
+                      <strong>Instrucciones:</strong> {globalSettings.payment_instructions}
+                    </p>
+                  )}
+                </div>
+              </div>
+            )}
+
+            <div className="bg-slate-50 border border-slate-100 rounded-lg p-3 text-[10px] text-slate-500 mt-2 text-left">
               <p className="font-bold text-slate-700">Nota Legal Aclaratoria:</p>
-              <p className="mt-0.5">Este es un comprobante interno de cobro del SaaS. No corresponde a una factura electrónica SRI.</p>
+              <p className="mt-0.5">{receiptNote}</p>
             </div>
           </Card>
         </div>
