@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react'
 import { Card } from '@/components/ui/Card'
-import { Button } from '@/components/ui/Button'
+import { Button, Tooltip } from '@/components/ui'
 import { supabase } from '@/lib/supabaseClient'
 import {
   DollarSign, Activity,
   AlertCircle, ShieldCheck, Plus, CreditCard,
-  Ban, ShieldAlert, Key, Edit
+  Ban, ShieldAlert, Key, Edit, History
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 
@@ -48,6 +48,8 @@ interface Invoice {
   balance: number
   status: string
   due_date: string
+  period_start?: string
+  period_end?: string
 }
 
 export function SuperAdminSubscriptions() {
@@ -86,6 +88,29 @@ export function SuperAdminSubscriptions() {
 
   // Form Void Invoice
   const [voidNotes, setVoidNotes] = useState('')
+
+  // Form History Modal
+  const [showHistoryModal, setShowHistoryModal] = useState(false)
+  const [historyInvoices, setHistoryInvoices] = useState<any[]>([])
+  const [historyPayments, setHistoryPayments] = useState<any[]>([])
+  const [activeHistoryTab, setActiveHistoryTab] = useState<'invoices' | 'payments'>('invoices')
+
+  const formatPeriodLabel = (startStr: string | null | undefined, endStr: string | null | undefined, invoiceNumber: string, balance: number) => {
+    const formatDate = (dateStr: string | null | undefined) => {
+      if (!dateStr) return ''
+      const parts = dateStr.split('-')
+      if (parts.length !== 3) return dateStr
+      const months = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic']
+      const day = parts[2]
+      const month = months[parseInt(parts[1], 10) - 1]
+      const year = parts[0]
+      return `${day} ${month} ${year}`
+    }
+    
+    const start = startStr ? formatDate(startStr) : '—'
+    const end = endStr ? formatDate(endStr) : '—'
+    return `${start} - ${end} · ${invoiceNumber} · Saldo $${Number(balance).toFixed(2)}`
+  }
 
   useEffect(() => {
     loadData()
@@ -146,18 +171,57 @@ export function SuperAdminSubscriptions() {
     }
   }
 
-  const handleOpenInvModal = (row: CompanySubscriptionRow) => {
+  const handleOpenInvModal = async (row: CompanySubscriptionRow) => {
     if (!row.sub_id) {
       toast.error('La compañía debe tener una suscripción activa antes de facturar.')
       return
     }
     setSelectedRow(row)
     setInvAmount(row.price_amount || 0)
-    const today = new Date().toISOString().split('T')[0]
-    setInvPeriodStart(today)
-    setInvPeriodEnd('')
-    setInvDueDate('')
     setInvNotes('')
+
+    try {
+      const { data: sub, error } = await supabase
+        .from('company_subscriptions')
+        .select('starts_at, current_period_start, current_period_end, next_due_date, billing_cycle')
+        .eq('id', row.sub_id)
+        .single()
+
+      if (error) throw error
+
+      if (sub) {
+        const baseStart = sub.next_due_date || sub.current_period_start || new Date().toISOString().split('T')[0]
+        let calculatedEnd = ''
+        const startDt = new Date(baseStart + 'T00:00:00')
+        if (sub.billing_cycle === 'annual') {
+          const endDt = new Date(startDt)
+          endDt.setFullYear(endDt.getFullYear() + 1)
+          endDt.setDate(endDt.getDate() - 1)
+          calculatedEnd = endDt.toISOString().split('T')[0]
+        } else {
+          const endDt = new Date(startDt)
+          endDt.setMonth(endDt.getMonth() + 1)
+          endDt.setDate(endDt.getDate() - 1)
+          calculatedEnd = endDt.toISOString().split('T')[0]
+        }
+
+        setInvPeriodStart(baseStart)
+        setInvPeriodEnd(calculatedEnd)
+        setInvDueDate(sub.next_due_date || baseStart)
+      } else {
+        const today = new Date().toISOString().split('T')[0]
+        setInvPeriodStart(today)
+        setInvPeriodEnd('')
+        setInvDueDate('')
+      }
+    } catch (err: any) {
+      toast.error('Error al precargar fechas de suscripción: ' + err.message)
+      const today = new Date().toISOString().split('T')[0]
+      setInvPeriodStart(today)
+      setInvPeriodEnd('')
+      setInvDueDate('')
+    }
+
     setShowInvModal(true)
   }
 
@@ -166,6 +230,23 @@ export function SuperAdminSubscriptions() {
     if (!selectedRow || !selectedRow.sub_id || !selectedRow.plan_id) return
 
     try {
+      // Validar duplicados de período activo
+      const { data: existing, error: checkError } = await supabase
+        .from('saas_invoices')
+        .select('id, invoice_number')
+        .eq('subscription_id', selectedRow.sub_id)
+        .eq('period_start', invPeriodStart)
+        .eq('period_end', invPeriodEnd)
+        .neq('status', 'void')
+        .limit(1)
+
+      if (checkError) throw checkError
+
+      if (existing && existing.length > 0) {
+        toast.error(`Ya existe un cobro interno activo para este período (${existing[0].invoice_number}).`)
+        return
+      }
+
       const { error } = await supabase.rpc('generate_saas_invoice', {
         p_company_id: selectedRow.company_id,
         p_subscription_id: selectedRow.sub_id,
@@ -178,11 +259,11 @@ export function SuperAdminSubscriptions() {
       })
 
       if (error) throw error
-      toast.success('Factura generada exitosamente.')
+      toast.success('Cobro interno generado exitosamente.')
       setShowInvModal(false)
       loadData()
     } catch (err: any) {
-      toast.error('Error al generar factura: ' + err.message)
+      toast.error('Error al generar cobro: ' + err.message)
     }
   }
 
@@ -198,16 +279,16 @@ export function SuperAdminSubscriptions() {
     try {
       const { data, error } = await supabase
         .from('saas_invoices')
-        .select('id, invoice_number, amount, amount_paid, balance, status, due_date')
+        .select('id, invoice_number, amount, amount_paid, balance, status, due_date, period_start, period_end')
         .eq('company_id', row.company_id)
         .neq('status', 'void')
         .gt('balance', 0)
         .order('due_date', { ascending: true })
 
       if (error) throw error
-      setPayInvoices(data || [])
+      setPayInvoices((data || []) as unknown as Invoice[])
     } catch (err: any) {
-      toast.error('Error al cargar facturas pendientes: ' + err.message)
+      toast.error('Error al cargar cobros pendientes: ' + err.message)
     }
   }
 
@@ -244,21 +325,28 @@ export function SuperAdminSubscriptions() {
     try {
       const { data, error } = await supabase
         .from('saas_invoices')
-        .select('id, invoice_number, amount, amount_paid, balance, status, due_date')
+        .select('id, invoice_number, amount, amount_paid, balance, status, due_date, period_start, period_end')
         .eq('company_id', row.company_id)
         .neq('status', 'void')
         .order('created_at', { ascending: false })
 
       if (error) throw error
-      setPayInvoices(data || [])
+      setPayInvoices((data || []) as unknown as Invoice[])
     } catch (err: any) {
-      toast.error('Error al cargar facturas: ' + err.message)
+      toast.error('Error al cargar cobros: ' + err.message)
     }
   }
 
   const handleVoidInvoice = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!selectedInvoiceId || !voidNotes) return
+
+    // Buscar si el cobro tiene pagos antes de intentar anular en UI
+    const chosen = payInvoices.find(i => i.id === selectedInvoiceId)
+    if (chosen && chosen.amount_paid && Number(chosen.amount_paid) > 0) {
+      toast.error('Este cobro ya tiene pagos registrados. No puede anularse directamente para proteger el historial financiero.')
+      return
+    }
 
     try {
       const { error } = await supabase.rpc('mark_saas_invoice_void', {
@@ -267,11 +355,42 @@ export function SuperAdminSubscriptions() {
       })
 
       if (error) throw error
-      toast.success('Factura anulada.')
+      toast.success('Cobro interno anulado exitosamente.')
       setShowVoidModal(false)
       loadData()
     } catch (err: any) {
-      toast.error('Error al anular factura: ' + err.message)
+      toast.error('Error al anular cobro: ' + err.message)
+    }
+  }
+
+  const handleOpenHistoryModal = async (row: CompanySubscriptionRow) => {
+    setSelectedRow(row)
+    setHistoryInvoices([])
+    setHistoryPayments([])
+    setActiveHistoryTab('invoices')
+    setShowHistoryModal(true)
+
+    try {
+      const [invsRes, paysRes] = await Promise.all([
+        supabase
+          .from('saas_invoices')
+          .select('id, invoice_number, period_start, period_end, amount, amount_paid, balance, status, due_date, notes, created_at')
+          .eq('company_id', row.company_id)
+          .order('created_at', { ascending: false }),
+        supabase
+          .from('saas_payments')
+          .select('id, invoice_id, amount, payment_method, reference, created_at, notes, saas_invoices(invoice_number)')
+          .eq('company_id', row.company_id)
+          .order('created_at', { ascending: false })
+      ])
+
+      if (invsRes.error) throw invsRes.error
+      if (paysRes.error) throw paysRes.error
+
+      setHistoryInvoices(invsRes.data || [])
+      setHistoryPayments(paysRes.data || [])
+    } catch (err: any) {
+      toast.error('Error al cargar historial: ' + err.message)
     }
   }
 
@@ -405,26 +524,43 @@ export function SuperAdminSubscriptions() {
                     </td>
                     <td className="px-4 py-3 text-center">
                       <div className="flex items-center justify-center gap-1">
-                        <Button size="xs" variant="outline" title="Ajustar suscripción" onClick={() => handleOpenSubModal(row)}>
-                          <Edit className="h-3 w-3" />
-                        </Button>
-                        <Button size="xs" variant="outline" title="Facturar cobro" onClick={() => handleOpenInvModal(row)}>
-                          <Plus className="h-3 w-3" />
-                        </Button>
-                        <Button size="xs" variant="outline" title="Registrar Pago" onClick={() => handleOpenPayModal(row)}>
-                          <CreditCard className="h-3 w-3" />
-                        </Button>
-                        <Button size="xs" variant="outline" title="Anular Factura" onClick={() => handleOpenVoidModal(row)}>
-                          <Ban className="h-3 w-3 text-amber-600" />
-                        </Button>
+                        <Tooltip content="Ajustar suscripción">
+                          <Button size="xs" variant="outline" onClick={() => handleOpenSubModal(row)}>
+                            <Edit className="h-3 w-3" />
+                          </Button>
+                        </Tooltip>
+                        <Tooltip content="Generar cobro interno">
+                           <Button size="xs" variant="outline" onClick={() => handleOpenInvModal(row)}>
+                             <Plus className="h-3 w-3" />
+                           </Button>
+                         </Tooltip>
+                         <Tooltip content="Historial de cobros">
+                           <Button size="xs" variant="outline" onClick={() => handleOpenHistoryModal(row)}>
+                             <History className="h-3 w-3" />
+                           </Button>
+                         </Tooltip>
+                         <Tooltip content="Registrar Pago">
+                           <Button size="xs" variant="outline" onClick={() => handleOpenPayModal(row)}>
+                             <CreditCard className="h-3 w-3" />
+                           </Button>
+                         </Tooltip>
+                         <Tooltip content="Anular Cobro Interno">
+                           <Button size="xs" variant="outline" onClick={() => handleOpenVoidModal(row)}>
+                             <Ban className="h-3 w-3 text-amber-600" />
+                           </Button>
+                         </Tooltip>
                         {isCompanyActive ? (
-                          <Button size="xs" variant="danger" title="Suspender por falta de pago" onClick={() => handleSuspendCompany(row)}>
-                            <ShieldAlert className="h-3 w-3" />
-                          </Button>
+                          <Tooltip content="Suspender compañía">
+                            <Button size="xs" variant="danger" onClick={() => handleSuspendCompany(row)}>
+                              <ShieldAlert className="h-3 w-3" />
+                            </Button>
+                          </Tooltip>
                         ) : (
-                          <Button size="xs" variant="primary" title="Reactivar servicio" onClick={() => handleReactivateCompany(row)}>
-                            <Key className="h-3 w-3" />
-                          </Button>
+                          <Tooltip content="Reactivar compañía">
+                            <Button size="xs" variant="primary" onClick={() => handleReactivateCompany(row)}>
+                              <Key className="h-3 w-3" />
+                            </Button>
+                          </Tooltip>
                         )}
                       </div>
                     </td>
@@ -508,8 +644,8 @@ export function SuperAdminSubscriptions() {
       {showInvModal && selectedRow && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
           <Card className="p-6 max-w-md w-full bg-white space-y-4">
-            <h3 className="text-sm font-bold uppercase tracking-wider text-slate-800">Generar Cobro / Factura SaaS</h3>
-            <p className="text-xs text-slate-500">Emite una nueva factura manual a {selectedRow.legal_name}.</p>
+            <h3 className="text-sm font-bold uppercase tracking-wider text-slate-800">Generar Cobro Interno SaaS</h3>
+            <p className="text-xs text-slate-500">Emite un nuevo recibo interno manual a {selectedRow.legal_name}.</p>
             <form onSubmit={handleGenerateInvoice} className="space-y-3">
               <div>
                 <label className="block text-xs font-bold text-slate-700">Monto</label>
@@ -533,9 +669,12 @@ export function SuperAdminSubscriptions() {
                 <label className="block text-xs font-bold text-slate-700">Notas</label>
                 <textarea value={invNotes} onChange={(e) => setInvNotes(e.target.value)} className="w-full mt-1 p-2 text-xs border rounded h-16" placeholder="Detalles de facturación..." />
               </div>
+              <p className="text-[10px] text-slate-500 leading-relaxed">
+                Las fechas se calculan desde la suscripción y pueden ajustarse antes de guardar.
+              </p>
               <div className="flex justify-end gap-2 pt-2">
                 <Button type="button" variant="outline" onClick={() => setShowInvModal(false)}>Cancelar</Button>
-                <Button type="submit" variant="primary">Generar Factura</Button>
+                <Button type="submit" variant="primary">Generar Cobro Interno</Button>
               </div>
             </form>
           </Card>
@@ -550,15 +689,15 @@ export function SuperAdminSubscriptions() {
             <p className="text-xs text-slate-500">Registrar abono de cobros para {selectedRow.legal_name}.</p>
             <form onSubmit={handleRegisterPayment} className="space-y-3">
               <div>
-                <label className="block text-xs font-bold text-slate-700">Factura Pendiente</label>
+                <label className="block text-xs font-bold text-slate-700">Cobro/Recibo Pendiente</label>
                 <select value={selectedInvoiceId} onChange={(e) => {
                   setSelectedInvoiceId(e.target.value)
                   const chosen = payInvoices.find(i => i.id === e.target.value)
                   if (chosen) setPayAmount(chosen.balance)
                 }} required className="w-full mt-1 p-2 text-xs border rounded">
-                  <option value="">Seleccione una factura</option>
+                  <option value="">Seleccione un cobro pendiente</option>
                   {payInvoices.map((i) => (
-                    <option key={i.id} value={i.id}>{i.invoice_number} (Saldo: ${Number(i.balance).toFixed(2)})</option>
+                    <option key={i.id} value={i.id}>{formatPeriodLabel(i.period_start, i.period_end, i.invoice_number, i.balance)}</option>
                   ))}
                 </select>
               </div>
@@ -596,15 +735,15 @@ export function SuperAdminSubscriptions() {
       {showVoidModal && selectedRow && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
           <Card className="p-6 max-w-md w-full bg-white space-y-4">
-            <h3 className="text-sm font-bold uppercase tracking-wider text-slate-800">Anular Factura SaaS</h3>
+            <h3 className="text-sm font-bold uppercase tracking-wider text-slate-800">Anular Cobro Interno SaaS</h3>
             <p className="text-xs text-slate-500">Cancela deudas activas de {selectedRow.legal_name}. Esta acción es irreversible.</p>
             <form onSubmit={handleVoidInvoice} className="space-y-3">
               <div>
-                <label className="block text-xs font-bold text-slate-700">Factura a Anular</label>
+                <label className="block text-xs font-bold text-slate-700">Cobro/Recibo a Anular</label>
                 <select value={selectedInvoiceId} onChange={(e) => setSelectedInvoiceId(e.target.value)} required className="w-full mt-1 p-2 text-xs border rounded">
                   <option value="">Seleccione una factura</option>
                   {payInvoices.map((i) => (
-                    <option key={i.id} value={i.id}>{i.invoice_number} (Saldo: ${Number(i.balance).toFixed(2)}) - {i.status.toUpperCase()}</option>
+                    <option key={i.id} value={i.id}>{formatPeriodLabel(i.period_start, i.period_end, i.invoice_number, i.balance)} - {i.status.toUpperCase()}</option>
                   ))}
                 </select>
               </div>
@@ -614,9 +753,143 @@ export function SuperAdminSubscriptions() {
               </div>
               <div className="flex justify-end gap-2 pt-2">
                 <Button type="button" variant="outline" onClick={() => setShowVoidModal(false)}>Cancelar</Button>
-                <Button type="submit" variant="danger">Anular Factura</Button>
+                <Button type="submit" variant="danger">Anular Cobro Interno</Button>
               </div>
             </form>
+          </Card>
+        </div>
+      )}
+
+      {/* 5. MODAL HISTORIAL DE COBROS */}
+      {showHistoryModal && selectedRow && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <Card className="p-6 max-w-4xl w-full bg-white space-y-4 max-h-[85vh] overflow-y-auto">
+            <div className="flex justify-between items-center">
+              <div>
+                <h3 className="text-sm font-bold uppercase tracking-wider text-slate-800">Historial de Cobros y Recibos</h3>
+                <p className="text-xs text-slate-500 mt-1">Historial completo para la cooperativa {selectedRow.legal_name}.</p>
+              </div>
+              <Button size="sm" variant="outline" onClick={() => setShowHistoryModal(false)}>Cerrar</Button>
+            </div>
+
+            {/* Tabs de Historial */}
+            <div className="flex gap-2 border-b border-slate-100 pb-2">
+              <button
+                type="button"
+                onClick={() => setActiveHistoryTab('invoices')}
+                className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-colors ${
+                  activeHistoryTab === 'invoices' ? 'bg-primary-50 text-primary-700' : 'text-slate-600 hover:bg-slate-50'
+                }`}
+              >
+                Cobros Emitidos ({historyInvoices.length})
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveHistoryTab('payments')}
+                className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-colors ${
+                  activeHistoryTab === 'payments' ? 'bg-primary-50 text-primary-700' : 'text-slate-600 hover:bg-slate-50'
+                }`}
+              >
+                Pagos Registrados ({historyPayments.length})
+              </button>
+            </div>
+
+            {activeHistoryTab === 'invoices' ? (
+              <div className="overflow-x-auto">
+                <table className="w-full text-[11px] text-left text-slate-600">
+                  <thead className="bg-slate-50 text-slate-500 border-b border-slate-100 font-bold">
+                    <tr>
+                      <th className="px-3 py-2">Número Interno</th>
+                      <th className="px-3 py-2">Período</th>
+                      <th className="px-3 py-2">Emisión</th>
+                      <th className="px-3 py-2">Vence</th>
+                      <th className="px-3 py-2 text-right">Monto</th>
+                      <th className="px-3 py-2 text-right">Pagado</th>
+                      <th className="px-3 py-2 text-right">Saldo</th>
+                      <th className="px-3 py-2 text-center">Estado</th>
+                      <th className="px-3 py-2">Notas</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {historyInvoices.map((inv) => (
+                      <tr key={inv.id} className="hover:bg-slate-50/50">
+                        <td className="px-3 py-2 font-bold text-slate-900">{inv.invoice_number}</td>
+                        <td className="px-3 py-2 whitespace-nowrap">
+                          {inv.period_start ? `${inv.period_start} al ${inv.period_end}` : '—'}
+                        </td>
+                        <td className="px-3 py-2 whitespace-nowrap">{inv.created_at ? new Date(inv.created_at).toLocaleDateString() : '—'}</td>
+                        <td className="px-3 py-2 whitespace-nowrap">{inv.due_date}</td>
+                        <td className="px-3 py-2 text-right font-semibold">${Number(inv.amount).toFixed(2)}</td>
+                        <td className="px-3 py-2 text-right text-green-600">${Number(inv.amount_paid || 0).toFixed(2)}</td>
+                        <td className="px-3 py-2 text-right font-black text-slate-800">${Number(inv.balance).toFixed(2)}</td>
+                        <td className="px-3 py-2 text-center whitespace-nowrap">
+                          <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold border ${
+                            inv.status === 'paid' ? 'bg-green-50 text-green-700 border-green-200' :
+                            inv.status === 'partial' ? 'bg-blue-50 text-blue-700 border-blue-200' :
+                            inv.status === 'overdue' ? 'bg-red-50 text-red-700 border-red-200' :
+                            inv.status === 'void' ? 'bg-slate-100 text-slate-600 border-slate-200' : 'bg-yellow-50 text-yellow-700 border-yellow-200'
+                          }`}>
+                            {inv.status === 'paid' ? 'Pagado' :
+                             inv.status === 'partial' ? 'Parcial' :
+                             inv.status === 'overdue' ? 'Vencido' :
+                             inv.status === 'void' ? 'Anulado' : 'Pendiente'}
+                          </span>
+                        </td>
+                        <td className="px-3 py-2 text-slate-500 max-w-xs truncate" title={inv.notes}>{inv.notes || '—'}</td>
+                      </tr>
+                    ))}
+                    {historyInvoices.length === 0 && (
+                      <tr>
+                        <td colSpan={9} className="px-3 py-8 text-center text-slate-400">No hay cobros generados para esta compañía.</td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-[11px] text-left text-slate-600">
+                  <thead className="bg-slate-50 text-slate-500 border-b border-slate-100 font-bold">
+                    <tr>
+                      <th className="px-3 py-2">Recibo Relacionado</th>
+                      <th className="px-3 py-2">Monto Pagado</th>
+                      <th className="px-3 py-2">Método</th>
+                      <th className="px-3 py-2">Referencia</th>
+                      <th className="px-3 py-2">Fecha de Registro</th>
+                      <th className="px-3 py-2">Notas</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {historyPayments.map((pay) => (
+                      <tr key={pay.id} className="hover:bg-slate-50/50">
+                        <td className="px-3 py-2 font-semibold text-slate-800">
+                          {pay.saas_invoices?.invoice_number || '—'}
+                        </td>
+                        <td className="px-3 py-2 font-bold text-green-700">${Number(pay.amount).toFixed(2)}</td>
+                        <td className="px-3 py-2 capitalize">
+                          {pay.payment_method === 'transfer' ? 'Transferencia' :
+                           pay.payment_method === 'deposit' ? 'Depósito' :
+                           pay.payment_method === 'cash' ? 'Efectivo' : 'Otro'}
+                        </td>
+                        <td className="px-3 py-2 text-slate-700">{pay.reference || '—'}</td>
+                        <td className="px-3 py-2 whitespace-nowrap">{pay.created_at ? new Date(pay.created_at).toLocaleString() : '—'}</td>
+                        <td className="px-3 py-2 text-slate-500 max-w-xs truncate" title={pay.notes}>{pay.notes || '—'}</td>
+                      </tr>
+                    ))}
+                    {historyPayments.length === 0 && (
+                      <tr>
+                        <td colSpan={6} className="px-3 py-8 text-center text-slate-400">No se han registrado pagos para esta compañía.</td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            )}
+
+            <div className="bg-slate-50 border border-slate-100 rounded-lg p-3 text-[10px] text-slate-500 mt-2">
+              <p className="font-bold text-slate-700">Nota Legal Aclaratoria:</p>
+              <p className="mt-0.5">Este es un comprobante interno de cobro del SaaS. No corresponde a una factura electrónica SRI.</p>
+            </div>
           </Card>
         </div>
       )}

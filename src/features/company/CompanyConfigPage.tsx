@@ -7,6 +7,7 @@ import { useCompany } from '@/hooks/useCompany'
 import { useDocuments } from '@/hooks/useDocuments'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
+import { Tooltip } from '@/components/ui/Tooltip'
 import { Input } from '@/components/ui/Input'
 import { Textarea } from '@/components/ui/Textarea'
 import { Select } from '@/components/ui/Select'
@@ -514,24 +515,26 @@ export function CompanyConfigPage() {
                         </td>
                         <td className="px-6 py-4 text-right">
                           <div className="inline-flex items-center gap-2">
-                            <button
-                              onClick={() => openEditTypeModal(type)}
-                              className="p-1 text-gray-400 hover:text-primary-600 rounded"
-                              title="Editar"
-                            >
-                              <Edit className="w-4 h-4" />
-                            </button>
-                            <button
-                              onClick={() => handleToggleActive(type)}
-                              className="p-1 text-gray-400 hover:text-primary-600 rounded transition-colors"
-                              title={type.is_active ? 'Desactivar' : 'Activar'}
-                            >
-                              {type.is_active ? (
-                                <ToggleRight className="w-6 h-6 text-green-500" />
-                              ) : (
-                                <ToggleLeft className="w-6 h-6 text-gray-300" />
-                              )}
-                            </button>
+                            <Tooltip content="Editar tipo de documento">
+                              <button
+                                onClick={() => openEditTypeModal(type)}
+                                className="p-1 text-gray-400 hover:text-primary-600 rounded"
+                              >
+                                <Edit className="w-4 h-4" />
+                              </button>
+                            </Tooltip>
+                            <Tooltip content={type.is_active ? 'Desactivar tipo' : 'Activar tipo'}>
+                              <button
+                                onClick={() => handleToggleActive(type)}
+                                className="p-1 text-gray-400 hover:text-primary-600 rounded transition-colors"
+                              >
+                                {type.is_active ? (
+                                  <ToggleRight className="w-6 h-6 text-green-500" />
+                                ) : (
+                                  <ToggleLeft className="w-6 h-6 text-gray-300" />
+                                )}
+                              </button>
+                            </Tooltip>
                           </div>
                         </td>
                       </tr>

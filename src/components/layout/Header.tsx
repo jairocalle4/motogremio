@@ -2,6 +2,7 @@ import { Bell, RefreshCw, AlertTriangle, Info, ShieldAlert } from 'lucide-react'
 import { useLocation, Link, useNavigate } from 'react-router-dom'
 import { useState, useEffect, useRef } from 'react'
 import { useAuth } from '@/context/useAuth'
+import { Tooltip } from '@/components/ui/Tooltip'
 import { usePermissions } from '@/hooks/usePermissions'
 import { MenuToggle } from './Sidebar'
 import { PLAN_LABELS, PLAN_COLORS } from '@/lib/constants'
@@ -110,28 +111,29 @@ export function Header({ onMenuToggle }: HeaderProps) {
 
         {/* Campana de Alertas con Dropdown */}
         <div className="relative" ref={dropdownRef}>
-          <button 
-            onClick={() => setDropdownOpen(!dropdownOpen)}
-            className="relative p-2 rounded-lg text-gray-500 hover:bg-gray-100 transition-colors block focus:outline-none"
-            title="Ver alertas y notificaciones"
-          >
-            <Bell className="h-5 w-5" />
-            
-            {/* Pulsing red dot indicator for critical alerts */}
-            {counts.critical > 0 && (
-              <span className="absolute top-1.5 right-1.5 flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-danger-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-danger-500"></span>
-              </span>
-            )}
+          <Tooltip content="Ver alertas y notificaciones">
+            <button 
+              onClick={() => setDropdownOpen(!dropdownOpen)}
+              className="relative p-2 rounded-lg text-gray-500 hover:bg-gray-100 transition-colors block focus:outline-none"
+            >
+              <Bell className="h-5 w-5" />
+              
+              {/* Pulsing red dot indicator for critical alerts */}
+              {counts.critical > 0 && (
+                <span className="absolute top-1.5 right-1.5 flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-danger-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-danger-500"></span>
+                </span>
+              )}
 
-            {/* Badge for total active warnings/alerts */}
-            {totalAlertCount > 0 && (
-              <span className="absolute -top-1 -right-1 min-w-[16px] h-4 bg-danger-500 text-white rounded-full text-[9px] font-bold flex items-center justify-center px-1">
-                {totalAlertCount}
-              </span>
-            )}
-          </button>
+              {/* Badge for total active warnings/alerts */}
+              {totalAlertCount > 0 && (
+                <span className="absolute -top-1 -right-1 min-w-[16px] h-4 bg-danger-500 text-white rounded-full text-[9px] font-bold flex items-center justify-center px-1">
+                  {totalAlertCount}
+                </span>
+              )}
+            </button>
+          </Tooltip>
 
           {/* Dropdown Container */}
           {dropdownOpen && (
@@ -139,14 +141,15 @@ export function Header({ onMenuToggle }: HeaderProps) {
               <div className="px-4 py-2 border-b border-gray-100 flex items-center justify-between">
                 <span className="font-semibold text-sm text-gray-800">Alertas Recientes</span>
                 <div className="flex items-center gap-2">
-                  <button 
-                    onClick={() => refresh()} 
-                    disabled={loading}
-                    className="text-gray-400 hover:text-gray-600 transition-colors focus:outline-none disabled:opacity-50"
-                    title="Actualizar alertas"
-                  >
-                    <RefreshCw className={`h-3.5 w-3.5 ${loading ? 'animate-spin' : ''}`} />
-                  </button>
+                  <Tooltip content="Actualizar alertas">
+                    <button 
+                      onClick={() => refresh()} 
+                      disabled={loading}
+                      className="text-gray-400 hover:text-gray-600 transition-colors focus:outline-none disabled:opacity-50"
+                    >
+                      <RefreshCw className={`h-3.5 w-3.5 ${loading ? 'animate-spin' : ''}`} />
+                    </button>
+                  </Tooltip>
                 </div>
               </div>
 
