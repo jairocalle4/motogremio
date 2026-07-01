@@ -5,9 +5,10 @@ import { supabase } from '@/lib/supabaseClient'
 import {
   DollarSign, Activity,
   AlertCircle, ShieldCheck, Plus, CreditCard,
-  Ban, ShieldAlert, Key, Edit, History
+  Ban, ShieldAlert, Key, Edit, History, Printer, Eye, Download
 } from 'lucide-react'
 import toast from 'react-hot-toast'
+import { generateSaasInvoiceNoticePdf, generateSaasPaymentReceiptPdf, formatDateDMY, formatDateTimeDMY } from './utils/saasBillingPdf'
 
 interface BillingOverview {
   mrr: number
@@ -57,6 +58,10 @@ export function SuperAdminSubscriptions() {
   const [subscriptions, setSubscriptions] = useState<CompanySubscriptionRow[]>([])
   const [plans, setPlans] = useState<Plan[]>([])
   const [loading, setLoading] = useState(true)
+  const [globalSettings, setGlobalSettings] = useState<any>(null)
+
+  const currencySymbol = globalSettings?.currency_symbol || '$'
+  const receiptNote = globalSettings?.internal_receipt_note || 'Este documento es un comprobante interno de cobro del SaaS. No corresponde a una factura electrónica SRI.'
 
   // Modales
   const [showSubModal, setShowSubModal] = useState(false)
@@ -95,6 +100,21 @@ export function SuperAdminSubscriptions() {
   const [historyPayments, setHistoryPayments] = useState<any[]>([])
   const [activeHistoryTab, setActiveHistoryTab] = useState<'invoices' | 'payments'>('invoices')
 
+  const [showReceiptModal, setShowReceiptModal] = useState(false)
+  const [selectedInvoice, setSelectedInvoice] = useState<any>(null)
+  const [showPaymentReceiptModal, setShowPaymentReceiptModal] = useState(false)
+  const [selectedPayment, setSelectedPayment] = useState<any>(null)
+
+  const handleOpenReceiptModal = (inv: any) => {
+    setSelectedInvoice(inv)
+    setShowReceiptModal(true)
+  }
+
+  const handleOpenPaymentReceiptModal = (pay: any) => {
+    setSelectedPayment(pay)
+    setShowPaymentReceiptModal(true)
+  }
+
   const formatPeriodLabel = (startStr: string | null | undefined, endStr: string | null | undefined, invoiceNumber: string, balance: number) => {
     const formatDate = (dateStr: string | null | undefined) => {
       if (!dateStr) return ''
@@ -109,7 +129,7 @@ export function SuperAdminSubscriptions() {
     
     const start = startStr ? formatDate(startStr) : '—'
     const end = endStr ? formatDate(endStr) : '—'
-    return `${start} - ${end} · ${invoiceNumber} · Saldo $${Number(balance).toFixed(2)}`
+    return `${start} - ${end} · ${invoiceNumber} · Saldo ${currencySymbol}${Number(balance).toFixed(2)}`
   }
 
   useEffect(() => {
@@ -119,10 +139,11 @@ export function SuperAdminSubscriptions() {
   const loadData = async () => {
     setLoading(true)
     try {
-      const [overviewRes, subsRes, plansRes] = await Promise.all([
+      const [overviewRes, subsRes, plansRes, settingsRes] = await Promise.all([
         supabase.rpc('get_saas_billing_overview'),
         supabase.rpc('get_company_subscriptions'),
-        supabase.from('plans').select('id, name, price_monthly').eq('is_active', true)
+        supabase.from('plans').select('id, name, price_monthly').eq('is_active', true),
+        supabase.rpc('get_saas_settings')
       ])
 
       if (overviewRes.error) throw overviewRes.error
@@ -132,6 +153,9 @@ export function SuperAdminSubscriptions() {
       setOverview(overviewRes.data as unknown as BillingOverview)
       setSubscriptions((subsRes.data as unknown as CompanySubscriptionRow[]) || [])
       setPlans((plansRes.data as unknown as Plan[]) || [])
+      if (settingsRes.data && settingsRes.data.length > 0) {
+        setGlobalSettings(settingsRes.data[0])
+      }
     } catch (err: any) {
       toast.error('Error al cargar datos de cobros: ' + err.message)
     } finally {
@@ -453,10 +477,10 @@ export function SuperAdminSubscriptions() {
       {overview && (
         <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
           {[
-            { label: 'MRR Estimado', val: `$${Number(overview.mrr).toFixed(2)}`, icon: DollarSign, color: 'text-blue-600 bg-blue-50 border-l-blue-500' },
-            { label: 'Cobrado del Mes', val: `$${Number(overview.collected_month).toFixed(2)}`, icon: ShieldCheck, color: 'text-green-600 bg-green-50 border-l-green-500' },
-            { label: 'Pendiente Cobro', val: `$${Number(overview.pending_total).toFixed(2)}`, icon: Activity, color: 'text-orange-600 bg-orange-50 border-l-orange-500' },
-            { label: 'Facturas Vencidas', val: `$${Number(overview.overdue_total).toFixed(2)}`, icon: AlertCircle, color: 'text-red-600 bg-red-50 border-l-red-500' },
+            { label: 'MRR Estimado', val: `${currencySymbol}${Number(overview.mrr).toFixed(2)}`, icon: DollarSign, color: 'text-blue-600 bg-blue-50 border-l-blue-500' },
+            { label: 'Cobrado del Mes', val: `${currencySymbol}${Number(overview.collected_month).toFixed(2)}`, icon: ShieldCheck, color: 'text-green-600 bg-green-50 border-l-green-500' },
+            { label: 'Pendiente Cobro', val: `${currencySymbol}${Number(overview.pending_total).toFixed(2)}`, icon: Activity, color: 'text-orange-600 bg-orange-50 border-l-orange-500' },
+            { label: 'Facturas Vencidas', val: `${currencySymbol}${Number(overview.overdue_total).toFixed(2)}`, icon: AlertCircle, color: 'text-red-600 bg-red-50 border-l-red-500' },
             { label: 'Suspendidas', val: overview.suspended_companies, icon: ShieldAlert, color: 'text-purple-600 bg-purple-50 border-l-purple-500' }
           ].map((item, idx) => (
             <Card key={idx} className={`p-4 border-l-4 ${item.color} shadow-sm`}>
@@ -503,7 +527,7 @@ export function SuperAdminSubscriptions() {
                     <td className="px-4 py-3 font-semibold">{row.plan_name || <span className="text-slate-400">Sin Plan</span>}</td>
                     <td className="px-4 py-3">{row.billing_cycle === 'annual' ? 'Anual' : row.billing_cycle === 'monthly' ? 'Mensual' : '—'}</td>
                     <td className="px-4 py-3 text-right font-semibold">
-                      {row.price_amount !== null ? `$${Number(row.price_amount).toFixed(2)}` : '—'}
+                      {row.price_amount !== null ? `${currencySymbol}${Number(row.price_amount).toFixed(2)}` : '—'}
                     </td>
                     <td className="px-4 py-3 text-center">
                       <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
@@ -517,9 +541,9 @@ export function SuperAdminSubscriptions() {
                     <td className="px-4 py-3 text-center text-slate-500">{row.next_due_date || '—'}</td>
                     <td className="px-4 py-3 text-right font-black text-slate-800">
                       {row.outstanding_balance > 0 ? (
-                        <span className="text-red-600">${Number(row.outstanding_balance).toFixed(2)}</span>
+                        <span className="text-red-600">{currencySymbol}{Number(row.outstanding_balance).toFixed(2)}</span>
                       ) : (
-                        <span className="text-green-600">$0.00</span>
+                        <span className="text-green-600">{currencySymbol}0.00</span>
                       )}
                     </td>
                     <td className="px-4 py-3 text-center">
@@ -760,13 +784,13 @@ export function SuperAdminSubscriptions() {
         </div>
       )}
 
-      {/* 5. MODAL HISTORIAL DE COBROS */}
+      {/* 5. MODAL HISTORIAL DE COBROS Y PAGOS */}
       {showHistoryModal && selectedRow && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
           <Card className="p-6 max-w-4xl w-full bg-white space-y-4 max-h-[85vh] overflow-y-auto">
             <div className="flex justify-between items-center">
               <div>
-                <h3 className="text-sm font-bold uppercase tracking-wider text-slate-800">Historial de Cobros y Recibos</h3>
+                <h3 className="text-sm font-bold uppercase tracking-wider text-slate-800">Historial de Cobros y Pagos</h3>
                 <p className="text-xs text-slate-500 mt-1">Historial completo para la cooperativa {selectedRow.legal_name}.</p>
               </div>
               <Button size="sm" variant="outline" onClick={() => setShowHistoryModal(false)}>Cerrar</Button>
@@ -807,6 +831,7 @@ export function SuperAdminSubscriptions() {
                       <th className="px-3 py-2 text-right">Pagado</th>
                       <th className="px-3 py-2 text-right">Saldo</th>
                       <th className="px-3 py-2 text-center">Estado</th>
+                      <th className="px-3 py-2 text-center">Acciones</th>
                       <th className="px-3 py-2">Notas</th>
                     </tr>
                   </thead>
@@ -815,13 +840,13 @@ export function SuperAdminSubscriptions() {
                       <tr key={inv.id} className="hover:bg-slate-50/50">
                         <td className="px-3 py-2 font-bold text-slate-900">{inv.invoice_number}</td>
                         <td className="px-3 py-2 whitespace-nowrap">
-                          {inv.period_start ? `${inv.period_start} al ${inv.period_end}` : '—'}
+                          {inv.period_start ? `${formatDateDMY(inv.period_start)} al ${formatDateDMY(inv.period_end)}` : '—'}
                         </td>
-                        <td className="px-3 py-2 whitespace-nowrap">{inv.created_at ? new Date(inv.created_at).toLocaleDateString() : '—'}</td>
-                        <td className="px-3 py-2 whitespace-nowrap">{inv.due_date}</td>
-                        <td className="px-3 py-2 text-right font-semibold">${Number(inv.amount).toFixed(2)}</td>
-                        <td className="px-3 py-2 text-right text-green-600">${Number(inv.amount_paid || 0).toFixed(2)}</td>
-                        <td className="px-3 py-2 text-right font-black text-slate-800">${Number(inv.balance).toFixed(2)}</td>
+                        <td className="px-3 py-2 whitespace-nowrap">{formatDateDMY(inv.created_at)}</td>
+                        <td className="px-3 py-2 whitespace-nowrap">{formatDateDMY(inv.due_date)}</td>
+                        <td className="px-3 py-2 text-right font-semibold">{currencySymbol}{Number(inv.amount).toFixed(2)}</td>
+                        <td className="px-3 py-2 text-right text-green-600">{currencySymbol}{Number(inv.amount_paid || 0).toFixed(2)}</td>
+                        <td className="px-3 py-2 text-right font-black text-slate-800">{currencySymbol}{Number(inv.balance).toFixed(2)}</td>
                         <td className="px-3 py-2 text-center whitespace-nowrap">
                           <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold border ${
                             inv.status === 'paid' ? 'bg-green-50 text-green-700 border-green-200' :
@@ -835,12 +860,26 @@ export function SuperAdminSubscriptions() {
                              inv.status === 'void' ? 'Anulado' : 'Pendiente'}
                           </span>
                         </td>
+                        <td className="px-3 py-2 text-center whitespace-nowrap">
+                          <div className="flex justify-center gap-1">
+                            <Tooltip content="Ver Aviso de Cobro">
+                              <Button size="xs" variant="outline" onClick={() => handleOpenReceiptModal(inv)}>
+                                <Eye className="h-3 w-3" />
+                              </Button>
+                            </Tooltip>
+                            <Tooltip content="Descargar PDF">
+                              <Button size="xs" variant="outline" onClick={() => generateSaasInvoiceNoticePdf(inv, historyPayments, selectedRow.legal_name, selectedRow.ruc, globalSettings)}>
+                                <Download className="h-3 w-3" />
+                              </Button>
+                            </Tooltip>
+                          </div>
+                        </td>
                         <td className="px-3 py-2 text-slate-500 max-w-xs truncate" title={inv.notes}>{inv.notes || '—'}</td>
                       </tr>
                     ))}
                     {historyInvoices.length === 0 && (
                       <tr>
-                        <td colSpan={9} className="px-3 py-8 text-center text-slate-400">No hay cobros generados para esta compañía.</td>
+                        <td colSpan={10} className="px-3 py-8 text-center text-slate-400">No hay cobros generados para esta compañía.</td>
                       </tr>
                     )}
                   </tbody>
@@ -851,11 +890,12 @@ export function SuperAdminSubscriptions() {
                 <table className="w-full text-[11px] text-left text-slate-600">
                   <thead className="bg-slate-50 text-slate-500 border-b border-slate-100 font-bold">
                     <tr>
-                      <th className="px-3 py-2">Recibo Relacionado</th>
+                      <th className="px-3 py-2">Cobro Relacionado</th>
                       <th className="px-3 py-2">Monto Pagado</th>
                       <th className="px-3 py-2">Método</th>
                       <th className="px-3 py-2">Referencia</th>
                       <th className="px-3 py-2">Fecha de Registro</th>
+                      <th className="px-3 py-2 text-center">Acciones</th>
                       <th className="px-3 py-2">Notas</th>
                     </tr>
                   </thead>
@@ -865,20 +905,40 @@ export function SuperAdminSubscriptions() {
                         <td className="px-3 py-2 font-semibold text-slate-800">
                           {pay.saas_invoices?.invoice_number || '—'}
                         </td>
-                        <td className="px-3 py-2 font-bold text-green-700">${Number(pay.amount).toFixed(2)}</td>
+                        <td className="px-3 py-2 font-bold text-green-700">{currencySymbol}{Number(pay.amount).toFixed(2)}</td>
                         <td className="px-3 py-2 capitalize">
                           {pay.payment_method === 'transfer' ? 'Transferencia' :
                            pay.payment_method === 'deposit' ? 'Depósito' :
                            pay.payment_method === 'cash' ? 'Efectivo' : 'Otro'}
                         </td>
                         <td className="px-3 py-2 text-slate-700">{pay.reference || '—'}</td>
-                        <td className="px-3 py-2 whitespace-nowrap">{pay.created_at ? new Date(pay.created_at).toLocaleString() : '—'}</td>
+                        <td className="px-3 py-2 whitespace-nowrap">{formatDateTimeDMY(pay.created_at)}</td>
+                        <td className="px-3 py-2 text-center whitespace-nowrap">
+                          <div className="flex justify-center gap-1">
+                            <Tooltip content="Ver Comprobante de Pago">
+                              <Button size="xs" variant="outline" onClick={() => handleOpenPaymentReceiptModal(pay)}>
+                                <Eye className="h-3 w-3" />
+                              </Button>
+                            </Tooltip>
+                            <Tooltip content="Descargar PDF">
+                              <Button size="xs" variant="outline" onClick={() => generateSaasPaymentReceiptPdf(
+                                pay,
+                                historyInvoices.find(i => i.invoice_number === pay.saas_invoices?.invoice_number || i.id === pay.invoice_id),
+                                selectedRow.legal_name,
+                                selectedRow.ruc,
+                                globalSettings
+                              )}>
+                                <Download className="h-3 w-3" />
+                              </Button>
+                            </Tooltip>
+                          </div>
+                        </td>
                         <td className="px-3 py-2 text-slate-500 max-w-xs truncate" title={pay.notes}>{pay.notes || '—'}</td>
                       </tr>
                     ))}
                     {historyPayments.length === 0 && (
                       <tr>
-                        <td colSpan={6} className="px-3 py-8 text-center text-slate-400">No se han registrado pagos para esta compañía.</td>
+                        <td colSpan={7} className="px-3 py-8 text-center text-slate-400">No se han registrado pagos para esta compañía.</td>
                       </tr>
                     )}
                   </tbody>
@@ -886,9 +946,332 @@ export function SuperAdminSubscriptions() {
               </div>
             )}
 
-            <div className="bg-slate-50 border border-slate-100 rounded-lg p-3 text-[10px] text-slate-500 mt-2">
+            {/* Datos de Transferencia SaaS */}
+            {globalSettings && (globalSettings.payment_bank_name || globalSettings.payment_instructions) && (
+              <div className="bg-purple-50/50 border border-purple-100 rounded-lg p-3 text-[11px] text-slate-700 mt-3 text-left">
+                <p className="font-bold text-purple-800 uppercase tracking-wider text-[10px]">Datos de Pago para Renovación SaaS:</p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mt-1">
+                  {globalSettings.payment_bank_name && (
+                    <p>
+                      <strong>Banco:</strong> {globalSettings.payment_bank_name} {globalSettings.payment_account_type ? `(${globalSettings.payment_account_type})` : ''}
+                    </p>
+                  )}
+                  {globalSettings.payment_account_number && (
+                    <p>
+                      <strong>Cuenta:</strong> {globalSettings.payment_account_number}
+                    </p>
+                  )}
+                  {globalSettings.payment_account_holder && (
+                    <p>
+                      <strong>Titular:</strong> {globalSettings.payment_account_holder} {globalSettings.payment_account_holder_id ? `· RUC/CI: ${globalSettings.payment_account_holder_id}` : ''}
+                    </p>
+                  )}
+                  {globalSettings.payment_instructions && (
+                    <p className="md:col-span-2 text-slate-650 italic">
+                      <strong>Instrucciones:</strong> {globalSettings.payment_instructions}
+                    </p>
+                  )}
+                </div>
+              </div>
+            )}
+
+            <div className="bg-slate-50 border border-slate-100 rounded-lg p-3 text-[10px] text-slate-500 mt-2 text-left">
               <p className="font-bold text-slate-700">Nota Legal Aclaratoria:</p>
-              <p className="mt-0.5">Este es un comprobante interno de cobro del SaaS. No corresponde a una factura electrónica SRI.</p>
+              <p className="mt-0.5">{receiptNote}</p>
+            </div>
+          </Card>
+        </div>
+      )}
+
+      {/* 6. MODAL AVISO DE COBRO DETALLADO */}
+      {showReceiptModal && selectedInvoice && selectedRow && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <Card className="p-6 max-w-2xl w-full bg-white space-y-4 max-h-[90vh] overflow-y-auto" id="printable-receipt">
+            <style>{`
+              @media print {
+                body * {
+                  visibility: hidden;
+                }
+                #printable-receipt, #printable-receipt * {
+                  visibility: visible;
+                }
+                #printable-receipt {
+                  position: absolute;
+                  left: 0;
+                  top: 0;
+                  width: 100%;
+                  box-shadow: none !important;
+                  border: none !important;
+                  background: white !important;
+                  color: black !important;
+                  padding: 10px !important;
+                }
+                .print-hide {
+                  display: none !important;
+                }
+              }
+            `}</style>
+            
+            {/* Header del modal (oculto en impresión) */}
+            <div className="flex justify-between items-center print-hide border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-2">
+                <Printer className="h-5 w-5 text-primary-600" />
+                <h3 className="text-sm font-bold uppercase tracking-wider text-slate-800">Aviso de Cobro Interno SaaS</h3>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button size="sm" onClick={() => generateSaasInvoiceNoticePdf(selectedInvoice, historyPayments, selectedRow.legal_name, selectedRow.ruc, globalSettings, true)}>
+                  Imprimir desde navegador
+                </Button>
+                <Button size="sm" variant="outline" onClick={() => setShowReceiptModal(false)}>
+                  Cerrar
+                </Button>
+              </div>
+            </div>
+
+            {/* CONTENIDO DEL COMPROBANTE */}
+            <div className="space-y-6 text-slate-800">
+              {/* Encabezado del Comprobante */}
+              <div className="flex justify-between items-start border-b-2 border-slate-200 pb-4">
+                <div>
+                  <h2 className="text-lg font-black tracking-tight text-slate-900">MotoGremio SaaS</h2>
+                  <p className="text-xs text-slate-500 mt-0.5">Aviso de Obligación de Pago SaaS</p>
+                </div>
+                <div className="text-right">
+                  <span className="text-xs font-bold text-slate-400 block uppercase">Cobro Interno Nro.</span>
+                  <span className="text-sm font-black text-slate-900 font-mono">{selectedInvoice.invoice_number}</span>
+                </div>
+              </div>
+
+              {/* Detalles del Cliente / Suscripción */}
+              <div className="grid grid-cols-2 gap-4 text-xs">
+                <div>
+                  <p className="font-bold text-slate-400 uppercase text-[9px] tracking-wider">Cliente:</p>
+                  <p className="font-bold text-slate-900 text-sm mt-0.5">{selectedRow.legal_name}</p>
+                  <p className="text-slate-500 mt-0.5">RUC: {selectedRow.ruc}</p>
+                </div>
+                <div>
+                  <p className="font-bold text-slate-400 uppercase text-[9px] tracking-wider">Detalles de Emisión:</p>
+                  <p className="mt-0.5 text-slate-700"><strong>Fecha Emisión:</strong> {formatDateDMY(selectedInvoice.created_at)}</p>
+                  <p className="text-slate-700"><strong>Fecha Vencimiento:</strong> {formatDateDMY(selectedInvoice.due_date)}</p>
+                  <p className="text-slate-700"><strong>Período:</strong> {selectedInvoice.period_start ? `${formatDateDMY(selectedInvoice.period_start)} al ${formatDateDMY(selectedInvoice.period_end)}` : '—'}</p>
+                </div>
+              </div>
+
+              {/* Tabla de Concepto y Totales */}
+              <div className="border border-slate-200 rounded-lg overflow-hidden">
+                <table className="w-full text-xs text-left">
+                  <thead className="bg-slate-50 border-b border-slate-200 font-bold text-slate-500">
+                    <tr>
+                      <th className="px-4 py-2">Concepto</th>
+                      <th className="px-4 py-2 text-right">Monto Emitido</th>
+                      <th className="px-4 py-2 text-right">Monto Pagado</th>
+                      <th className="px-4 py-2 text-right">Saldo Pendiente</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr className="border-b border-slate-100">
+                      <td className="px-4 py-3 font-semibold text-slate-800">
+                        Renovación y Soporte Mensual de Plataforma SaaS
+                      </td>
+                      <td className="px-4 py-3 text-right font-semibold">
+                        {currencySymbol}{Number(selectedInvoice.amount).toFixed(2)}
+                      </td>
+                      <td className="px-4 py-3 text-right font-semibold text-green-600">
+                        {currencySymbol}{Number(selectedInvoice.amount_paid || 0).toFixed(2)}
+                      </td>
+                      <td className="px-4 py-3 text-right font-black text-slate-900">
+                        {currencySymbol}{Number(selectedInvoice.balance).toFixed(2)}
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Historial de abonos específicos */}
+              <div>
+                <h4 className="text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-2">Abonos / Pagos Aplicados:</h4>
+                <div className="border border-slate-150 rounded-lg overflow-hidden">
+                  <table className="w-full text-[11px] text-left">
+                    <thead className="bg-slate-50 border-b border-slate-150 font-bold text-slate-500">
+                      <tr>
+                        <th className="px-3 py-1.5">Fecha</th>
+                        <th className="px-3 py-1.5">Método</th>
+                        <th className="px-3 py-1.5">Referencia</th>
+                        <th className="px-3 py-1.5 text-right">Abono</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {historyPayments
+                        .filter((p) => p.saas_invoice_id === selectedInvoice.id || p.saas_invoices?.invoice_number === selectedInvoice.invoice_number)
+                        .map((pay) => (
+                          <tr key={pay.id} className="hover:bg-slate-50/50">
+                            <td className="px-3 py-2 whitespace-nowrap">
+                              {formatDateTimeDMY(pay.created_at)}
+                            </td>
+                            <td className="px-3 py-2 capitalize">
+                              {pay.payment_method === 'transfer' ? 'Transferencia' :
+                               pay.payment_method === 'deposit' ? 'Depósito' :
+                               pay.payment_method === 'cash' ? 'Efectivo' : 'Otro'}
+                            </td>
+                            <td className="px-3 py-2 text-slate-700 font-mono">{pay.reference || '—'}</td>
+                            <td className="px-3 py-2 text-right font-bold text-green-700">
+                              {currencySymbol}{Number(pay.amount).toFixed(2)}
+                            </td>
+                          </tr>
+                        ))}
+                      {historyPayments.filter((p) => p.saas_invoice_id === selectedInvoice.id || p.saas_invoices?.invoice_number === selectedInvoice.invoice_number).length === 0 && (
+                        <tr>
+                          <td colSpan={4} className="px-3 py-4 text-center text-slate-400 italic">No se registran abonos o pagos asociados a este cobro.</td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* Información Bancaria (si existe) */}
+              {globalSettings && (globalSettings.payment_bank_name || globalSettings.payment_instructions) && (
+                <div className="bg-purple-50/50 border border-purple-100 rounded-lg p-3 text-[11px]">
+                  <p className="font-bold text-purple-800 uppercase tracking-wider text-[10px]">Datos de Pago para Renovación SaaS:</p>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mt-1">
+                    {globalSettings.payment_bank_name && (
+                      <p><strong>Banco:</strong> {globalSettings.payment_bank_name} {globalSettings.payment_account_type ? `(${globalSettings.payment_account_type})` : ''}</p>
+                    )}
+                    {globalSettings.payment_account_number && (
+                      <p><strong>Cuenta:</strong> {globalSettings.payment_account_number}</p>
+                    )}
+                    {globalSettings.payment_account_holder && (
+                      <p><strong>Titular:</strong> {globalSettings.payment_account_holder} {globalSettings.payment_account_holder_id ? `· RUC/CI: ${globalSettings.payment_account_holder_id}` : ''}</p>
+                    )}
+                    {globalSettings.payment_instructions && (
+                      <p className="md:col-span-2 text-slate-600 italic"><strong>Instrucciones:</strong> {globalSettings.payment_instructions}</p>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Nota Legal Aclaratoria */}
+              <div className="bg-slate-50 border border-slate-200 rounded-lg p-3 text-[10px] text-slate-500 text-left">
+                <p className="font-bold text-slate-700">Nota Legal Aclaratoria:</p>
+                <p className="mt-0.5">Este documento es un aviso de cobro interno del SaaS. No corresponde a una factura electrónica SRI ni certifica por sí solo la recepción de pago.</p>
+              </div>
+            </div>
+          </Card>
+        </div>
+      )}
+
+      {/* 7. MODAL COMPROBANTE DE PAGO DETALLADO IMPRIMIBLE */}
+      {showPaymentReceiptModal && selectedPayment && selectedRow && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <Card className="p-6 max-w-2xl w-full bg-white space-y-4 max-h-[90vh] overflow-y-auto" id="printable-payment-receipt">
+            <style>{`
+              @media print {
+                body * {
+                  visibility: hidden;
+                }
+                #printable-payment-receipt, #printable-payment-receipt * {
+                  visibility: visible;
+                }
+                #printable-payment-receipt {
+                  position: absolute;
+                  left: 0;
+                  top: 0;
+                  width: 100%;
+                  box-shadow: none !important;
+                  border: none !important;
+                  background: white !important;
+                  color: black !important;
+                  padding: 10px !important;
+                }
+                .print-hide {
+                  display: none !important;
+                }
+              }
+            `}</style>
+            
+            {/* Header del modal */}
+            <div className="flex justify-between items-center print-hide border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-2">
+                <Printer className="h-5 w-5 text-green-600" />
+                <h3 className="text-sm font-bold uppercase tracking-wider text-slate-800">Comprobante Interno de Pago</h3>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button size="sm" onClick={() => generateSaasPaymentReceiptPdf(
+                  selectedPayment,
+                  historyInvoices.find(i => i.invoice_number === selectedPayment.saas_invoices?.invoice_number || i.id === selectedPayment.invoice_id),
+                  selectedRow.legal_name,
+                  selectedRow.ruc,
+                  globalSettings,
+                  true
+                )}>
+                  Imprimir desde navegador
+                </Button>
+                <Button size="sm" variant="outline" onClick={() => setShowPaymentReceiptModal(false)}>
+                  Cerrar
+                </Button>
+              </div>
+            </div>
+
+            {/* CONTENIDO DEL COMPROBANTE */}
+            <div className="space-y-6 text-slate-800">
+              <div className="flex justify-between items-start border-b-2 border-slate-200 pb-4">
+                <div>
+                  <h2 className="text-lg font-black tracking-tight text-slate-900">MotoGremio SaaS</h2>
+                  <p className="text-xs text-green-600 mt-0.5">Comprobante Interno de Pago Recibido</p>
+                </div>
+                <div className="text-right">
+                  <span className="text-xs font-bold text-slate-400 block uppercase">Cobro Relacionado</span>
+                  <span className="text-sm font-black text-slate-900 font-mono">{selectedPayment.saas_invoices?.invoice_number || '—'}</span>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4 text-xs">
+                <div>
+                  <p className="font-bold text-slate-400 uppercase text-[9px] tracking-wider">Cliente:</p>
+                  <p className="font-bold text-slate-900 text-sm mt-0.5">{selectedRow.legal_name}</p>
+                  <p className="text-slate-500 mt-0.5">RUC: {selectedRow.ruc}</p>
+                </div>
+                <div>
+                  <p className="font-bold text-slate-400 uppercase text-[9px] tracking-wider">Detalles de Recepción:</p>
+                  <p className="mt-0.5 text-slate-700"><strong>Fecha Pago:</strong> {formatDateTimeDMY(selectedPayment.created_at)}</p>
+                  <p className="text-slate-700"><strong>Método de Pago:</strong> {selectedPayment.payment_method === 'transfer' ? 'Transferencia' : selectedPayment.payment_method === 'deposit' ? 'Depósito' : selectedPayment.payment_method === 'cash' ? 'Efectivo' : 'Otro'}</p>
+                  <p className="text-slate-700"><strong>Referencia:</strong> {selectedPayment.reference || '—'}</p>
+                </div>
+              </div>
+
+              <div className="border border-slate-200 rounded-lg overflow-hidden">
+                <table className="w-full text-xs text-left">
+                  <thead className="bg-slate-50 border-b border-slate-200 font-bold text-slate-500">
+                    <tr>
+                      <th className="px-4 py-2">Concepto</th>
+                      <th className="px-4 py-2 text-right">Monto Recibido</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr className="border-b border-slate-100">
+                      <td className="px-4 py-3 font-semibold text-slate-800">
+                        Abono a Suscripción Mensual de Plataforma SaaS MotoGremio
+                      </td>
+                      <td className="px-4 py-3 text-right font-black text-green-700">
+                        {currencySymbol}{Number(selectedPayment.amount).toFixed(2)}
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              {selectedPayment.notes && (
+                <div className="text-xs">
+                  <p className="font-bold text-slate-400 uppercase text-[9px] tracking-wider">Notas del Pago:</p>
+                  <p className="text-slate-650 mt-1 italic">{selectedPayment.notes}</p>
+                </div>
+              )}
+
+              {/* Nota Legal Aclaratoria */}
+              <div className="bg-slate-50 border border-slate-200 rounded-lg p-3 text-[10px] text-slate-500 text-left">
+                <p className="font-bold text-slate-700">Nota Legal Aclaratoria:</p>
+                <p className="mt-0.5">Este documento es un comprobante interno de pago recibido del SaaS. No corresponde a una factura electrónica SRI.</p>
+              </div>
             </div>
           </Card>
         </div>
