@@ -13,6 +13,45 @@ interface SaasSettings {
   internal_receipt_note: string
 }
 
+export function formatDateDMY(dateInput: any): string {
+  if (!dateInput) return '—'
+  if (typeof dateInput === 'string') {
+    if (dateInput.includes('T')) {
+      const date = new Date(dateInput)
+      if (!isNaN(date.getTime())) {
+        const day = String(date.getDate()).padStart(2, '0')
+        const month = String(date.getMonth() + 1).padStart(2, '0')
+        const year = date.getFullYear()
+        return `${day}/${month}/${year}`
+      }
+    } else {
+      const parts = dateInput.split('-')
+      if (parts.length === 3) {
+        const day = parts[2].trim().substring(0, 2)
+        return `${day}/${parts[1]}/${parts[0]}`
+      }
+    }
+  }
+  const date = new Date(dateInput)
+  if (isNaN(date.getTime())) return dateInput
+  const day = String(date.getDate()).padStart(2, '0')
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const year = date.getFullYear()
+  return `${day}/${month}/${year}`
+}
+
+export function formatDateTimeDMY(dateInput: any): string {
+  if (!dateInput) return '—'
+  const date = new Date(dateInput)
+  if (isNaN(date.getTime())) return dateInput
+  const day = String(date.getDate()).padStart(2, '0')
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const year = date.getFullYear()
+  const hours = String(date.getHours()).padStart(2, '0')
+  const minutes = String(date.getMinutes()).padStart(2, '0')
+  return `${day}/${month}/${year} ${hours}:${minutes}`
+}
+
 export function generateSaasInvoiceNoticePdf(
   invoice: any,
   payments: any[],
@@ -57,9 +96,9 @@ export function generateSaasInvoiceNoticePdf(
   doc.setFont('helvetica', 'normal')
   doc.text(`Nro Cobro: ${invoice.invoice_number}`, 110, 53)
   doc.text(`Estado: ${invoice.status.toUpperCase()}`, 110, 58)
-  doc.text(`Fecha Emisión: ${invoice.created_at ? new Date(invoice.created_at).toLocaleDateString() : '—'}`, 110, 63)
-  doc.text(`Fecha Vencimiento: ${invoice.due_date}`, 110, 68)
-  doc.text(`Período: ${invoice.period_start || '—'} al ${invoice.period_end || '—'}`, 110, 73)
+  doc.text(`Fecha Emisión: ${formatDateDMY(invoice.created_at)}`, 110, 63)
+  doc.text(`Fecha Vencimiento: ${formatDateDMY(invoice.due_date)}`, 110, 68)
+  doc.text(`Período: ${formatDateDMY(invoice.period_start)} al ${formatDateDMY(invoice.period_end)}`, 110, 73)
 
   // Main invoice table
   autoTable(doc, {
@@ -104,7 +143,7 @@ export function generateSaasInvoiceNoticePdf(
     currentY += 10
   } else {
     const paymentRows = invoicePayments.map((p) => [
-      p.created_at ? new Date(p.created_at).toLocaleString() : '—',
+      formatDateTimeDMY(p.created_at),
       p.payment_method === 'transfer' ? 'Transferencia' : p.payment_method === 'deposit' ? 'Depósito' : p.payment_method === 'cash' ? 'Efectivo' : 'Otro',
       p.reference || '—',
       `${currencySymbol}${Number(p.amount).toFixed(2)}`
@@ -235,10 +274,10 @@ export function generateSaasPaymentReceiptPdf(
   doc.text('DETALLES DE RECEPCIÓN:', 110, 48)
   doc.setFont('helvetica', 'normal')
   doc.text(`Cobro Relacionado: ${invoice?.invoice_number || '—'}`, 110, 53)
-  doc.text(`Fecha Pago: ${payment.created_at ? new Date(payment.created_at).toLocaleDateString() : '—'}`, 110, 58)
+  doc.text(`Fecha Pago: ${formatDateDMY(payment.created_at)}`, 110, 58)
   doc.text(`Método: ${payment.payment_method === 'transfer' ? 'Transferencia' : payment.payment_method === 'deposit' ? 'Depósito' : payment.payment_method === 'cash' ? 'Efectivo' : 'Otro'}`, 110, 63)
   doc.text(`Referencia: ${payment.reference || '—'}`, 110, 68)
-  doc.text(`Período Cobro: ${invoice?.period_start || '—'} al ${invoice?.period_end || '—'}`, 110, 73)
+  doc.text(`Período Cobro: ${formatDateDMY(invoice?.period_start)} al ${formatDateDMY(invoice?.period_end)}`, 110, 73)
 
   // Main payment table
   autoTable(doc, {

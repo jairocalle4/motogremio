@@ -8,7 +8,7 @@ import {
   Ban, ShieldAlert, Key, Edit, History, Printer, Eye, Download
 } from 'lucide-react'
 import toast from 'react-hot-toast'
-import { generateSaasInvoiceNoticePdf, generateSaasPaymentReceiptPdf } from './utils/saasBillingPdf'
+import { generateSaasInvoiceNoticePdf, generateSaasPaymentReceiptPdf, formatDateDMY, formatDateTimeDMY } from './utils/saasBillingPdf'
 
 interface BillingOverview {
   mrr: number
@@ -840,10 +840,10 @@ export function SuperAdminSubscriptions() {
                       <tr key={inv.id} className="hover:bg-slate-50/50">
                         <td className="px-3 py-2 font-bold text-slate-900">{inv.invoice_number}</td>
                         <td className="px-3 py-2 whitespace-nowrap">
-                          {inv.period_start ? `${inv.period_start} al ${inv.period_end}` : '—'}
+                          {inv.period_start ? `${formatDateDMY(inv.period_start)} al ${formatDateDMY(inv.period_end)}` : '—'}
                         </td>
-                        <td className="px-3 py-2 whitespace-nowrap">{inv.created_at ? new Date(inv.created_at).toLocaleDateString() : '—'}</td>
-                        <td className="px-3 py-2 whitespace-nowrap">{inv.due_date}</td>
+                        <td className="px-3 py-2 whitespace-nowrap">{formatDateDMY(inv.created_at)}</td>
+                        <td className="px-3 py-2 whitespace-nowrap">{formatDateDMY(inv.due_date)}</td>
                         <td className="px-3 py-2 text-right font-semibold">{currencySymbol}{Number(inv.amount).toFixed(2)}</td>
                         <td className="px-3 py-2 text-right text-green-600">{currencySymbol}{Number(inv.amount_paid || 0).toFixed(2)}</td>
                         <td className="px-3 py-2 text-right font-black text-slate-800">{currencySymbol}{Number(inv.balance).toFixed(2)}</td>
@@ -912,7 +912,7 @@ export function SuperAdminSubscriptions() {
                            pay.payment_method === 'cash' ? 'Efectivo' : 'Otro'}
                         </td>
                         <td className="px-3 py-2 text-slate-700">{pay.reference || '—'}</td>
-                        <td className="px-3 py-2 whitespace-nowrap">{pay.created_at ? new Date(pay.created_at).toLocaleString() : '—'}</td>
+                        <td className="px-3 py-2 whitespace-nowrap">{formatDateTimeDMY(pay.created_at)}</td>
                         <td className="px-3 py-2 text-center whitespace-nowrap">
                           <div className="flex justify-center gap-1">
                             <Tooltip content="Ver Comprobante de Pago">
@@ -1051,9 +1051,9 @@ export function SuperAdminSubscriptions() {
                 </div>
                 <div>
                   <p className="font-bold text-slate-400 uppercase text-[9px] tracking-wider">Detalles de Emisión:</p>
-                  <p className="mt-0.5 text-slate-700"><strong>Fecha Emisión:</strong> {selectedInvoice.created_at ? new Date(selectedInvoice.created_at).toLocaleDateString() : '—'}</p>
-                  <p className="text-slate-700"><strong>Fecha Vencimiento:</strong> {selectedInvoice.due_date}</p>
-                  <p className="text-slate-700"><strong>Período:</strong> {selectedInvoice.period_start ? `${selectedInvoice.period_start} al ${selectedInvoice.period_end}` : '—'}</p>
+                  <p className="mt-0.5 text-slate-700"><strong>Fecha Emisión:</strong> {formatDateDMY(selectedInvoice.created_at)}</p>
+                  <p className="text-slate-700"><strong>Fecha Vencimiento:</strong> {formatDateDMY(selectedInvoice.due_date)}</p>
+                  <p className="text-slate-700"><strong>Período:</strong> {selectedInvoice.period_start ? `${formatDateDMY(selectedInvoice.period_start)} al ${formatDateDMY(selectedInvoice.period_end)}` : '—'}</p>
                 </div>
               </div>
 
@@ -1106,7 +1106,7 @@ export function SuperAdminSubscriptions() {
                         .map((pay) => (
                           <tr key={pay.id} className="hover:bg-slate-50/50">
                             <td className="px-3 py-2 whitespace-nowrap">
-                              {pay.created_at ? new Date(pay.created_at).toLocaleString() : '—'}
+                              {formatDateTimeDMY(pay.created_at)}
                             </td>
                             <td className="px-3 py-2 capitalize">
                               {pay.payment_method === 'transfer' ? 'Transferencia' :
@@ -1233,7 +1233,7 @@ export function SuperAdminSubscriptions() {
                 </div>
                 <div>
                   <p className="font-bold text-slate-400 uppercase text-[9px] tracking-wider">Detalles de Recepción:</p>
-                  <p className="mt-0.5 text-slate-700"><strong>Fecha Pago:</strong> {selectedPayment.created_at ? new Date(selectedPayment.created_at).toLocaleString() : '—'}</p>
+                  <p className="mt-0.5 text-slate-700"><strong>Fecha Pago:</strong> {formatDateTimeDMY(selectedPayment.created_at)}</p>
                   <p className="text-slate-700"><strong>Método de Pago:</strong> {selectedPayment.payment_method === 'transfer' ? 'Transferencia' : selectedPayment.payment_method === 'deposit' ? 'Depósito' : selectedPayment.payment_method === 'cash' ? 'Efectivo' : 'Otro'}</p>
                   <p className="text-slate-700"><strong>Referencia:</strong> {selectedPayment.reference || '—'}</p>
                 </div>
