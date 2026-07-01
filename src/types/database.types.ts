@@ -1470,6 +1470,69 @@ export type Database = {
           },
         ]
       }
+      saas_settings: {
+        Row: {
+          created_at: string | null
+          currency_code: string
+          currency_symbol: string
+          grace_period_days: number
+          id: number
+          internal_receipt_note: string
+          limit_critical_percent: number
+          limit_warning_percent: number
+          next_due_warning_days: number
+          payment_account_holder: string | null
+          payment_account_holder_id: string | null
+          payment_account_number: string | null
+          payment_account_type: string | null
+          payment_bank_name: string | null
+          payment_instructions: string | null
+          suspension_mode: string
+          updated_at: string | null
+          updated_by: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          currency_code?: string
+          currency_symbol?: string
+          grace_period_days?: number
+          id?: never
+          internal_receipt_note?: string
+          limit_critical_percent?: number
+          limit_warning_percent?: number
+          next_due_warning_days?: number
+          payment_account_holder?: string | null
+          payment_account_holder_id?: string | null
+          payment_account_number?: string | null
+          payment_account_type?: string | null
+          payment_bank_name?: string | null
+          payment_instructions?: string | null
+          suspension_mode?: string
+          updated_at?: string | null
+          updated_by?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          currency_code?: string
+          currency_symbol?: string
+          grace_period_days?: number
+          id?: never
+          internal_receipt_note?: string
+          limit_critical_percent?: number
+          limit_warning_percent?: number
+          next_due_warning_days?: number
+          payment_account_holder?: string | null
+          payment_account_holder_id?: string | null
+          payment_account_number?: string | null
+          payment_account_type?: string | null
+          payment_bank_name?: string | null
+          payment_instructions?: string | null
+          suspension_mode?: string
+          updated_at?: string | null
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       sanction_types: {
         Row: {
           company_id: string
@@ -1973,6 +2036,29 @@ export type Database = {
       get_my_company_id: { Args: never; Returns: string }
       get_my_company_plan_usage: { Args: never; Returns: Json }
       get_saas_billing_overview: { Args: never; Returns: Json }
+      get_saas_settings: {
+        Args: never
+        Returns: {
+          created_at: string
+          currency_code: string
+          currency_symbol: string
+          grace_period_days: number
+          id: number
+          internal_receipt_note: string
+          limit_critical_percent: number
+          limit_warning_percent: number
+          next_due_warning_days: number
+          payment_account_holder: string
+          payment_account_holder_id: string
+          payment_account_number: string
+          payment_account_type: string
+          payment_bank_name: string
+          payment_instructions: string
+          suspension_mode: string
+          updated_at: string
+          updated_by: string
+        }[]
+      }
       get_super_admin_alerts: {
         Args: never
         Returns: {
@@ -2102,6 +2188,25 @@ export type Database = {
           p_slogan?: string
         }
         Returns: Json
+      }
+      update_saas_settings: {
+        Args: {
+          p_currency_code: string
+          p_currency_symbol: string
+          p_grace_period_days: number
+          p_internal_receipt_note: string
+          p_limit_critical_percent: number
+          p_limit_warning_percent: number
+          p_next_due_warning_days: number
+          p_payment_account_holder: string
+          p_payment_account_holder_id: string
+          p_payment_account_number: string
+          p_payment_account_type: string
+          p_payment_bank_name: string
+          p_payment_instructions: string
+          p_suspension_mode: string
+        }
+        Returns: boolean
       }
       update_super_admin_company_branding: {
         Args: {
