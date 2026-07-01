@@ -447,7 +447,19 @@ export function SuperAdminSubscriptions() {
             <form onSubmit={handleSaveSubscription} className="space-y-3">
               <div>
                 <label className="block text-xs font-bold text-slate-700">Plan</label>
-                <select value={subPlan} onChange={(e) => setSubPlan(e.target.value)} required className="w-full mt-1 p-2 text-xs border rounded">
+                <select
+                  value={subPlan}
+                  onChange={(e) => {
+                    const val = e.target.value
+                    setSubPlan(val)
+                    const chosen = plans.find(p => p.id === val)
+                    if (chosen) {
+                      setSubPrice(subCycle === 'annual' ? Number(chosen.price_monthly) * 12 : Number(chosen.price_monthly))
+                    }
+                  }}
+                  required
+                  className="w-full mt-1 p-2 text-xs border rounded"
+                >
                   <option value="">Seleccione un plan</option>
                   {plans.map((p) => (
                     <option key={p.id} value={p.id}>{p.name.toUpperCase()}</option>
@@ -456,7 +468,18 @@ export function SuperAdminSubscriptions() {
               </div>
               <div>
                 <label className="block text-xs font-bold text-slate-700">Ciclo de Facturación</label>
-                <select value={subCycle} onChange={(e) => setSubCycle(e.target.value)} className="w-full mt-1 p-2 text-xs border rounded">
+                <select
+                  value={subCycle}
+                  onChange={(e) => {
+                    const val = e.target.value
+                    setSubCycle(val)
+                    const chosen = plans.find(p => p.id === subPlan)
+                    if (chosen) {
+                      setSubPrice(val === 'annual' ? Number(chosen.price_monthly) * 12 : Number(chosen.price_monthly))
+                    }
+                  }}
+                  className="w-full mt-1 p-2 text-xs border rounded"
+                >
                   <option value="monthly">Mensual</option>
                   <option value="annual">Anual</option>
                 </select>
@@ -464,6 +487,9 @@ export function SuperAdminSubscriptions() {
               <div>
                 <label className="block text-xs font-bold text-slate-700">Precio Pactado</label>
                 <input type="number" step="0.01" value={subPrice} onChange={(e) => setSubPrice(Number(e.target.value))} required className="w-full mt-1 p-2 text-xs border rounded" />
+                <p className="text-[10px] text-slate-500 mt-1">
+                  El precio de la suscripción es el valor pactado con esta compañía. Cambiar el precio del catálogo de planes no modifica facturas ya emitidas.
+                </p>
               </div>
               <div>
                 <label className="block text-xs font-bold text-slate-700">Notas / Referencias</label>

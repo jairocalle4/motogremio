@@ -506,14 +506,19 @@ export function SuperAdminPlans() {
             />
           </div>
 
-          <Input
-            label="Precio Mensual ($USD)"
-            type="number"
-            step="0.01"
-            required
-            error={editErrors.price_monthly?.message}
-            {...registerEdit('price_monthly')}
-          />
+          <div>
+            <Input
+              label="Precio Mensual ($USD)"
+              type="number"
+              step="0.01"
+              required
+              error={editErrors.price_monthly?.message}
+              {...registerEdit('price_monthly')}
+            />
+            <p className="text-[11px] text-amber-600 mt-1 bg-amber-50 p-2 border border-amber-200 rounded">
+              Este cambio aplicará para nuevas suscripciones. Las suscripciones existentes conservarán su precio pactado hasta que se actualicen manualmente.
+            </p>
+          </div>
 
           <Textarea
             label="Características (Una por línea)"
