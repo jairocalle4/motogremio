@@ -209,7 +209,7 @@ export function Header({ onMenuToggle }: HeaderProps) {
               {/* Footer */}
               <div className="px-4 py-2 border-t border-gray-100 bg-gray-50/50 rounded-b-xl text-center">
                 <Link 
-                  to="/notificaciones" 
+                  to={profile?.role === 'super_admin' ? '/super-admin/alerts' : '/notificaciones'} 
                   onClick={() => setDropdownOpen(false)}
                   className="text-xs font-semibold text-primary-600 hover:text-primary-700 hover:underline transition-all block"
                 >
