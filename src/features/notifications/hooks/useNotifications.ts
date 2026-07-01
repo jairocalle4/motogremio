@@ -48,58 +48,85 @@ export function useNotifications() {
   const [error, setError] = useState<string | null>(null)
 
   const fetchAlerts = useCallback(async () => {
-    if (!companyId) return
+    const isSuperAdmin = profile?.role === 'super_admin'
+    if (!companyId && !isSuperAdmin) return
     setLoading(true)
     setError(null)
 
     try {
-      const { data, error: rpcError } = await (supabase as any).rpc('get_alerts_summary')
+      if (isSuperAdmin) {
+        const { data, error: rpcError } = await supabase.rpc('get_super_admin_alerts')
+        if (rpcError) throw rpcError
 
-      if (rpcError) throw rpcError
-
-      const rpcResult = data as any
-      if (rpcResult) {
-        // Mapear la respuesta de la RPC a la interfaz del frontend
-        const mappedAlerts: AppAlert[] = (rpcResult.alerts || []).map((alert: any) => {
-          // Mapeo de severidad: DB -> UI
+        const list = (data || []) as any[]
+        const mappedAlerts: AppAlert[] = list.map((alert: any) => {
           let severity: AlertSeverity = 'informativa'
           if (alert.severity === 'critical') severity = 'critica'
           else if (alert.severity === 'warning') severity = 'advertencia'
 
-          // Mapeo de origen
-          const origin: AlertOrigin = (alert.source || 'sistema') as AlertOrigin
-
-          // Determinar si es persistente (viene de la tabla de notificaciones)
-          const isPersistent = alert.source === 'sistema'
-
           return {
             id: alert.id,
             title: alert.title,
-            message: alert.message,
+            message: alert.description,
             severity,
-            origin,
-            link_url: alert.link_url || undefined,
-            days_overdue: alert.days_remaining !== null && alert.days_remaining < 0 ? Math.abs(alert.days_remaining) : undefined,
-            days_remaining: alert.days_remaining !== null ? alert.days_remaining : undefined,
-            due_date: alert.due_date || undefined,
-            is_persistent: isPersistent,
-            is_read: !!alert.is_read,
-            can_mark_read: isPersistent && userId !== undefined, // Solo si es persistente y hay sesión activa
-            scope: alert.scope || undefined
+            origin: 'sistema',
+            link_url: alert.action_href || undefined,
+            is_persistent: false,
+            is_read: false,
+            can_mark_read: false
           }
         })
 
         setAlerts(mappedAlerts)
+        setCounts({
+          total: list.length,
+          critical: list.filter(a => a.severity === 'critical').length,
+          warning: list.filter(a => a.severity === 'warning').length,
+          info: list.filter(a => a.severity === 'info').length,
+          unread: 0
+        })
+      } else {
+        const { data, error: rpcError } = await (supabase as any).rpc('get_alerts_summary')
+        if (rpcError) throw rpcError
 
-        // Mapear los contadores
-        if (rpcResult.counts) {
-          setCounts({
-            total: rpcResult.counts.total || 0,
-            critical: rpcResult.counts.critical || 0,
-            warning: rpcResult.counts.warning || 0,
-            info: rpcResult.counts.info || 0,
-            unread: rpcResult.counts.unread || 0
+        const rpcResult = data as any
+        if (rpcResult) {
+          const mappedAlerts: AppAlert[] = (rpcResult.alerts || []).map((alert: any) => {
+            let severity: AlertSeverity = 'informativa'
+            if (alert.severity === 'critical') severity = 'critica'
+            else if (alert.severity === 'warning') severity = 'advertencia'
+
+            const origin: AlertOrigin = (alert.source || 'sistema') as AlertOrigin
+            const isPersistent = alert.source === 'sistema'
+
+            return {
+              id: alert.id,
+              title: alert.title,
+              message: alert.message,
+              severity,
+              origin,
+              link_url: alert.link_url || undefined,
+              days_overdue: alert.days_remaining !== null && alert.days_remaining < 0 ? Math.abs(alert.days_remaining) : undefined,
+              days_remaining: alert.days_remaining !== null ? alert.days_remaining : undefined,
+              due_date: alert.due_date || undefined,
+              is_persistent: isPersistent,
+              is_read: !!alert.is_read,
+              can_mark_read: isPersistent && userId !== undefined,
+              scope: alert.scope || undefined
+            }
           })
+
+          setAlerts(mappedAlerts)
+
+          if (rpcResult.counts) {
+            setCounts({
+              total: rpcResult.counts.total || 0,
+              critical: rpcResult.counts.critical || 0,
+              warning: rpcResult.counts.warning || 0,
+              info: rpcResult.counts.info || 0,
+              unread: rpcResult.counts.unread || 0
+            })
+          }
         }
       }
     } catch (err: any) {
@@ -108,7 +135,7 @@ export function useNotifications() {
     } finally {
       setLoading(false)
     }
-  }, [companyId, userId])
+  }, [companyId, userId, profile])
 
   const markAsRead = async (id: string) => {
     const realId = id.replace('notif-', '')
