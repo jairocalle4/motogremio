@@ -18,7 +18,8 @@ export function generateSaasInvoiceNoticePdf(
   payments: any[],
   companyName: string,
   ruc: string,
-  settings: SaasSettings | null
+  settings: SaasSettings | null,
+  print?: boolean
 ) {
   const doc = new jsPDF({
     orientation: 'portrait',
@@ -31,45 +32,38 @@ export function generateSaasInvoiceNoticePdf(
 
   // Header Box
   doc.setFillColor(245, 247, 250)
-  doc.rect(15, 15, 180, 25, 'F')
+  doc.rect(15, 15, 180, 22, 'F')
   
   doc.setFont('helvetica', 'bold')
-  doc.setFontSize(16)
+  doc.setFontSize(14)
   doc.setTextColor(30, 41, 59)
-  doc.text('AVISO DE COBRO INTERNO SAAS', 20, 25)
-  doc.setFontSize(10)
-  doc.setFont('helvetica', 'normal')
-  doc.setTextColor(100, 116, 139)
-  doc.text('MotoGremio SaaS — Control Administrativo', 20, 32)
-
-  // Invoice Number
-  doc.setFont('helvetica', 'bold')
-  doc.setFontSize(12)
-  doc.setTextColor(15, 23, 42)
-  doc.text(`Nro: ${invoice.invoice_number}`, 150, 27, { align: 'left' })
+  doc.text('AVISO DE COBRO INTERNO SAAS', 20, 23)
   doc.setFontSize(9)
   doc.setFont('helvetica', 'normal')
-  doc.text(`Estado: ${invoice.status.toUpperCase()}`, 150, 33, { align: 'left' })
+  doc.setTextColor(100, 116, 139)
+  doc.text('MotoGremio SaaS — Control Administrativo', 20, 29)
 
   // Customer & Billing Info
   doc.setFont('helvetica', 'bold')
   doc.setFontSize(10)
   doc.setTextColor(15, 23, 42)
-  doc.text('CLIENTE / COOPERATIVA:', 15, 52)
+  doc.text('CLIENTE / COOPERATIVA:', 15, 48)
   doc.setFont('helvetica', 'normal')
-  doc.text(companyName, 15, 57)
-  doc.text(`RUC: ${ruc}`, 15, 62)
+  doc.text(companyName, 15, 53)
+  doc.text(`RUC: ${ruc}`, 15, 58)
 
   doc.setFont('helvetica', 'bold')
-  doc.text('DETALLES DEL COBRO:', 110, 52)
+  doc.text('DETALLES DEL COBRO:', 110, 48)
   doc.setFont('helvetica', 'normal')
-  doc.text(`Fecha Emisión: ${invoice.created_at ? new Date(invoice.created_at).toLocaleDateString() : '—'}`, 110, 57)
-  doc.text(`Fecha Vencimiento: ${invoice.due_date}`, 110, 62)
-  doc.text(`Período de servicio: ${invoice.period_start || '—'} al ${invoice.period_end || '—'}`, 110, 67)
+  doc.text(`Nro Cobro: ${invoice.invoice_number}`, 110, 53)
+  doc.text(`Estado: ${invoice.status.toUpperCase()}`, 110, 58)
+  doc.text(`Fecha Emisión: ${invoice.created_at ? new Date(invoice.created_at).toLocaleDateString() : '—'}`, 110, 63)
+  doc.text(`Fecha Vencimiento: ${invoice.due_date}`, 110, 68)
+  doc.text(`Período: ${invoice.period_start || '—'} al ${invoice.period_end || '—'}`, 110, 73)
 
   // Main invoice table
   autoTable(doc, {
-    startY: 75,
+    startY: 80,
     margin: { left: 15, right: 15 },
     head: [['Concepto', 'Total Emitido', 'Monto Pagado', 'Saldo Pendiente']],
     body: [
@@ -188,7 +182,13 @@ export function generateSaasInvoiceNoticePdf(
     { maxWidth: 174 }
   )
 
-  doc.save(`aviso-cobro-saas-${invoice.invoice_number}.pdf`)
+  if (print) {
+    const blob = doc.output('blob')
+    const url = URL.createObjectURL(blob)
+    window.open(url, '_blank')
+  } else {
+    doc.save(`aviso-cobro-saas-${invoice.invoice_number}.pdf`)
+  }
 }
 
 export function generateSaasPaymentReceiptPdf(
@@ -196,7 +196,8 @@ export function generateSaasPaymentReceiptPdf(
   invoice: any,
   companyName: string,
   ruc: string,
-  settings: SaasSettings | null
+  settings: SaasSettings | null,
+  print?: boolean
 ) {
   const doc = new jsPDF({
     orientation: 'portrait',
@@ -209,46 +210,39 @@ export function generateSaasPaymentReceiptPdf(
 
   // Header Box
   doc.setFillColor(240, 253, 244)
-  doc.rect(15, 15, 180, 25, 'F')
+  doc.rect(15, 15, 180, 22, 'F')
   
   doc.setFont('helvetica', 'bold')
-  doc.setFontSize(16)
+  doc.setFontSize(13)
   doc.setTextColor(21, 128, 61)
-  doc.text('COMPROBANTE INTERNO DE PAGO RECIBIDO', 20, 25)
-  doc.setFontSize(10)
-  doc.setFont('helvetica', 'normal')
-  doc.setTextColor(22, 163, 74)
-  doc.text('MotoGremio SaaS — Comprobante de Caja', 20, 32)
-
-  // Receipt details
-  doc.setFont('helvetica', 'bold')
-  doc.setFontSize(11)
-  doc.setTextColor(15, 23, 42)
-  doc.text(`Cobro Relacionado: ${invoice?.invoice_number || '—'}`, 135, 25, { align: 'left' })
+  doc.text('COMPROBANTE INTERNO DE PAGO RECIBIDO', 20, 23)
   doc.setFontSize(9)
   doc.setFont('helvetica', 'normal')
-  doc.text(`Fecha Pago: ${payment.created_at ? new Date(payment.created_at).toLocaleDateString() : '—'}`, 135, 31, { align: 'left' })
+  doc.setTextColor(22, 163, 74)
+  doc.text('MotoGremio SaaS — Comprobante de Caja', 20, 29)
 
   // Customer / Cooperativa
   doc.setFont('helvetica', 'bold')
   doc.setFontSize(10)
   doc.setTextColor(15, 23, 42)
-  doc.text('EMITIDO A:', 15, 52)
+  doc.text('EMITIDO A:', 15, 48)
   doc.setFont('helvetica', 'normal')
-  doc.text(companyName, 15, 57)
-  doc.text(`RUC: ${ruc}`, 15, 62)
+  doc.text(companyName, 15, 53)
+  doc.text(`RUC: ${ruc}`, 15, 58)
 
   // Details
   doc.setFont('helvetica', 'bold')
-  doc.text('DETALLES DE LA TRANSACCIÓN:', 110, 52)
+  doc.text('DETALLES DE RECEPCIÓN:', 110, 48)
   doc.setFont('helvetica', 'normal')
-  doc.text(`Método de Pago: ${payment.payment_method === 'transfer' ? 'Transferencia' : payment.payment_method === 'deposit' ? 'Depósito' : payment.payment_method === 'cash' ? 'Efectivo' : 'Otro'}`, 110, 57)
-  doc.text(`Referencia: ${payment.reference || '—'}`, 110, 62)
-  doc.text(`Período Cobro: ${invoice?.period_start || '—'} al ${invoice?.period_end || '—'}`, 110, 67)
+  doc.text(`Cobro Relacionado: ${invoice?.invoice_number || '—'}`, 110, 53)
+  doc.text(`Fecha Pago: ${payment.created_at ? new Date(payment.created_at).toLocaleDateString() : '—'}`, 110, 58)
+  doc.text(`Método: ${payment.payment_method === 'transfer' ? 'Transferencia' : payment.payment_method === 'deposit' ? 'Depósito' : payment.payment_method === 'cash' ? 'Efectivo' : 'Otro'}`, 110, 63)
+  doc.text(`Referencia: ${payment.reference || '—'}`, 110, 68)
+  doc.text(`Período Cobro: ${invoice?.period_start || '—'} al ${invoice?.period_end || '—'}`, 110, 73)
 
   // Main payment table
   autoTable(doc, {
-    startY: 75,
+    startY: 80,
     margin: { left: 15, right: 15 },
     head: [['Detalle del Abono Recibido', 'Monto Pagado']],
     body: [
@@ -304,5 +298,11 @@ export function generateSaasPaymentReceiptPdf(
     { maxWidth: 174 }
   )
 
-  doc.save(`comprobante-pago-saas-${payment.reference || payment.id}.pdf`)
+  if (print) {
+    const blob = doc.output('blob')
+    const url = URL.createObjectURL(blob)
+    window.open(url, '_blank')
+  } else {
+    doc.save(`comprobante-pago-saas-${payment.reference || payment.id}.pdf`)
+  }
 }

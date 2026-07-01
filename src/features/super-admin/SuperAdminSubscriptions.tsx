@@ -541,7 +541,7 @@ export function SuperAdminSubscriptions() {
                     <td className="px-4 py-3 text-center text-slate-500">{row.next_due_date || '—'}</td>
                     <td className="px-4 py-3 text-right font-black text-slate-800">
                       {row.outstanding_balance > 0 ? (
-                        <span className="text-red-600">{currencySymbol}${Number(row.outstanding_balance).toFixed(2)}</span>
+                        <span className="text-red-600">{currencySymbol}{Number(row.outstanding_balance).toFixed(2)}</span>
                       ) : (
                         <span className="text-green-600">{currencySymbol}0.00</span>
                       )}
@@ -844,9 +844,9 @@ export function SuperAdminSubscriptions() {
                         </td>
                         <td className="px-3 py-2 whitespace-nowrap">{inv.created_at ? new Date(inv.created_at).toLocaleDateString() : '—'}</td>
                         <td className="px-3 py-2 whitespace-nowrap">{inv.due_date}</td>
-                        <td className="px-3 py-2 text-right font-semibold">{currencySymbol}${Number(inv.amount).toFixed(2)}</td>
-                        <td className="px-3 py-2 text-right text-green-600">{currencySymbol}${Number(inv.amount_paid || 0).toFixed(2)}</td>
-                        <td className="px-3 py-2 text-right font-black text-slate-800">{currencySymbol}${Number(inv.balance).toFixed(2)}</td>
+                        <td className="px-3 py-2 text-right font-semibold">{currencySymbol}{Number(inv.amount).toFixed(2)}</td>
+                        <td className="px-3 py-2 text-right text-green-600">{currencySymbol}{Number(inv.amount_paid || 0).toFixed(2)}</td>
+                        <td className="px-3 py-2 text-right font-black text-slate-800">{currencySymbol}{Number(inv.balance).toFixed(2)}</td>
                         <td className="px-3 py-2 text-center whitespace-nowrap">
                           <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold border ${
                             inv.status === 'paid' ? 'bg-green-50 text-green-700 border-green-200' :
@@ -905,7 +905,7 @@ export function SuperAdminSubscriptions() {
                         <td className="px-3 py-2 font-semibold text-slate-800">
                           {pay.saas_invoices?.invoice_number || '—'}
                         </td>
-                        <td className="px-3 py-2 font-bold text-green-700">{currencySymbol}${Number(pay.amount).toFixed(2)}</td>
+                        <td className="px-3 py-2 font-bold text-green-700">{currencySymbol}{Number(pay.amount).toFixed(2)}</td>
                         <td className="px-3 py-2 capitalize">
                           {pay.payment_method === 'transfer' ? 'Transferencia' :
                            pay.payment_method === 'deposit' ? 'Depósito' :
@@ -1019,7 +1019,7 @@ export function SuperAdminSubscriptions() {
                 <h3 className="text-sm font-bold uppercase tracking-wider text-slate-800">Aviso de Cobro Interno SaaS</h3>
               </div>
               <div className="flex items-center gap-2">
-                <Button size="sm" onClick={() => window.print()}>
+                <Button size="sm" onClick={() => generateSaasInvoiceNoticePdf(selectedInvoice, historyPayments, selectedRow.legal_name, selectedRow.ruc, globalSettings, true)}>
                   Imprimir desde navegador
                 </Button>
                 <Button size="sm" variant="outline" onClick={() => setShowReceiptModal(false)}>
@@ -1074,13 +1074,13 @@ export function SuperAdminSubscriptions() {
                         Renovación y Soporte Mensual de Plataforma SaaS
                       </td>
                       <td className="px-4 py-3 text-right font-semibold">
-                        {currencySymbol}${Number(selectedInvoice.amount).toFixed(2)}
+                        {currencySymbol}{Number(selectedInvoice.amount).toFixed(2)}
                       </td>
                       <td className="px-4 py-3 text-right font-semibold text-green-600">
-                        {currencySymbol}${Number(selectedInvoice.amount_paid || 0).toFixed(2)}
+                        {currencySymbol}{Number(selectedInvoice.amount_paid || 0).toFixed(2)}
                       </td>
                       <td className="px-4 py-3 text-right font-black text-slate-900">
-                        {currencySymbol}${Number(selectedInvoice.balance).toFixed(2)}
+                        {currencySymbol}{Number(selectedInvoice.balance).toFixed(2)}
                       </td>
                     </tr>
                   </tbody>
@@ -1115,7 +1115,7 @@ export function SuperAdminSubscriptions() {
                             </td>
                             <td className="px-3 py-2 text-slate-700 font-mono">{pay.reference || '—'}</td>
                             <td className="px-3 py-2 text-right font-bold text-green-700">
-                              {currencySymbol}${Number(pay.amount).toFixed(2)}
+                              {currencySymbol}{Number(pay.amount).toFixed(2)}
                             </td>
                           </tr>
                         ))}
@@ -1196,7 +1196,14 @@ export function SuperAdminSubscriptions() {
                 <h3 className="text-sm font-bold uppercase tracking-wider text-slate-800">Comprobante Interno de Pago</h3>
               </div>
               <div className="flex items-center gap-2">
-                <Button size="sm" onClick={() => window.print()}>
+                <Button size="sm" onClick={() => generateSaasPaymentReceiptPdf(
+                  selectedPayment,
+                  historyInvoices.find(i => i.invoice_number === selectedPayment.saas_invoices?.invoice_number || i.id === selectedPayment.invoice_id),
+                  selectedRow.legal_name,
+                  selectedRow.ruc,
+                  globalSettings,
+                  true
+                )}>
                   Imprimir desde navegador
                 </Button>
                 <Button size="sm" variant="outline" onClick={() => setShowPaymentReceiptModal(false)}>
@@ -1246,7 +1253,7 @@ export function SuperAdminSubscriptions() {
                         Abono a Suscripción Mensual de Plataforma SaaS MotoGremio
                       </td>
                       <td className="px-4 py-3 text-right font-black text-green-700">
-                        {currencySymbol}${Number(selectedPayment.amount).toFixed(2)}
+                        {currencySymbol}{Number(selectedPayment.amount).toFixed(2)}
                       </td>
                     </tr>
                   </tbody>
