@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Card } from '@/components/ui/Card'
-import { Button } from '@/components/ui/Button'
+import { Button, Tooltip } from '@/components/ui'
 import { supabase } from '@/lib/supabaseClient'
 import {
   DollarSign, Activity,
@@ -405,26 +405,38 @@ export function SuperAdminSubscriptions() {
                     </td>
                     <td className="px-4 py-3 text-center">
                       <div className="flex items-center justify-center gap-1">
-                        <Button size="xs" variant="outline" title="Ajustar suscripción" onClick={() => handleOpenSubModal(row)}>
-                          <Edit className="h-3 w-3" />
-                        </Button>
-                        <Button size="xs" variant="outline" title="Facturar cobro" onClick={() => handleOpenInvModal(row)}>
-                          <Plus className="h-3 w-3" />
-                        </Button>
-                        <Button size="xs" variant="outline" title="Registrar Pago" onClick={() => handleOpenPayModal(row)}>
-                          <CreditCard className="h-3 w-3" />
-                        </Button>
-                        <Button size="xs" variant="outline" title="Anular Factura" onClick={() => handleOpenVoidModal(row)}>
-                          <Ban className="h-3 w-3 text-amber-600" />
-                        </Button>
+                        <Tooltip content="Ajustar suscripción">
+                          <Button size="xs" variant="outline" onClick={() => handleOpenSubModal(row)}>
+                            <Edit className="h-3 w-3" />
+                          </Button>
+                        </Tooltip>
+                        <Tooltip content="Facturar cobro">
+                          <Button size="xs" variant="outline" onClick={() => handleOpenInvModal(row)}>
+                            <Plus className="h-3 w-3" />
+                          </Button>
+                        </Tooltip>
+                        <Tooltip content="Registrar Pago">
+                          <Button size="xs" variant="outline" onClick={() => handleOpenPayModal(row)}>
+                            <CreditCard className="h-3 w-3" />
+                          </Button>
+                        </Tooltip>
+                        <Tooltip content="Anular Factura">
+                          <Button size="xs" variant="outline" onClick={() => handleOpenVoidModal(row)}>
+                            <Ban className="h-3 w-3 text-amber-600" />
+                          </Button>
+                        </Tooltip>
                         {isCompanyActive ? (
-                          <Button size="xs" variant="danger" title="Suspender por falta de pago" onClick={() => handleSuspendCompany(row)}>
-                            <ShieldAlert className="h-3 w-3" />
-                          </Button>
+                          <Tooltip content="Suspender compañía">
+                            <Button size="xs" variant="danger" onClick={() => handleSuspendCompany(row)}>
+                              <ShieldAlert className="h-3 w-3" />
+                            </Button>
+                          </Tooltip>
                         ) : (
-                          <Button size="xs" variant="primary" title="Reactivar servicio" onClick={() => handleReactivateCompany(row)}>
-                            <Key className="h-3 w-3" />
-                          </Button>
+                          <Tooltip content="Reactivar compañía">
+                            <Button size="xs" variant="primary" onClick={() => handleReactivateCompany(row)}>
+                              <Key className="h-3 w-3" />
+                            </Button>
+                          </Tooltip>
                         )}
                       </div>
                     </td>
