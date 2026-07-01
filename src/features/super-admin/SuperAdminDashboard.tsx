@@ -297,14 +297,14 @@ export function SuperAdminDashboard() {
         <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider mb-4">Roadmap ejecutivo del SaaS</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {[
-            { label: 'Suscripciones SaaS', desc: 'Gestión de planes y control de acceso', icon: DollarSign, badge: 'SA-2C', status: 'Planificado' },
-            { label: 'Facturación SaaS', desc: 'Emisión de cobros recurrentes a compañías', icon: FileText, badge: 'SA-2C', status: 'Planificado' },
-            { label: 'Métricas Globales', desc: 'Análisis global de finanzas y comportamiento', icon: TrendingUp, badge: 'SA-2B', status: 'En desarrollo' },
-            { label: 'Configuración Global', desc: 'Variables del entorno SaaS y parámetros base', icon: Settings, badge: 'SA-2D', status: 'Planificado' },
-            { label: 'Seguridad Global', desc: 'Auditoría avanzada y control de acceso', icon: Lock, badge: 'SA-2D', status: 'Requiere SA-2D' },
-            { label: 'Alertas Globales', desc: 'Notificaciones sobre incidentes en la plataforma', icon: AlertCircle, badge: 'SA-2E', status: 'Planificado' },
-            { label: 'Salud de Compañías', desc: 'Métricas de retención y actividad', icon: Activity, badge: 'SA-2B', status: 'Planificado' },
-            { label: 'Uso de Límites por Plan', desc: 'Reportes detallados de sobrecapacidad', icon: ShieldCheck, badge: 'SA-2B', status: 'Requiere SA-2B' }
+            { label: 'Suscripciones SaaS', desc: 'Gestión de planes, ciclos y control de acceso por suscripción.', icon: DollarSign, badge: 'SA-2C', status: 'Completado' },
+            { label: 'Facturación SaaS / Cobros Internos', desc: 'Generación de cobros internos, pagos, vencidos, recibos y suspensión.', icon: FileText, badge: 'SA-2C', status: 'Completado' },
+            { label: 'Métricas Globales', desc: 'KPIs base disponibles; pendiente analítica histórica avanzada.', icon: TrendingUp, badge: 'SA-2B', status: 'Parcial' },
+            { label: 'Uso de Límites por Plan', desc: 'Uso y límites visibles; pendiente alertas/recomendaciones de upgrade.', icon: ShieldCheck, badge: 'SA-2B', status: 'Parcial' },
+            { label: 'Seguridad Global', desc: 'Auditoría base disponible; pendiente controles avanzados de seguridad.', icon: Lock, badge: 'SA-2D', status: 'Parcial' },
+            { label: 'Alertas Globales', desc: 'Notificaciones por vencimientos, compañías suspendidas y límites críticos.', icon: AlertCircle, badge: 'SA-2E', status: 'Pendiente' },
+            { label: 'Salud de Compañías', desc: 'Indicadores de riesgo, baja actividad, deuda y oportunidades de upgrade.', icon: Activity, badge: 'SA-2B', status: 'Pendiente' },
+            { label: 'Configuración Global', desc: 'Parámetros globales del SaaS como días de gracia, textos y reglas generales.', icon: Settings, badge: 'SA-2D', status: 'Pendiente' }
           ].map((m, idx) => (
             <Card key={idx} className="p-5 border border-dashed border-slate-200 bg-slate-50/50 flex flex-col justify-between h-40">
               <div>
@@ -319,9 +319,15 @@ export function SuperAdminDashboard() {
                 <h4 className="text-xs font-bold text-slate-800 mt-3">{m.label}</h4>
                 <p className="text-[11px] text-slate-500 leading-normal mt-1">{m.desc}</p>
               </div>
-              <span className="text-[10px] text-primary-600 font-bold block pt-2 border-t border-slate-100">
-                {m.status}
-              </span>
+              <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
+                <span className={`text-[9px] font-extrabold px-2 py-0.5 rounded-full border ${
+                  m.status === 'Completado' ? 'text-emerald-700 bg-emerald-50 border-emerald-100' :
+                  m.status === 'Parcial' ? 'text-amber-700 bg-amber-50 border-amber-100' :
+                  'text-slate-500 bg-slate-100 border-slate-200'
+                }`}>
+                  {m.status}
+                </span>
+              </div>
             </Card>
           ))}
         </div>
