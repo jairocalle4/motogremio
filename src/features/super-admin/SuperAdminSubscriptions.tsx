@@ -5,7 +5,7 @@ import { supabase } from '@/lib/supabaseClient'
 import {
   DollarSign, Activity,
   AlertCircle, ShieldCheck, Plus, CreditCard,
-  Ban, ShieldAlert, Key, Edit, History
+  Ban, ShieldAlert, Key, Edit, History, Printer
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 
@@ -98,6 +98,14 @@ export function SuperAdminSubscriptions() {
   const [historyInvoices, setHistoryInvoices] = useState<any[]>([])
   const [historyPayments, setHistoryPayments] = useState<any[]>([])
   const [activeHistoryTab, setActiveHistoryTab] = useState<'invoices' | 'payments'>('invoices')
+
+  const [showReceiptModal, setShowReceiptModal] = useState(false)
+  const [selectedInvoice, setSelectedInvoice] = useState<any>(null)
+
+  const handleOpenReceiptModal = (inv: any) => {
+    setSelectedInvoice(inv)
+    setShowReceiptModal(true)
+  }
 
   const formatPeriodLabel = (startStr: string | null | undefined, endStr: string | null | undefined, invoiceNumber: string, balance: number) => {
     const formatDate = (dateStr: string | null | undefined) => {
@@ -815,6 +823,7 @@ export function SuperAdminSubscriptions() {
                       <th className="px-3 py-2 text-right">Pagado</th>
                       <th className="px-3 py-2 text-right">Saldo</th>
                       <th className="px-3 py-2 text-center">Estado</th>
+                      <th className="px-3 py-2 text-center">Recibo</th>
                       <th className="px-3 py-2">Notas</th>
                     </tr>
                   </thead>
@@ -843,12 +852,17 @@ export function SuperAdminSubscriptions() {
                              inv.status === 'void' ? 'Anulado' : 'Pendiente'}
                           </span>
                         </td>
+                        <td className="px-3 py-2 text-center">
+                          <Button size="xs" variant="outline" onClick={() => handleOpenReceiptModal(inv)}>
+                            <Printer className="h-3 w-3" />
+                          </Button>
+                        </td>
                         <td className="px-3 py-2 text-slate-500 max-w-xs truncate" title={inv.notes}>{inv.notes || '—'}</td>
                       </tr>
                     ))}
                     {historyInvoices.length === 0 && (
                       <tr>
-                        <td colSpan={9} className="px-3 py-8 text-center text-slate-400">No hay cobros generados para esta compañía.</td>
+                        <td colSpan={10} className="px-3 py-8 text-center text-slate-400">No hay cobros generados para esta compañía.</td>
                       </tr>
                     )}
                   </tbody>
@@ -926,6 +940,183 @@ export function SuperAdminSubscriptions() {
             <div className="bg-slate-50 border border-slate-100 rounded-lg p-3 text-[10px] text-slate-500 mt-2 text-left">
               <p className="font-bold text-slate-700">Nota Legal Aclaratoria:</p>
               <p className="mt-0.5">{receiptNote}</p>
+            </div>
+          </Card>
+        </div>
+      )}
+
+      {/* 6. MODAL RECIBO DETALLADO IMPRIMIBLE */}
+      {showReceiptModal && selectedInvoice && selectedRow && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <Card className="p-6 max-w-2xl w-full bg-white space-y-4 max-h-[90vh] overflow-y-auto" id="printable-receipt">
+            <style>{`
+              @media print {
+                body * {
+                  visibility: hidden;
+                }
+                #printable-receipt, #printable-receipt * {
+                  visibility: visible;
+                }
+                #printable-receipt {
+                  position: absolute;
+                  left: 0;
+                  top: 0;
+                  width: 100%;
+                  box-shadow: none !important;
+                  border: none !important;
+                  background: white !important;
+                  color: black !important;
+                  padding: 10px !important;
+                }
+                .print-hide {
+                  display: none !important;
+                }
+              }
+            `}</style>
+            
+            {/* Header del modal (oculto en impresión) */}
+            <div className="flex justify-between items-center print-hide border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-2">
+                <Printer className="h-5 w-5 text-primary-600" />
+                <h3 className="text-sm font-bold uppercase tracking-wider text-slate-800">Recibo Interno de Cobro</h3>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button size="sm" onClick={() => window.print()}>
+                  Imprimir Comprobante
+                </Button>
+                <Button size="sm" variant="outline" onClick={() => setShowReceiptModal(false)}>
+                  Cerrar
+                </Button>
+              </div>
+            </div>
+
+            {/* CONTENIDO DEL COMPROBANTE */}
+            <div className="space-y-6 text-slate-800">
+              {/* Encabezado del Comprobante */}
+              <div className="flex justify-between items-start border-b-2 border-slate-200 pb-4">
+                <div>
+                  <h2 className="text-lg font-black tracking-tight text-slate-900">MotoGremio SaaS</h2>
+                  <p className="text-xs text-slate-500 mt-0.5">Comprobante de Control Interno Administrativo</p>
+                </div>
+                <div className="text-right">
+                  <span className="text-xs font-bold text-slate-400 block uppercase">Cobro Interno Nro.</span>
+                  <span className="text-sm font-black text-slate-900 font-mono">{selectedInvoice.invoice_number}</span>
+                </div>
+              </div>
+
+              {/* Detalles del Cliente / Suscripción */}
+              <div className="grid grid-cols-2 gap-4 text-xs">
+                <div>
+                  <p className="font-bold text-slate-400 uppercase text-[9px] tracking-wider">Cliente:</p>
+                  <p className="font-bold text-slate-900 text-sm mt-0.5">{selectedRow.legal_name}</p>
+                  <p className="text-slate-500 mt-0.5">RUC: {selectedRow.ruc}</p>
+                </div>
+                <div>
+                  <p className="font-bold text-slate-400 uppercase text-[9px] tracking-wider">Detalles de Emisión:</p>
+                  <p className="mt-0.5 text-slate-700"><strong>Fecha Emisión:</strong> {selectedInvoice.created_at ? new Date(selectedInvoice.created_at).toLocaleDateString() : '—'}</p>
+                  <p className="text-slate-700"><strong>Fecha Vencimiento:</strong> {selectedInvoice.due_date}</p>
+                  <p className="text-slate-700"><strong>Período:</strong> {selectedInvoice.period_start ? `${selectedInvoice.period_start} al ${selectedInvoice.period_end}` : '—'}</p>
+                </div>
+              </div>
+
+              {/* Tabla de Concepto y Totales */}
+              <div className="border border-slate-200 rounded-lg overflow-hidden">
+                <table className="w-full text-xs text-left">
+                  <thead className="bg-slate-50 border-b border-slate-200 font-bold text-slate-500">
+                    <tr>
+                      <th className="px-4 py-2">Concepto</th>
+                      <th className="px-4 py-2 text-right">Monto Emitido</th>
+                      <th className="px-4 py-2 text-right">Monto Pagado</th>
+                      <th className="px-4 py-2 text-right">Saldo Pendiente</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr className="border-b border-slate-100">
+                      <td className="px-4 py-3 font-semibold text-slate-800">
+                        Renovación y Soporte Mensual de Plataforma SaaS
+                      </td>
+                      <td className="px-4 py-3 text-right font-semibold">
+                        {currencySymbol}${Number(selectedInvoice.amount).toFixed(2)}
+                      </td>
+                      <td className="px-4 py-3 text-right font-semibold text-green-600">
+                        {currencySymbol}${Number(selectedInvoice.amount_paid || 0).toFixed(2)}
+                      </td>
+                      <td className="px-4 py-3 text-right font-black text-slate-900">
+                        {currencySymbol}${Number(selectedInvoice.balance).toFixed(2)}
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Historial de abonos específicos */}
+              <div>
+                <h4 className="text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-2">Abonos / Pagos Registrados:</h4>
+                <div className="border border-slate-150 rounded-lg overflow-hidden">
+                  <table className="w-full text-[11px] text-left">
+                    <thead className="bg-slate-50 border-b border-slate-150 font-bold text-slate-500">
+                      <tr>
+                        <th className="px-3 py-1.5">Fecha</th>
+                        <th className="px-3 py-1.5">Método</th>
+                        <th className="px-3 py-1.5">Referencia</th>
+                        <th className="px-3 py-1.5 text-right">Abono</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {historyPayments
+                        .filter((p) => p.saas_invoice_id === selectedInvoice.id || p.saas_invoices?.invoice_number === selectedInvoice.invoice_number)
+                        .map((pay) => (
+                          <tr key={pay.id} className="hover:bg-slate-50/50">
+                            <td className="px-3 py-2 whitespace-nowrap">
+                              {pay.created_at ? new Date(pay.created_at).toLocaleString() : '—'}
+                            </td>
+                            <td className="px-3 py-2 capitalize">
+                              {pay.payment_method === 'transfer' ? 'Transferencia' :
+                               pay.payment_method === 'deposit' ? 'Depósito' :
+                               pay.payment_method === 'cash' ? 'Efectivo' : 'Otro'}
+                            </td>
+                            <td className="px-3 py-2 text-slate-700 font-mono">{pay.reference || '—'}</td>
+                            <td className="px-3 py-2 text-right font-bold text-green-700">
+                              {currencySymbol}${Number(pay.amount).toFixed(2)}
+                            </td>
+                          </tr>
+                        ))}
+                      {historyPayments.filter((p) => p.saas_invoice_id === selectedInvoice.id || p.saas_invoices?.invoice_number === selectedInvoice.invoice_number).length === 0 && (
+                        <tr>
+                          <td colSpan={4} className="px-3 py-4 text-center text-slate-400 italic">No se registran abonos o pagos asociados a este cobro.</td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* Información Bancaria (si existe) */}
+              {globalSettings && (globalSettings.payment_bank_name || globalSettings.payment_instructions) && (
+                <div className="bg-purple-50/50 border border-purple-100 rounded-lg p-3 text-[11px]">
+                  <p className="font-bold text-purple-800 uppercase tracking-wider text-[10px]">Datos de Pago para Renovación SaaS:</p>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mt-1">
+                    {globalSettings.payment_bank_name && (
+                      <p><strong>Banco:</strong> {globalSettings.payment_bank_name} {globalSettings.payment_account_type ? `(${globalSettings.payment_account_type})` : ''}</p>
+                    )}
+                    {globalSettings.payment_account_number && (
+                      <p><strong>Cuenta:</strong> {globalSettings.payment_account_number}</p>
+                    )}
+                    {globalSettings.payment_account_holder && (
+                      <p><strong>Titular:</strong> {globalSettings.payment_account_holder} {globalSettings.payment_account_holder_id ? `· RUC/CI: ${globalSettings.payment_account_holder_id}` : ''}</p>
+                    )}
+                    {globalSettings.payment_instructions && (
+                      <p className="md:col-span-2 text-slate-600 italic"><strong>Instrucciones:</strong> {globalSettings.payment_instructions}</p>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Nota Legal Aclaratoria */}
+              <div className="bg-slate-50 border border-slate-200 rounded-lg p-3 text-[10px] text-slate-500 text-left">
+                <p className="font-bold text-slate-700">Nota Legal Aclaratoria:</p>
+                <p className="mt-0.5">{receiptNote}</p>
+              </div>
             </div>
           </Card>
         </div>
