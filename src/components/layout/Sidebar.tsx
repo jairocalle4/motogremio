@@ -58,6 +58,7 @@ const adminNav: NavSection[] = [
       { to: '/super-admin',           label: 'Dashboard',        icon: LayoutDashboard },
       { to: '/super-admin/companies',     label: 'Compañías',        icon: Building2 },
       { to: '/super-admin/plans',        label: 'Planes',           icon: Package },
+      { to: '/super-admin/subscriptions', label: 'Suscripciones',    icon: Wallet },
     ],
   },
   {
