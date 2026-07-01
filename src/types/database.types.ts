@@ -1973,6 +1973,24 @@ export type Database = {
       get_my_company_id: { Args: never; Returns: string }
       get_my_company_plan_usage: { Args: never; Returns: Json }
       get_saas_billing_overview: { Args: never; Returns: Json }
+      get_super_admin_alerts: {
+        Args: never
+        Returns: {
+          action_href: string
+          action_label: string
+          amount: number
+          company_id: string
+          company_name: string
+          created_at: string
+          description: string
+          due_date: string
+          id: string
+          severity: string
+          status: string
+          title: string
+          type: string
+        }[]
+      }
       get_super_admin_audit_filters: { Args: never; Returns: Json }
       get_super_admin_audit_log_detail: {
         Args: { p_audit_log_id: string }

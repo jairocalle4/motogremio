@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { Card } from '@/components/ui/Card'
+import { Button } from '@/components/ui'
 import { supabase } from '@/lib/supabaseClient'
 import { motion } from 'framer-motion'
 import {
   Building2, Users, FileText, CheckCircle,
   AlertCircle, TrendingUp, Activity, ArrowUpRight,
-  Lock, Settings, ShieldCheck, DollarSign
+  Lock, Settings, ShieldCheck, DollarSign, Bell
 } from 'lucide-react'
 import {
   ResponsiveContainer, PieChart, Pie, Cell, Tooltip, Legend,
@@ -52,6 +54,8 @@ export function SuperAdminDashboard() {
   const [recentLogs, setRecentLogs] = useState<AuditLogItem[]>([])
   const [billingOverview, setBillingOverview] = useState<any>(null)
   const [loading, setLoading] = useState(true)
+  const [alertsCount, setAlertsCount] = useState({ critical: 0, billing: 0, limits: 0, inactive: 0 })
+  const navigate = useNavigate()
 
   useEffect(() => {
     async function loadDashboardData() {
@@ -74,6 +78,17 @@ export function SuperAdminDashboard() {
         setPlanOverview(overviewRes)
         setRecentLogs(logsRes.data || [])
         setBillingOverview(billingRes.data)
+
+        const { data: dbAlerts } = await supabase.rpc('get_super_admin_alerts')
+        if (dbAlerts) {
+          const list = dbAlerts as any[]
+          setAlertsCount({
+            critical: list.filter(a => a.severity === 'critical').length,
+            billing: list.filter(a => a.type.startsWith('billing_') || a.type === 'subscription_due_soon').length,
+            limits: list.filter(a => a.type.endsWith('_limit_warning')).length,
+            inactive: list.filter(a => a.type === 'company_inactive').length
+          })
+        }
       } catch (err: any) {
         toast.error('Error al cargar datos del panel: ' + err.message)
       } finally {
@@ -242,9 +257,9 @@ export function SuperAdminDashboard() {
         </Card>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Crecimiento Mensual */}
-        <Card className="p-6">
+        <Card className="p-6 lg:col-span-1">
           <div className="mb-4">
             <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider">Crecimiento de Compañías</h3>
             <p className="text-xs text-slate-400">Cooperativas dadas de alta por mes</p>
@@ -267,7 +282,7 @@ export function SuperAdminDashboard() {
         </Card>
 
         {/* Últimas compañías registradas */}
-        <Card className="p-6">
+        <Card className="p-6 lg:col-span-1">
           <div className="flex justify-between items-center mb-4">
             <div>
               <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider">Últimos Registros</h3>
@@ -282,13 +297,61 @@ export function SuperAdminDashboard() {
                   <p className="text-xs font-semibold text-slate-800">{c.legal_name}</p>
                   <p className="text-[10px] text-slate-400 font-mono">RUC: {c.ruc}</p>
                 </div>
-                <span className="text-[10px] bg-slate-100 px-2 py-0.5 rounded font-bold text-slate-600">
+                <span className="text-[10px] bg-slate-100 px-2 py-0.5 rounded font-bold text-slate-600 font-mono">
                   {c.plan_name || 'Sin Plan'}
                 </span>
               </div>
             ))}
             {companies.length === 0 && <p className="text-xs text-slate-400 italic">No hay cooperativas registradas.</p>}
           </div>
+        </Card>
+
+        {/* Alertas del Sistema (Resumen) */}
+        <Card className="p-6 lg:col-span-1 flex flex-col justify-between">
+          <div>
+            <div className="flex justify-between items-center mb-4">
+              <div>
+                <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
+                  <Bell className="h-4 w-4 text-slate-500" />
+                  Alertas del Sistema
+                </h3>
+                <p className="text-xs text-slate-400">Resumen de notificaciones críticas</p>
+              </div>
+              <button
+                onClick={() => navigate('/super-admin/alerts')}
+                className="text-xs text-primary-600 hover:underline font-bold flex items-center gap-0.5"
+              >
+                <span>Ver todas</span>
+                <ArrowUpRight className="h-3 w-3" />
+              </button>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="bg-red-50/50 border border-red-100 p-3 rounded-xl flex flex-col justify-between h-20">
+                <span className="text-[10px] font-bold text-red-650 uppercase">Críticas</span>
+                <span className="text-2xl font-black text-red-700 mt-1">{alertsCount.critical}</span>
+              </div>
+              <div className="bg-purple-50/50 border border-purple-100 p-3 rounded-xl flex flex-col justify-between h-20">
+                <span className="text-[10px] font-bold text-purple-650 uppercase">Cobros/Vencidos</span>
+                <span className="text-2xl font-black text-purple-700 mt-1">{alertsCount.billing}</span>
+              </div>
+              <div className="bg-sky-50/50 border border-sky-100 p-3 rounded-xl flex flex-col justify-between h-20">
+                <span className="text-[10px] font-bold text-sky-650 uppercase">Límites</span>
+                <span className="text-2xl font-black text-sky-700 mt-1">{alertsCount.limits}</span>
+              </div>
+              <div className="bg-slate-50 border border-slate-100 p-3 rounded-xl flex flex-col justify-between h-20">
+                <span className="text-[10px] font-bold text-slate-600 uppercase">Inactivas</span>
+                <span className="text-2xl font-black text-slate-700 mt-1">{alertsCount.inactive}</span>
+              </div>
+            </div>
+          </div>
+          <Button
+            size="xs"
+            variant="outline"
+            onClick={() => navigate('/super-admin/alerts')}
+            className="w-full mt-4 justify-center"
+          >
+            Gestionar Alertas
+          </Button>
         </Card>
       </div>
 
@@ -302,7 +365,7 @@ export function SuperAdminDashboard() {
             { label: 'Métricas Globales', desc: 'KPIs base disponibles; pendiente analítica histórica avanzada.', icon: TrendingUp, badge: 'SA-2B', status: 'Parcial' },
             { label: 'Uso de Límites por Plan', desc: 'Uso y límites visibles; pendiente alertas/recomendaciones de upgrade.', icon: ShieldCheck, badge: 'SA-2B', status: 'Parcial' },
             { label: 'Seguridad Global', desc: 'Auditoría base disponible; pendiente controles avanzados de seguridad.', icon: Lock, badge: 'SA-2D', status: 'Parcial' },
-            { label: 'Alertas Globales', desc: 'Notificaciones por vencimientos, compañías suspendidas y límites críticos.', icon: AlertCircle, badge: 'SA-2E', status: 'Pendiente' },
+            { label: 'Alertas Globales', desc: 'Alertas financieras, vencimientos y límites críticos disponibles; pendientes notificaciones automáticas.', icon: AlertCircle, badge: 'SA-2E', status: 'Parcial' },
             { label: 'Salud de Compañías', desc: 'Indicadores de riesgo, baja actividad, deuda y oportunidades de upgrade.', icon: Activity, badge: 'SA-2B', status: 'Pendiente' },
             { label: 'Configuración Global', desc: 'Parámetros globales del SaaS como días de gracia, textos y reglas generales.', icon: Settings, badge: 'SA-2D', status: 'Pendiente' }
           ].map((m, idx) => (

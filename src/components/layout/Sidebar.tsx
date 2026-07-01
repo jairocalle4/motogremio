@@ -59,6 +59,7 @@ const adminNav: NavSection[] = [
       { to: '/super-admin/companies',     label: 'Compañías',        icon: Building2 },
       { to: '/super-admin/plans',        label: 'Planes',           icon: Package },
       { to: '/super-admin/subscriptions', label: 'Suscripciones',    icon: Wallet },
+      { to: '/super-admin/alerts',        label: 'Alertas Globales',  icon: Bell },
     ],
   },
   {
