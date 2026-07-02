@@ -57,3 +57,7 @@ Para que el sistema sea amigable y profesional, utiliza los términos correctos 
 * **Documentación y Recibos:**
   * El documento asociado a un **Cobro Emitido** representa el estado de cuenta o factura proforma del SaaS (aviso de cobro).
   * El documento asociado a un **Pago Registrado** representa el comprobante de caja/recibo definitivo de dinero recibido.
+
+### 8. Futura Automatización de Cobros y Mensajería WhatsApp
+* La planeación conceptual para la automatización futura de cobros recurrentes y el envío de notificaciones por WhatsApp Cloud API se encuentra documentada en [future-automation-billing-whatsapp.md](file:///c:/Users/Admin/Desktop/JAIRO/PROYECTOS/SAS%20Mototaxis/docs/future-automation-billing-whatsapp.md).
+* **Flujo Conceptual:** Scheduler automático de detección -> Generación atómica idempotente de Cobros Emitidos -> Encolado de mensajes -> Envío por Edge Functions -> Conciliación manual de Pagos.
