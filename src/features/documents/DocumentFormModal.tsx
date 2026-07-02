@@ -356,11 +356,11 @@ export function DocumentFormModal({
                </div>
              </div>
           ) : storageCap?.reason === 'plan_restricted' ? (
-             <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg flex flex-col gap-2">
-               <div className="flex items-center gap-2 text-amber-800 font-semibold">
+             <div className="p-4 bg-indigo-50 border border-indigo-200 rounded-lg flex flex-col gap-2">
+               <div className="flex items-center gap-2 text-indigo-800 font-semibold">
                  <Crown className="w-4 h-4" /> Plan Básico
                </div>
-               <p className="text-xs text-amber-700 leading-relaxed">
+               <p className="text-xs text-indigo-700 leading-relaxed">
                  La carga segura de documentos está disponible desde el Plan Profesional.<br/>
                  Protege licencias, matrículas, permisos y respaldos importantes manteniéndolos siempre accesibles desde la nube.<br/>
                  Actualiza a Profesional o Empresarial para habilitar almacenamiento documental avanzado.
@@ -377,12 +377,12 @@ export function DocumentFormModal({
                )}
              </div>
           ) : storageCap?.reason === 'missing_provider_config' ? (
-             <div className="p-4 bg-slate-50 border border-slate-200 rounded-lg flex flex-col gap-3">
+             <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg flex flex-col gap-3">
                <div className="flex items-start gap-2">
                  <AlertTriangle className="w-4 h-4 text-amber-600 mt-0.5" />
                  <div>
-                   <p className="text-sm font-medium text-slate-800">Almacenamiento no configurado</p>
-                   <p className="text-xs text-slate-500">Contacta a soporte técnico para habilitar tu almacenamiento documental.</p>
+                   <p className="text-sm font-medium text-amber-900">Almacenamiento documental no configurado.</p>
+                   <p className="text-xs text-amber-700 mt-1">Tu plan permite carga segura de documentos, pero el Super Admin todavía no ha configurado Cloudinary para esta compañía.</p>
                  </div>
                </div>
                {watch('file_url') && (
@@ -393,17 +393,40 @@ export function DocumentFormModal({
                   />
                )}
              </div>
+          ) : storageCap?.reason === 'no_company' ? (
+             <div className="p-4 bg-sky-50 border border-sky-200 rounded-lg flex flex-col gap-2">
+               <div className="flex items-center gap-2 text-sky-800 font-semibold">
+                 <AlertTriangle className="w-4 h-4" /> Carga documental no disponible para este usuario.
+               </div>
+               <p className="text-xs text-sky-700">
+                 El Super Admin configura el almacenamiento desde el detalle de la compañía, pero la carga de documentos la realizan el admin o secretaria de la compañía.
+               </p>
+             </div>
+          ) : storageCap?.reason === 'blocked_by_role' ? (
+             <div className="p-4 bg-orange-50 border border-orange-200 rounded-lg flex flex-col gap-2">
+               <div className="flex items-center gap-2 text-orange-800 font-semibold">
+                 <AlertTriangle className="w-4 h-4" /> No tienes permisos para cargar documentos.
+               </div>
+               <p className="text-xs text-orange-700">
+                 La carga documental está disponible para administradores y secretarias de la compañía.
+               </p>
+             </div>
+          ) : storageCap?.reason === 'company_inactive' ? (
+             <div className="p-4 bg-orange-50 border border-orange-200 rounded-lg flex flex-col gap-2">
+               <div className="flex items-center gap-2 text-orange-800 font-semibold">
+                 <AlertTriangle className="w-4 h-4" /> La compañía no está activa.
+               </div>
+               <p className="text-xs text-orange-700">
+                 No se pueden cargar documentos mientras la compañía esté inactiva.
+               </p>
+             </div>
           ) : (
              <div className="p-4 bg-red-50 border border-red-200 rounded-lg flex flex-col gap-2">
                <div className="flex items-center gap-2 text-red-800 font-semibold">
-                 <AlertTriangle className="w-4 h-4" /> Error de validación
+                 <AlertTriangle className="w-4 h-4" /> No se pudo verificar la configuración de carga documental.
                </div>
                <p className="text-xs text-red-700">
-                 {storageCap?.reason === 'blocked_by_role' 
-                   ? 'Tu rol no tiene permisos para subir archivos operativos o institucionales.' 
-                   : storageCap?.reason === 'no_company'
-                   ? 'Debes estar asignado a una compañía activa para subir documentos.'
-                   : 'No se pudo verificar la configuración de carga documental. Intenta nuevamente o contacta al administrador.'}
+                 Intenta nuevamente o contacta al administrador.
                </p>
                {watch('file_url') && (
                   <div className="mt-2">
