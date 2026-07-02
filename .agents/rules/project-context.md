@@ -95,18 +95,20 @@ No implementar todavía permisos personalizados por usuario, pero dejar la arqui
 
 ## 5. Módulos obligatorios del producto
 
-### 5.1 Administración SaaS
+### 5.1 Administración SaaS y Módulos de Super Admin
 
-Debe permitir:
+El Panel de Super Admin consta de los siguientes módulos activos:
 
-* Registrar compañías clientes.
-* Administrar planes comerciales.
-* Registrar suscripciones.
-* Activar, suspender o desactivar compañías.
-* Consultar fecha de contratación y próxima renovación.
-* Consultar cantidad de socios registrados por compañía.
-* Consultar estado de cada cliente.
-* Administrar límites y funciones disponibles por plan.
+* **Dashboard**: Resumen ejecutivo del SaaS: compañías, ingresos, cobros, alertas y estado general.
+* **Compañías**: Administración de compañías clientes (cooperativas), estado, plan asignado y datos base.
+* **Planes**: Catálogo de planes SaaS, límites de socios/unidades, precios y disponibilidad.
+* **Suscripciones**: Relación comercial entre compañía y plan, precio pactado, ciclo de facturación y estado.
+* **Cobros/Pagos SaaS**: Cobros emitidos, pagos registrados, saldos, historial y documentos internos generados en PDF.
+* **Alertas Globales**: Alertas del SaaS: vencimientos, deuda, compañías inactivas y límites cercanos.
+* **Configuración Global**: Parámetros generales del SaaS como días de aviso, umbrales de alerta, moneda, datos de cobro y textos legales.
+* **Auditoría**: Registro de acciones y bitácora de eventos sensibles del Super Admin.
+
+**Nota sobre Salud de Compañías**: Tras una decisión de producto, no se implementará "Salud de Compañías" como un módulo independiente, ya que la información de riesgo y estado está distribuida y visible en los módulos de Dashboard, Alertas Globales, Suscripciones y Compañías.
 
 ### 5.2 Gestión de compañías
 

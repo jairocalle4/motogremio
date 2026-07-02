@@ -360,33 +360,36 @@ export function SuperAdminDashboard() {
         <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider mb-4">Roadmap ejecutivo del SaaS</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {[
-            { label: 'Suscripciones SaaS', desc: 'Gestión de planes, ciclos y control de acceso por suscripción.', icon: DollarSign, badge: 'SA-2C', status: 'Completado' },
-            { label: 'Facturación SaaS / Cobros Internos', desc: 'Generación de cobros internos, pagos, vencidos, recibos y suspensión.', icon: FileText, badge: 'SA-2C', status: 'Completado' },
-            { label: 'Métricas Globales', desc: 'KPIs base disponibles; pendiente analítica histórica avanzada.', icon: TrendingUp, badge: 'SA-2B', status: 'Parcial' },
-            { label: 'Uso de Límites por Plan', desc: 'Uso y límites visibles; pendiente alertas/recomendaciones de upgrade.', icon: ShieldCheck, badge: 'SA-2B', status: 'Parcial' },
-            { label: 'Seguridad Global', desc: 'Auditoría base disponible; pendiente controles avanzados de seguridad.', icon: Lock, badge: 'SA-2D', status: 'Parcial' },
-            { label: 'Alertas Globales', desc: 'Alertas financieras, vencimientos y límites críticos disponibles; pendientes notificaciones automáticas.', icon: AlertCircle, badge: 'SA-2E', status: 'Parcial' },
-            { label: 'Salud de Compañías', desc: 'Indicadores de riesgo, baja actividad, deuda y oportunidades de upgrade.', icon: Activity, badge: 'SA-2B', status: 'Pendiente' },
-            { label: 'Configuración Global', desc: 'Parámetros de cobro, alertas y datos de pago configurables; pendientes reglas avanzadas.', icon: Settings, badge: 'SA-2D', status: 'Parcial' }
+            { label: 'Dashboard Super Admin', desc: 'Resumen ejecutivo de compañías, ingresos y alertas críticas.', icon: Building2, badge: 'SA-2A', status: 'Completado' },
+            { label: 'Gestión de Compañías', desc: 'Administración de cooperativas clientes, estado y plan asignado.', icon: Users, badge: 'SA-2A', status: 'Completado' },
+            { label: 'Gestión de Planes', desc: 'Catálogo de planes SaaS, límites de socios/unidades y precios.', icon: ShieldCheck, badge: 'SA-2A', status: 'Completado' },
+            { label: 'Suscripciones SaaS', desc: 'Control comercial de planes activos, ciclos de cobro y vigencia.', icon: DollarSign, badge: 'SA-2C', status: 'Completado' },
+            { label: 'Cobros/Pagos SaaS', desc: 'Control de cobros internos, registro de abonos y comprobantes PDF.', icon: FileText, badge: 'SA-2C', status: 'Completado' },
+            { label: 'Alertas Globales', desc: 'Detección automática de compañías vencidas, deudoras o sobre límites.', icon: Bell, badge: 'SA-2E', status: 'Completado' },
+            { label: 'Configuración Global Básica', desc: 'Administración de moneda, días de aviso, límites y textos bancarios.', icon: Settings, badge: 'SA-2D.1', status: 'Completado' },
+            { label: 'Auditoría Básica', desc: 'Bitácora automática de acciones y cambios sensibles de Super Admin.', icon: Activity, badge: 'SA-2D', status: 'Completado' },
+            { label: 'Métricas Avanzadas', desc: 'KPIs e informes históricos avanzados de ingresos y crecimiento global.', icon: TrendingUp, badge: 'SA-2B', status: 'Futuro / No MVP' },
+            { label: 'Automatizaciones', desc: 'Envío automático de recordatorios e integraciones de avisos de cobro.', icon: Bell, badge: 'SA-2E', status: 'Futuro / No MVP' },
+            { label: 'Seguridad Avanzada', desc: 'Controles extras de accesos concurrentes e IPs autorizadas.', icon: Lock, badge: 'SA-2D', status: 'Futuro / No MVP' }
           ].map((m, idx) => (
-            <Card key={idx} className="p-5 border border-dashed border-slate-200 bg-slate-50/50 flex flex-col justify-between h-40">
+            <Card key={idx} className="p-4 border border-dashed border-slate-200 bg-slate-50/50 flex flex-col justify-between h-[150px]">
               <div>
                 <div className="flex items-center justify-between">
-                  <div className="p-2 bg-slate-100 text-slate-600 rounded-lg">
-                    <m.icon className="h-4.5 w-4.5" />
+                  <div className="p-1.5 bg-slate-100 text-slate-650 rounded-lg">
+                    <m.icon className="h-4 w-4" />
                   </div>
-                  <span className="text-[9px] bg-slate-200 text-slate-600 font-bold px-1.5 py-0.5 rounded uppercase">
+                  <span className="text-[8px] bg-slate-200 text-slate-600 font-bold px-1 py-0.5 rounded uppercase">
                     {m.badge}
                   </span>
                 </div>
-                <h4 className="text-xs font-bold text-slate-800 mt-3">{m.label}</h4>
-                <p className="text-[11px] text-slate-500 leading-normal mt-1">{m.desc}</p>
+                <h4 className="text-xs font-bold text-slate-800 mt-2">{m.label}</h4>
+                <p className="text-[10px] text-slate-500 leading-normal mt-1">{m.desc}</p>
               </div>
-              <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
+              <div className="pt-1.5 border-t border-slate-100 flex items-center justify-between">
                 <span className={`text-[9px] font-extrabold px-2 py-0.5 rounded-full border ${
                   m.status === 'Completado' ? 'text-emerald-700 bg-emerald-50 border-emerald-100' :
-                  m.status === 'Parcial' ? 'text-amber-700 bg-amber-50 border-amber-100' :
-                  'text-slate-500 bg-slate-100 border-slate-200'
+                  m.status === 'Futuro / No MVP' ? 'text-slate-500 bg-slate-100 border-slate-200' :
+                  'text-amber-700 bg-amber-50 border-amber-100'
                 }`}>
                   {m.status}
                 </span>
