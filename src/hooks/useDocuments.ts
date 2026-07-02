@@ -204,6 +204,35 @@ export function useDocuments() {
     }
   }
 
+  const checkStorageCapability = async () => {
+    try {
+      const { data, error } = await supabase.rpc('get_my_storage_capability')
+      if (error) throw error
+      return data
+    } catch (err: any) {
+      console.error('Capability error:', err)
+      return { can_upload: false, reason: 'error' }
+    }
+  }
+
+  const uploadDocumentFile = async (file: File) => {
+    try {
+      const formData = new FormData()
+      formData.append('file', file)
+      
+      const { data, error } = await supabase.functions.invoke('upload-company-document', {
+        body: formData
+      })
+      if (error) throw error
+      if (data?.error) throw new Error(data.error)
+      
+      return { data, error: null }
+    } catch (err: any) {
+      console.error('Upload error:', err)
+      return { data: null, error: err.message || 'Error al subir el archivo' }
+    }
+  }
+
   return {
     documents,
     documentTypes,
@@ -216,6 +245,8 @@ export function useDocuments() {
     updateDocument,
     deleteDocument,
     createDocumentType,
-    updateDocumentType
+    updateDocumentType,
+    checkStorageCapability,
+    uploadDocumentFile
   }
 }
