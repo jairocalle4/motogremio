@@ -110,6 +110,8 @@ El Panel de Super Admin consta de los siguientes módulos activos:
 
 **Nota sobre Salud de Compañías**: Tras una decisión de producto, no se implementará "Salud de Compañías" como un módulo independiente, ya que la información de riesgo y estado está distribuida y visible en los módulos de Dashboard, Alertas Globales, Suscripciones y Compañías.
 
+**Nota sobre Automatización de Cobros y WhatsApp**: La planeación conceptual para la automatización futura de cobros recurrentes y el envío de notificaciones por WhatsApp Cloud API se encuentra documentada en [future-automation-billing-whatsapp.md](file:///c:/Users/Admin/Desktop/JAIRO/PROYECTOS/SAS%20Mototaxis/docs/future-automation-billing-whatsapp.md). Esta funcionalidad no forma parte del MVP inicial y se implementará en una fase posterior.
+
 ### 5.2 Gestión de compañías
 
 Cada compañía debe poder registrar:

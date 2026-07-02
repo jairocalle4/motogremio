@@ -369,7 +369,7 @@ export function SuperAdminDashboard() {
             { label: 'Configuración Global Básica', desc: 'Administración de moneda, días de aviso, límites y textos bancarios.', icon: Settings, badge: 'SA-2D.1', status: 'Completado' },
             { label: 'Auditoría Básica', desc: 'Bitácora automática de acciones y cambios sensibles de Super Admin.', icon: Activity, badge: 'SA-2D', status: 'Completado' },
             { label: 'Métricas Avanzadas', desc: 'KPIs e informes históricos avanzados de ingresos y crecimiento global.', icon: TrendingUp, badge: 'SA-2B', status: 'Futuro / No MVP' },
-            { label: 'Automatizaciones', desc: 'Envío automático de recordatorios e integraciones de avisos de cobro.', icon: Bell, badge: 'SA-2E', status: 'Futuro / No MVP' },
+            { label: 'Automatizaciones', desc: 'Generación automática de cobros, cola de mensajes y WhatsApp Business API planificado para fase posterior.', icon: Bell, badge: 'SA-2E', status: 'Futuro / No MVP' },
             { label: 'Seguridad Avanzada', desc: 'Controles extras de accesos concurrentes e IPs autorizadas.', icon: Lock, badge: 'SA-2D', status: 'Futuro / No MVP' }
           ].map((m, idx) => (
             <Card key={idx} className="p-4 border border-dashed border-slate-200 bg-slate-50/50 flex flex-col justify-between h-[150px]">
