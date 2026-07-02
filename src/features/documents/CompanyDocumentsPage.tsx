@@ -6,6 +6,7 @@ import { FileText, Search, AlertTriangle, FileCheck, Clock, FileQuestion, Buildi
 import { DocumentFormModal } from './DocumentFormModal'
 import { Button } from '@/components/ui/Button'
 import { usePermissions } from '@/hooks/usePermissions'
+import { Link } from 'react-router-dom'
 
 export function CompanyDocumentsPage() {
   const { documents, documentTypes, loading, fetchDocuments, fetchDocumentTypes, createDocument } = useDocuments()
@@ -96,8 +97,10 @@ export function CompanyDocumentsPage() {
           <h1 className="text-2xl md:text-3xl font-extrabold text-gray-900 tracking-tight">
             Documentos y vencimientos
           </h1>
-          <p className="text-sm text-gray-500 mt-1">
-            Administra la base documental institucional y de control operativo de la cooperativa.
+          <p className="text-sm text-gray-500 mt-1 max-w-3xl">
+            {activeTab === 'institutional' 
+              ? 'Administra la base documental institucional de la compañía.'
+              : 'Vista de control de documentos asociados a socios, unidades y conductores. Para cargar o renovar un documento operativo, ingresa a la ficha correspondiente.'}
           </p>
         </div>
         {isAdmin && activeTab === 'institutional' && (
@@ -296,19 +299,30 @@ export function CompanyDocumentsPage() {
                       <DocumentBadge status={doc.status} />
                     </td>
                     <td className="px-6 py-4 text-right">
-                      {doc.file_url ? (
-                        <a 
-                          href={doc.file_url} 
-                          target="_blank" 
-                          rel="noreferrer"
-                          className="inline-flex items-center gap-1 text-[#1E3A5F] hover:text-[#152a45] text-xs font-bold transition-all duration-200 hover:underline active:scale-95 bg-[#1E3A5F]/5 py-1.5 px-3 rounded-lg group-hover:bg-[#1E3A5F]/10"
-                        >
-                          Ver Archivo
-                          <ArrowUpRight className="w-3.5 h-3.5 transition-transform duration-200 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
-                        </a>
-                      ) : (
-                        <span className="text-gray-400 text-xs italic">Sin archivo</span>
-                      )}
+                      <div className="flex items-center justify-end gap-2">
+                        {activeTab === 'operational' && (
+                          <Link
+                            to={doc.member ? `/socios/${doc.member.id}` : doc.driver ? `/conductores/${doc.driver.id}` : `/unidades/${doc.vehicle?.id}`}
+                            className="inline-flex items-center gap-1 text-brand-600 hover:text-brand-800 text-xs font-bold transition-all duration-200 hover:underline active:scale-95 bg-brand-50 py-1.5 px-3 rounded-lg hover:bg-brand-100 whitespace-nowrap"
+                          >
+                            Ir a {getEntityTypeLabel(doc)}
+                            <ArrowUpRight className="w-3.5 h-3.5" />
+                          </Link>
+                        )}
+                        {doc.file_url ? (
+                          <a 
+                            href={doc.file_url} 
+                            target="_blank" 
+                            rel="noreferrer"
+                            className="inline-flex items-center gap-1 text-[#1E3A5F] hover:text-[#152a45] text-xs font-bold transition-all duration-200 hover:underline active:scale-95 bg-[#1E3A5F]/5 py-1.5 px-3 rounded-lg hover:bg-[#1E3A5F]/10 whitespace-nowrap"
+                          >
+                            Ver Archivo
+                            <ArrowUpRight className="w-3.5 h-3.5 transition-transform duration-200 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+                          </a>
+                        ) : (
+                          <span className="text-gray-400 text-xs italic px-2">Sin archivo</span>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))

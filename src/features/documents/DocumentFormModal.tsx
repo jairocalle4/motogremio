@@ -393,7 +393,29 @@ export function DocumentFormModal({
                   />
                )}
              </div>
-          ) : null}
+          ) : (
+             <div className="p-4 bg-red-50 border border-red-200 rounded-lg flex flex-col gap-2">
+               <div className="flex items-center gap-2 text-red-800 font-semibold">
+                 <AlertTriangle className="w-4 h-4" /> Error de validación
+               </div>
+               <p className="text-xs text-red-700">
+                 {storageCap?.reason === 'blocked_by_role' 
+                   ? 'Tu rol no tiene permisos para subir archivos operativos o institucionales.' 
+                   : storageCap?.reason === 'no_company'
+                   ? 'Debes estar asignado a una compañía activa para subir documentos.'
+                   : 'No se pudo verificar la configuración de carga documental. Intenta nuevamente o contacta al administrador.'}
+               </p>
+               {watch('file_url') && (
+                  <div className="mt-2">
+                    <Input
+                      label="URL del Archivo Existente"
+                      error={errors.file_url?.message as string}
+                      {...register('file_url')}
+                    />
+                  </div>
+               )}
+             </div>
+          )}
         </div>
 
         <Textarea
