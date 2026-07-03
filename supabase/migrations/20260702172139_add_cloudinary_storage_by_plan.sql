@@ -127,8 +127,8 @@ BEGIN
     );
   END IF;
 
-  -- En registrar auditoria usamos la tabla saas_audit_logs porque es el super admin
-  INSERT INTO saas_audit_logs (user_id, action, entity_type, entity_id, new_data)
+  -- En registrar auditoria usamos la tabla audit_logs porque es el super admin
+  INSERT INTO audit_logs (user_id, action, entity_type, entity_id, new_data)
   VALUES (auth.uid(), 'UPDATE_STORAGE_SETTINGS', 'company_storage_settings', p_company_id, jsonb_build_object('is_active', p_is_active));
 END;
 $$ LANGUAGE plpgsql;
