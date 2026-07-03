@@ -353,9 +353,9 @@ export function useReports(activeTab: string = 'resumen') {
       }
 
       // ─── FILTRADO DE ARRAYS BASE SEGÚN EL RANGO ──────────────────────────────
-      const filteredMembers = (members || []).filter(m => filterByDate(m.admission_date))
-      const filteredVehicles = (vehicles || []).filter(v => filterByDate((v as any).registration_date))
-      const filteredDrivers = (drivers || []).filter(d => filterByDate((d as any).admission_date))
+      const filteredMembers = (members || []).filter(m => filterByDate(m.admission_date || m.created_at))
+      const filteredVehicles = (vehicles || []).filter(v => filterByDate((v as any).registration_date || (v as any).created_at))
+      const filteredDrivers = (drivers || []).filter(d => filterByDate((d as any).admission_date || (d as any).created_at))
       const filteredDocuments = (documents || []).filter(d => filterByDate(d.expiry_date))
       const filteredSanctions = (sanctions || []).filter(s => filterByDate(s.date))
       const filteredMeetings = (meetings || []).filter(m => filterByDate(m.date))
