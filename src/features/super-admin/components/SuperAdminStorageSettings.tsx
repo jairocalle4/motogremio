@@ -3,7 +3,7 @@ import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Select } from '@/components/ui/Select'
-import { Cloud, CheckCircle, Save } from 'lucide-react'
+import { Cloud, CheckCircle, Save, HelpCircle } from 'lucide-react'
 import { supabase } from '@/lib/supabaseClient'
 import toast from 'react-hot-toast'
 
@@ -186,6 +186,19 @@ export function SuperAdminStorageSettings({ companyId }: { companyId: string }) 
         />
       </div>
       
+      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 space-y-2 text-xs text-blue-800">
+        <p className="font-semibold flex items-center gap-1.5">
+          <HelpCircle className="w-4 h-4" />
+          Nota sobre visualización de archivos PDF
+        </p>
+        <p className="leading-relaxed">
+          <strong>Importante:</strong> para visualizar PDFs desde enlaces públicos, Cloudinary debe tener habilitada la entrega de archivos PDF/ZIP en la configuración de seguridad del entorno. Si esta opción está bloqueada, los PDFs pueden subir correctamente pero abrirán con error 401.
+        </p>
+        <p className="leading-relaxed text-blue-700/80">
+          La prueba de conexión valida credenciales, pero no confirma que Cloudinary permita entregar PDFs públicamente. Para PDFs, revisa la configuración de seguridad <em>PDF/ZIP delivery</em>.
+        </p>
+      </div>
+
       <div className="flex justify-end gap-3 pt-2">
         <Button onClick={handleTestConnection} isLoading={testing} variant="outline" type="button">
           Probar conexión
