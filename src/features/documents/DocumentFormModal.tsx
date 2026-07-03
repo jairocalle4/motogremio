@@ -428,6 +428,11 @@ export function DocumentFormModal({
                <p className="text-xs text-red-700">
                  Intenta nuevamente o contacta al administrador.
                </p>
+               {import.meta.env.DEV && storageCap && (
+                 <p className="text-[10px] text-red-500 font-mono mt-1 leading-normal border-t border-red-100 pt-1">
+                   [DEV ONLY] Reason: {storageCap.reason} {storageCap.error_details ? `| Error: ${storageCap.error_details}` : ''}
+                 </p>
+               )}
                {watch('file_url') && (
                   <div className="mt-2">
                     <Input

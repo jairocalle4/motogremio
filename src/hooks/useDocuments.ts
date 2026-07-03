@@ -211,7 +211,7 @@ export function useDocuments() {
       return data
     } catch (err: any) {
       console.error('Capability error:', err)
-      return { can_upload: false, reason: 'error' }
+      return { can_upload: false, reason: 'error', error_details: err.message }
     }
   }
 

@@ -10,6 +10,7 @@ import toast from 'react-hot-toast'
 export function SuperAdminStorageSettings({ companyId }: { companyId: string }) {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [testing, setTesting] = useState(false)
   const [hasSecret, setHasSecret] = useState(false)
   const [formData, setFormData] = useState({
     cloud_name: '',
@@ -83,6 +84,23 @@ export function SuperAdminStorageSettings({ companyId }: { companyId: string }) 
     }
   }
 
+  const handleTestConnection = async () => {
+    setTesting(true)
+    try {
+      const { data, error } = await supabase.functions.invoke('test-cloudinary-connection', {
+        body: { company_id: companyId }
+      })
+      if (error) throw error
+      if (data?.error) throw new Error(data.error)
+      toast.success(data?.message || 'Conexión Cloudinary verificada correctamente.')
+    } catch (err: any) {
+      console.error(err)
+      toast.error(err.message || 'No se pudo conectar con Cloudinary. Revisa Cloud Name, API Key y API Secret.')
+    } finally {
+      setTesting(false)
+    }
+  }
+
   if (loading) return <div className="text-sm text-slate-500">Cargando configuración...</div>
 
   return (
@@ -109,12 +127,15 @@ export function SuperAdminStorageSettings({ companyId }: { companyId: string }) 
             { value: 'true', label: 'Activo' }
           ]}
         />
-        <Input
-          label="Cloud Name *"
-          value={formData.cloud_name}
-          onChange={(e) => setFormData(f => ({ ...f, cloud_name: e.target.value }))}
-          placeholder="ej: dxqk2m3xyz"
-        />
+        <div>
+          <Input
+            label="Cloud Name *"
+            value={formData.cloud_name}
+            onChange={(e) => setFormData(f => ({ ...f, cloud_name: e.target.value }))}
+            placeholder="ej: dxqk2m3xyz"
+          />
+          <p className="text-[11px] text-slate-400 mt-1">Identificador del entorno de Cloudinary. Ejemplo: ddw9fdcnt.</p>
+        </div>
         <Input
           label="API Key *"
           value={formData.api_key}
@@ -133,19 +154,26 @@ export function SuperAdminStorageSettings({ companyId }: { companyId: string }) 
               <CheckCircle className="w-3 h-3" /> Credencial guardada
             </p>
           )}
+          <p className="text-[11px] text-slate-400 mt-1">Se guarda de forma segura y no se vuelve a mostrar. Déjalo vacío si solo deseas conservar la credencial actual.</p>
         </div>
-        <Input
-          label="Upload Preset (Opcional)"
-          value={formData.upload_preset}
-          onChange={(e) => setFormData(f => ({ ...f, upload_preset: e.target.value }))}
-          placeholder="ej: ml_default"
-        />
-        <Input
-          label="Carpeta Base (Opcional)"
-          value={formData.base_folder}
-          onChange={(e) => setFormData(f => ({ ...f, base_folder: e.target.value }))}
-          placeholder="ej: motogremio_coop1"
-        />
+        <div>
+          <Input
+            label="Upload Preset (Opcional)"
+            value={formData.upload_preset}
+            onChange={(e) => setFormData(f => ({ ...f, upload_preset: e.target.value }))}
+            placeholder="ej: ml_default"
+          />
+          <p className="text-[11px] text-slate-400 mt-1">Opcional. Úsalo solo si configuraste un preset de subida en Cloudinary. Para esta integración segura puedes dejarlo vacío.</p>
+        </div>
+        <div>
+          <Input
+            label="Carpeta Base (Opcional)"
+            value={formData.base_folder}
+            onChange={(e) => setFormData(f => ({ ...f, base_folder: e.target.value }))}
+            placeholder="ej: motogremio_coop1"
+          />
+          <p className="text-[11px] text-slate-400 mt-1">Opcional. Sirve para organizar archivos. Ejemplo: motogremio/bravo-peralta.</p>
+        </div>
         <Select
           label="Tamaño máximo por archivo"
           value={formData.max_file_size_mb}
@@ -158,7 +186,10 @@ export function SuperAdminStorageSettings({ companyId }: { companyId: string }) 
         />
       </div>
       
-      <div className="flex justify-end pt-2">
+      <div className="flex justify-end gap-3 pt-2">
+        <Button onClick={handleTestConnection} isLoading={testing} variant="outline" type="button">
+          Probar conexión
+        </Button>
         <Button onClick={handleSave} isLoading={saving} className="gap-2">
           <Save className="w-4 h-4" />
           Guardar Configuración
