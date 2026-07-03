@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Plus, FileText, Trash2, Edit } from 'lucide-react'
+import { Plus, FileText, Trash2, Edit, Image, ArrowUpRight } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { Tooltip } from '@/components/ui/Tooltip'
 import { Card } from '@/components/ui/Card'
@@ -110,13 +110,42 @@ export function DocumentsList({ targetEntity, entityId, title = 'Documentos' }: 
               <div className="text-xs text-gray-500 space-y-1">
                 {doc.issue_date && <p>Emitido: {doc.issue_date}</p>}
                 {doc.expiry_date && <p>Vence: {doc.expiry_date}</p>}
-                {doc.file_url && (
-                  <p>
-                    <a href={doc.file_url} target="_blank" rel="noreferrer" className="text-brand-600 hover:underline">
-                      Ver archivo adjunto
-                    </a>
-                  </p>
-                )}
+                 {doc.file_url && (() => {
+                   const getFileDetails = (url: string) => {
+                     const lowercaseUrl = url.toLowerCase();
+                     const isPdf = lowercaseUrl.includes('.pdf') || lowercaseUrl.includes('/raw/upload/');
+                     const isImage = lowercaseUrl.includes('.jpg') || lowercaseUrl.includes('.jpeg') || lowercaseUrl.includes('.png') || lowercaseUrl.includes('.webp') || lowercaseUrl.includes('/image/upload/');
+                     return {
+                       isPdf,
+                       isImage,
+                       label: isPdf ? 'Ver PDF' : isImage ? 'Ver imagen' : 'Ver archivo'
+                     }
+                   };
+                   const fileDetails = getFileDetails(doc.file_url);
+                   return (
+                     <div className="pt-2">
+                       <a 
+                         href={doc.file_url} 
+                         target="_blank" 
+                         rel="noreferrer" 
+                         className="inline-flex items-center gap-1.5 text-brand-600 hover:text-brand-800 text-xs font-bold bg-brand-50 hover:bg-brand-100 py-1.5 px-3 rounded-lg transition-all duration-200 active:scale-95"
+                       >
+                         {fileDetails.isPdf ? (
+                           <FileText className="w-3.5 h-3.5 text-red-600" />
+                         ) : (
+                           <Image className="w-3.5 h-3.5 text-blue-600" />
+                         )}
+                         {fileDetails.label}
+                         <ArrowUpRight className="w-3.5 h-3.5 text-brand-600" />
+                       </a>
+                       {fileDetails.isPdf && (
+                         <p className="text-[10px] text-gray-400 mt-1 leading-tight">
+                           Si el PDF no abre (Error 401), verifica la entrega de PDFs en Cloudinary.
+                         </p>
+                       )}
+                     </div>
+                   );
+                 })()}
               </div>
 
               <div className="mt-auto pt-3 flex items-center justify-end gap-2 border-t border-gray-100">

@@ -25,6 +25,7 @@ import {
   type SuperAdminPlan,
   type CompanyPlanChangePreview
 } from './hooks/useSuperAdminPlans'
+import { SuperAdminStorageSettings } from './components/SuperAdminStorageSettings'
 import {
   getSuperAdminCompanyBranding,
   updateSuperAdminCompanyBranding,
@@ -689,6 +690,9 @@ export function SuperAdminCompanyDetail() {
           )}
         </Card>
       </div>
+
+      {/* ── Configuración de Almacenamiento Documental ── */}
+      {companyId && <SuperAdminStorageSettings companyId={companyId} />}
 
       {/* ── Sección de Usuarios e Invitaciones ── */}
       <Card className="p-6 space-y-6">

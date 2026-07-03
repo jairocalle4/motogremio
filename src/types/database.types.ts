@@ -388,6 +388,72 @@ export type Database = {
           },
         ]
       }
+      company_storage_settings: {
+        Row: {
+          allowed_formats: string[]
+          api_key: string
+          api_secret_encrypted: string | null
+          base_folder: string | null
+          cloud_name: string
+          company_id: string
+          created_at: string | null
+          id: string
+          is_active: boolean
+          max_file_size_mb: number
+          provider: string
+          updated_at: string | null
+          updated_by: string | null
+          upload_preset: string | null
+        }
+        Insert: {
+          allowed_formats?: string[]
+          api_key: string
+          api_secret_encrypted?: string | null
+          base_folder?: string | null
+          cloud_name: string
+          company_id: string
+          created_at?: string | null
+          id?: string
+          is_active?: boolean
+          max_file_size_mb?: number
+          provider?: string
+          updated_at?: string | null
+          updated_by?: string | null
+          upload_preset?: string | null
+        }
+        Update: {
+          allowed_formats?: string[]
+          api_key?: string
+          api_secret_encrypted?: string | null
+          base_folder?: string | null
+          cloud_name?: string
+          company_id?: string
+          created_at?: string | null
+          id?: string
+          is_active?: boolean
+          max_file_size_mb?: number
+          provider?: string
+          updated_at?: string | null
+          updated_by?: string | null
+          upload_preset?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "company_storage_settings_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: true
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "company_storage_settings_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       company_subscriptions: {
         Row: {
           billing_cycle: string
@@ -656,6 +722,63 @@ export type Database = {
             columns: ["member_id"]
             isOneToOne: false
             referencedRelation: "members"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      file_upload_logs: {
+        Row: {
+          company_id: string
+          created_at: string | null
+          document_id: string | null
+          error_message: string | null
+          file_name: string
+          file_size_bytes: number | null
+          file_type: string | null
+          id: string
+          provider: string
+          status: string
+          uploaded_by: string | null
+        }
+        Insert: {
+          company_id: string
+          created_at?: string | null
+          document_id?: string | null
+          error_message?: string | null
+          file_name: string
+          file_size_bytes?: number | null
+          file_type?: string | null
+          id?: string
+          provider: string
+          status: string
+          uploaded_by?: string | null
+        }
+        Update: {
+          company_id?: string
+          created_at?: string | null
+          document_id?: string | null
+          error_message?: string | null
+          file_name?: string
+          file_size_bytes?: number | null
+          file_type?: string | null
+          id?: string
+          provider?: string
+          status?: string
+          uploaded_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "file_upload_logs_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "file_upload_logs_uploaded_by_fkey"
+            columns: ["uploaded_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -2011,6 +2134,10 @@ export type Database = {
       get_company_invitations: { Args: { p_company_id: string }; Returns: Json }
       get_company_plan_usage: { Args: { p_company_id: string }; Returns: Json }
       get_company_reports_summary: { Args: never; Returns: Json }
+      get_company_storage_settings: {
+        Args: { p_company_id: string }
+        Returns: Json
+      }
       get_company_subscriptions: {
         Args: never
         Returns: {
@@ -2035,6 +2162,7 @@ export type Database = {
       get_my_company_branding: { Args: never; Returns: Json }
       get_my_company_id: { Args: never; Returns: string }
       get_my_company_plan_usage: { Args: never; Returns: Json }
+      get_my_storage_capability: { Args: never; Returns: Json }
       get_saas_billing_overview: { Args: never; Returns: Json }
       get_saas_settings: {
         Args: never
@@ -2239,6 +2367,20 @@ export type Database = {
           p_price_monthly: number
         }
         Returns: Json
+      }
+      upsert_company_storage_settings: {
+        Args: {
+          p_allowed_formats: string[]
+          p_api_key: string
+          p_api_secret: string
+          p_base_folder: string
+          p_cloud_name: string
+          p_company_id: string
+          p_is_active: boolean
+          p_max_file_size_mb: number
+          p_upload_preset: string
+        }
+        Returns: undefined
       }
     }
     Enums: {
