@@ -1,12 +1,12 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { DollarSign, Search, Eye, AlertCircle, CheckCircle2 } from 'lucide-react'
+import { DollarSign, Search, Eye, AlertCircle, CheckCircle2, PauseCircle } from 'lucide-react'
 import { Badge } from '@/components/ui/Badge'
 import { Tooltip } from '@/components/ui/Tooltip'
 import { Select } from '@/components/ui/Select'
 import { RegisterPaymentModal } from '../RegisterPaymentModal'
-import { usePayments } from '@/hooks/usePayments'
 import type { Charge, Member, ChargeStatus } from '@/types'
+import type { usePayments } from '@/hooks/usePayments'
 
 const CHARGE_STATUS_OPTIONS = [
   { value: '', label: 'Todos los estados' },
@@ -14,32 +14,35 @@ const CHARGE_STATUS_OPTIONS = [
   { value: 'parcial', label: 'Parcial' },
   { value: 'pagada', label: 'Pagada' },
   { value: 'anulada', label: 'Anulada' },
+  { value: 'suspendida', label: 'Suspendida (En apelación)' },
 ]
 
 const MONTHS_LABELS = ['', 'Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic']
 
 function getStatusBadge(status: ChargeStatus) {
   switch (status) {
-    case 'pendiente': return <Badge variant="warning">Pendiente</Badge>
-    case 'parcial':   return <Badge variant="warning">Parcial</Badge>
-    case 'pagada':    return <Badge variant="success">Pagada</Badge>
-    case 'anulada':   return <Badge variant="default">Anulada</Badge>
-    default:          return <Badge variant="default">{status}</Badge>
+    case 'pendiente':   return <Badge variant="warning">Pendiente</Badge>
+    case 'parcial':     return <Badge variant="warning">Parcial</Badge>
+    case 'pagada':      return <Badge variant="success">Pagada</Badge>
+    case 'anulada':     return <Badge variant="default">Anulada</Badge>
+    case 'suspendida':  return <Badge variant="default">En apelación</Badge>
+    default:            return <Badge variant="default">{status}</Badge>
   }
 }
 
 interface DebtorsTabProps {
   canManage: boolean
+  paymentsState: ReturnType<typeof usePayments>
+  onRefreshKpis: () => Promise<void>
 }
 
-export function DebtorsTab({ canManage }: DebtorsTabProps) {
+export function DebtorsTab({ canManage, paymentsState, onRefreshKpis }: DebtorsTabProps) {
   const navigate = useNavigate()
-  const { charges, loading, error, fetchCharges, registerPayment, fetchKpis } = usePayments()
+  const { charges, loading, error, fetchCharges, registerPayment } = paymentsState
 
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState<string>('pendiente')
 
-  // Modal de pago
   const [payModalOpen, setPayModalOpen] = useState(false)
   const [selectedMember, setSelectedMember] = useState<Pick<Member, 'id' | 'first_name' | 'last_name' | 'document_id'> | null>(null)
   const [memberPendingCharges, setMemberPendingCharges] = useState<Charge[]>([])
@@ -54,7 +57,6 @@ export function DebtorsTab({ canManage }: DebtorsTabProps) {
     refresh()
   }, [refresh])
 
-  // Filtrado local por búsqueda
   const filtered = charges.filter(c => {
     if (!searchTerm) return true
     const term = searchTerm.toLowerCase()
@@ -68,7 +70,6 @@ export function DebtorsTab({ canManage }: DebtorsTabProps) {
   const handleOpenPayModal = (charge: Charge) => {
     if (!charge.member) return
     setSelectedMember(charge.member)
-    // Cargar todas las cuotas pendientes de ese socio del array actual
     const memberCharges = charges.filter(
       c => c.member_id === charge.member_id && (c.status === 'pendiente' || c.status === 'parcial')
     )
@@ -78,7 +79,7 @@ export function DebtorsTab({ canManage }: DebtorsTabProps) {
 
   const handlePaymentSuccess = () => {
     refresh()
-    fetchKpis()
+    onRefreshKpis()
   }
 
   if (error) {
@@ -107,7 +108,7 @@ export function DebtorsTab({ canManage }: DebtorsTabProps) {
           value={statusFilter}
           onChange={e => setStatusFilter(e.target.value)}
           options={CHARGE_STATUS_OPTIONS}
-          className="sm:w-48"
+          className="sm:w-56"
         />
       </div>
 
@@ -140,10 +141,15 @@ export function DebtorsTab({ canManage }: DebtorsTabProps) {
             </thead>
             <tbody className="divide-y divide-gray-100">
               {filtered.map(charge => {
-                const isOverdue = charge.status !== 'pagada' && charge.status !== 'anulada' &&
+                const isOverdue = charge.status !== 'pagada' && charge.status !== 'anulada' && charge.status !== 'suspendida' &&
                   new Date(charge.due_date) < new Date()
+                const isSuspended = charge.status === 'suspendida'
+                const isPayable = canManage &&
+                  (charge.status === 'pendiente' || charge.status === 'parcial') &&
+                  !isSuspended
+
                 return (
-                  <tr key={charge.id} className="hover:bg-gray-50 transition-colors">
+                  <tr key={charge.id} className={`hover:bg-gray-50 transition-colors ${isSuspended ? 'opacity-70' : ''}`}>
                     <td className="px-4 py-3">
                       <div>
                         <p className="font-medium text-gray-900">
@@ -172,7 +178,12 @@ export function DebtorsTab({ canManage }: DebtorsTabProps) {
                         <span className="ml-2 text-xs text-red-600 font-medium">Vencida</span>
                       )}
                     </td>
-                    <td className="px-4 py-3">{getStatusBadge(charge.status)}</td>
+                    <td className="px-4 py-3">
+                      {getStatusBadge(charge.status)}
+                      {isSuspended && (
+                        <p className="text-xs text-amber-600 mt-0.5">Cobro suspendido</p>
+                      )}
+                    </td>
                     <td className="px-4 py-3 text-right">
                       <span className={`font-bold ${Number(charge.balance) > 0 ? 'text-red-600' : 'text-gray-400'}`}>
                         ${Number(charge.balance).toFixed(2)}
@@ -190,7 +201,14 @@ export function DebtorsTab({ canManage }: DebtorsTabProps) {
                             </button>
                           </Tooltip>
                         )}
-                        {canManage && (charge.status === 'pendiente' || charge.status === 'parcial') && (
+                        {isSuspended && (
+                          <Tooltip content="Cobro suspendido — sanción en apelación">
+                            <span className="p-1.5 rounded-lg bg-amber-50">
+                              <PauseCircle className="h-3.5 w-3.5 text-amber-500" />
+                            </span>
+                          </Tooltip>
+                        )}
+                        {isPayable && (
                           <button
                             onClick={() => handleOpenPayModal(charge)}
                             className="flex items-center gap-1.5 px-2.5 py-1.5 bg-green-600 text-white text-xs font-medium rounded-lg hover:bg-green-700 transition-colors"

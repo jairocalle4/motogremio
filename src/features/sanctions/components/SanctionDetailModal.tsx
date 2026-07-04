@@ -51,7 +51,8 @@ export function SanctionDetailModal({
     setLoading(true)
     try {
       if (actionType === 'resolve') {
-        await resolveSanction(sanction.id, notes.trim() || 'Resuelta administrativamente')
+        // Por defecto: confirmar la multa tal como está (sin modificar ni anular)
+        await resolveSanction(sanction.id, notes.trim() || 'Resuelta administrativamente', 'confirm')
       } else if (actionType === 'appeal') {
         await appealSanction(sanction.id, notes.trim())
       } else if (actionType === 'nullify') {
@@ -166,10 +167,23 @@ export function SanctionDetailModal({
               <span className="text-xs font-semibold text-green-800 flex items-center gap-1">
                 <DollarSign className="h-4 w-4" /> Multa Asociada
               </span>
-              <span className="text-xs bg-green-100 border border-green-200 text-green-800 px-2 py-0.5 rounded-full font-bold">
-                {fine.status?.toUpperCase() || 'PENDIENTE'}
+              <span className={`text-xs px-2 py-0.5 rounded-full font-bold border ${
+                fine.status === 'suspendida'
+                  ? 'bg-amber-100 border-amber-200 text-amber-800'
+                  : fine.status === 'anulada'
+                  ? 'bg-gray-100 border-gray-200 text-gray-600'
+                  : fine.status === 'pagada'
+                  ? 'bg-green-100 border-green-200 text-green-800'
+                  : 'bg-orange-100 border-orange-200 text-orange-800'
+              }`}>
+                {fine.status === 'suspendida' ? 'SUSPENDIDA (APELACIÓN)' : (fine.status?.toUpperCase() || 'PENDIENTE')}
               </span>
             </div>
+            {fine.status === 'suspendida' && (
+              <p className="text-xs text-amber-700 bg-amber-50 border border-amber-100 rounded-lg px-3 py-1.5">
+                ⚠️ El cobro está suspendido mientras la sanción está en apelación.
+              </p>
+            )}
             <div className="grid grid-cols-2 gap-4 pt-1">
               <div>
                 <p className="text-xs text-gray-500">Monto Original</p>
@@ -182,6 +196,7 @@ export function SanctionDetailModal({
             </div>
           </div>
         )}
+
 
         {/* Notas de resolución existentes */}
         {sanction.resolution_notes && (

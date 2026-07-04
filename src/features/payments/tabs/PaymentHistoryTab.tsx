@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { Search, AlertCircle, Receipt } from 'lucide-react'
-import { usePayments } from '@/hooks/usePayments'
+import type { usePayments } from '@/hooks/usePayments'
 
 const PAYMENT_METHOD_LABELS: Record<string, string> = {
   efectivo:      'Efectivo',
@@ -10,8 +10,12 @@ const PAYMENT_METHOD_LABELS: Record<string, string> = {
   otro:          'Otro',
 }
 
-export function PaymentHistoryTab() {
-  const { payments, loading, error, fetchPayments } = usePayments()
+interface PaymentHistoryTabProps {
+  paymentsState: ReturnType<typeof usePayments>
+}
+
+export function PaymentHistoryTab({ paymentsState }: PaymentHistoryTabProps) {
+  const { payments, loading, error, fetchPayments } = paymentsState
   const [searchTerm, setSearchTerm] = useState('')
 
   const refresh = useCallback(() => {

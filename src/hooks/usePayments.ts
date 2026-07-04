@@ -90,9 +90,10 @@ export function usePayments() {
 
   const createChargeType = useCallback(async (data: ChargeTypeFormData) => {
     if (!companyId) return null
-    const { data: result, error: err } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: result, error: err } = await (supabase as any)
       .from('charge_types')
-      .insert({ ...data, company_id: companyId })
+      .insert({ ...data, company_id: companyId, is_system: false, category: data.is_recurring ? 'monthly' : 'manual' })
       .select()
       .single()
     if (err) {
@@ -105,11 +106,13 @@ export function usePayments() {
 
   const updateChargeType = useCallback(async (id: string, data: Partial<ChargeTypeFormData>) => {
     if (!companyId) return null
-    const { data: result, error: err } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: result, error: err } = await (supabase as any)
       .from('charge_types')
       .update({ ...data, updated_at: new Date().toISOString() })
       .eq('id', id)
       .eq('company_id', companyId)
+      .eq('is_system', false)  // nunca editar tipos internos
       .select()
       .single()
     if (err) {
@@ -122,11 +125,13 @@ export function usePayments() {
 
   const deleteChargeType = useCallback(async (id: string) => {
     if (!companyId) return
-    const { error: err } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error: err } = await (supabase as any)
       .from('charge_types')
       .delete()
       .eq('id', id)
       .eq('company_id', companyId)
+      .eq('is_system', false)  // nunca borrar tipos internos
     if (err) {
       toast.error('No se puede eliminar este tipo de cobro (tiene cuotas asociadas)')
       throw err
@@ -153,7 +158,8 @@ export function usePayments() {
 
       if (params.memberId)     query = query.eq('member_id', params.memberId)
       if (params.vehicleId)    query = query.eq('vehicle_id', params.vehicleId)
-      if (params.status)       query = query.eq('status', params.status)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      if (params.status)       query = (query as any).eq('status', params.status)
       if (params.periodMonth)  query = query.eq('period_month', params.periodMonth)
       if (params.periodYear)   query = query.eq('period_year', params.periodYear)
 
@@ -173,81 +179,33 @@ export function usePayments() {
   }, [companyId])
 
   /**
-   * Genera cuotas mensuales para todas las unidades activas de la compañía.
-   * Una cuota por unidad activa, asignada al socio propietario de la unidad.
-   * El índice único en BD previene duplicados.
+   * Genera cuotas mensuales usando la RPC backend con validaciones completas.
+   * La RPC valida: tipo recurrente, no interno, con monto, unidades activas, sin duplicados.
    */
-  const generateMonthlyCharges = useCallback(async (params: GenerateChargesParams) => {
-    if (!companyId) return { inserted: 0, skipped: 0 }
+  const generateMonthlyChargesRpc = useCallback(async (params: GenerateChargesParams) => {
+    if (!companyId) return { inserted: 0, skipped: 0, activeUnits: 0 }
     setLoading(true)
     try {
-      // Cargar unidades activas con su socio propietario
-      const { data: vehicles, error: vErr } = await supabase
-        .from('vehicles')
-        .select('id, disk_number, plate, member_id')
-        .eq('company_id', companyId)
-        .eq('status', 'activa')
-      if (vErr) throw vErr
-
-      // Cargar el tipo de cobro para obtener monto y nombre
-      const { data: chargeType, error: ctErr } = await supabase
-        .from('charge_types')
-        .select('id, name, default_amount')
-        .eq('id', params.chargeTypeId)
-        .eq('company_id', companyId)
-        .single()
-      if (ctErr) throw ctErr
-      if (!chargeType.default_amount) throw new Error('El tipo de cobro no tiene monto por defecto configurado')
-
-      const monthNames = [
-        'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
-        'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre',
-      ]
-      const monthName = monthNames[params.periodMonth - 1]
-
-      if (!vehicles || vehicles.length === 0) {
-        toast.error('No hay unidades activas para generar cuotas')
-        return { inserted: 0, skipped: 0 }
-      }
-
-      let inserted = 0
-      let skipped = 0
-
-      // Insertar cuota por unidad (el índice único en BD previene duplicados)
-      for (const vehicle of vehicles) {
-        const { error: insertErr } = await supabase
-          .from('charges')
-          .insert({
-            company_id: companyId,
-            member_id: vehicle.member_id,
-            vehicle_id: vehicle.id,
-            charge_type_id: params.chargeTypeId,
-            description: `${chargeType.name} — Disco ${vehicle.disk_number} — ${monthName} ${params.periodYear}`,
-            amount: chargeType.default_amount,
-            balance: chargeType.default_amount,
-            due_date: params.dueDate,
-            status: 'pendiente',
-            period_month: params.periodMonth,
-            period_year: params.periodYear,
-          })
-        if (insertErr) {
-          // Error de constraint único = cuota ya existe para este periodo
-          if (insertErr.code === '23505') {
-            skipped++
-          } else {
-            throw insertErr
-          }
-        } else {
-          inserted++
-        }
-      }
-
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data, error: rpcErr } = await (supabase as any).rpc('generate_monthly_charges_rpc', {
+        p_charge_type_id: params.chargeTypeId,
+        p_period_month:   params.periodMonth,
+        p_period_year:    params.periodYear,
+        p_due_date:       params.dueDate,
+      })
+      if (rpcErr) throw rpcErr
+      const result = typeof data === 'string' ? JSON.parse(data) : data
+      const inserted = Number(result?.created_count ?? 0)
+      const skipped  = Number(result?.skipped_count  ?? 0)
+      const activeUnits = Number(result?.active_units_count ?? 0)
       if (inserted > 0) {
-        toast.success(`${inserted} cuota(s) generada(s) correctamente${skipped > 0 ? ` (${skipped} ya existían)` : ''}`)
+        toast.success(`${inserted} cuota(s) generada(s)${skipped > 0 ? ` (${skipped} ya existían)` : ''}`)
       } else if (skipped > 0) {
         toast.error('Todas las cuotas de este periodo ya existen')
+      } else if (activeUnits === 0) {
+        toast.error('No hay unidades activas para generar cuotas')
       }
-      return { inserted, skipped }
+      return { inserted, skipped, activeUnits }
     } catch (e) {
       const msg = e instanceof Error ? e.message : 'Error al generar cuotas'
       toast.error(msg)
@@ -259,8 +217,6 @@ export function usePayments() {
 
   /**
    * Anula una cuota (cambia estado a 'anulada').
-   * El trigger de BD recalcularía el balance, pero como anulamos manualmente
-   * ponemos balance = 0 también.
    */
   const voidCharge = useCallback(async (chargeId: string) => {
     if (!companyId) return
@@ -309,9 +265,7 @@ export function usePayments() {
   }, [companyId])
 
   /**
-   * Registra un pago completo contra una o más cuotas.
-   * Inserta en `payments` y luego en `payment_allocations`.
-   * El trigger de BD actualiza automáticamente `charges.balance` y `charges.status`.
+   * Registra un pago completo contra una o más cuotas mediante RPC atómica.
    */
   const registerPayment = useCallback(async (params: RegisterPaymentParams) => {
     if (!companyId || !profile?.id) return null
@@ -331,7 +285,6 @@ export function usePayments() {
       if (payErr) throw payErr
 
       toast.success('Pago registrado correctamente')
-      // Retornar estructura compatible mapeando el resultado JSON de la RPC
       const resultObj = typeof data === 'string' ? JSON.parse(data) : data
       return { id: resultObj?.payment_id, amount: params.amount } as Payment
     } catch (e) {
@@ -357,7 +310,6 @@ export function usePayments() {
       const monthStart = `${currentYear}-${String(currentMonth).padStart(2, '0')}-01`
       const monthEnd = new Date(currentYear, currentMonth, 0).toISOString().split('T')[0]
 
-      // Total por cobrar (balance de cuotas pendientes o parciales)
       const { data: pendingData } = await supabase
         .from('charges')
         .select('balance')
@@ -366,7 +318,6 @@ export function usePayments() {
 
       const totalPendingBalance = (pendingData ?? []).reduce((sum: number, c: { balance: number }) => sum + Number(c.balance), 0)
 
-      // Recaudado este mes
       const { data: paymentsData } = await supabase
         .from('payments')
         .select('amount')
@@ -376,7 +327,6 @@ export function usePayments() {
 
       const collectedThisMonth = (paymentsData ?? []).reduce((sum: number, p: { amount: number }) => sum + Number(p.amount), 0)
 
-      // Socios morosos (cuotas vencidas con balance > 0)
       const today = now.toISOString().split('T')[0]
       const { data: delinquentData } = await supabase
         .from('charges')
@@ -386,11 +336,8 @@ export function usePayments() {
         .lt('due_date', today)
 
       const uniqueDelinquents = new Set((delinquentData ?? []).map((c: { member_id: string }) => c.member_id))
-
-      // Cuotas vencidas (count)
       const overdueChargesCount = (delinquentData ?? []).length
 
-      // Top deudores — cargar cuotas activas con datos del socio
       const { data: chargesWithMembers } = await supabase
         .from('charges')
         .select(`
@@ -401,7 +348,6 @@ export function usePayments() {
         .in('status', ['pendiente', 'parcial'])
         .gt('balance', 0)
 
-      // Agregar por socio
       const debtorMap = new Map<string, DebtorSummary>()
       for (const c of (chargesWithMembers ?? [])) {
         const m = c.member as { id: string; first_name: string; last_name: string; document_id: string } | null
@@ -439,9 +385,19 @@ export function usePayments() {
 
   // ─── Exportaciones ───────────────────────────────────────────────────────────
 
+  /** Tipos de cobro válidos para generación mensual: no internos, recurrentes, con monto */
+  const chargeTypesRecurring = chargeTypes.filter(
+    ct => !ct.is_system && ct.is_recurring && ct.default_amount != null && ct.default_amount > 0
+  )
+
+  /** Tipos de cobro visibles al admin: todos los que no son internos del sistema */
+  const chargeTypesVisible = chargeTypes.filter(ct => !ct.is_system)
+
   return {
     // Estado
     chargeTypes,
+    chargeTypesRecurring,
+    chargeTypesVisible,
     charges,
     payments,
     kpis,
@@ -454,7 +410,7 @@ export function usePayments() {
     deleteChargeType,
     // Cuotas
     fetchCharges,
-    generateMonthlyCharges,
+    generateMonthlyChargesRpc,
     voidCharge,
     // Pagos
     fetchPayments,

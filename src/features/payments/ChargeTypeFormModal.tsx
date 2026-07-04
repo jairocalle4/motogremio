@@ -8,6 +8,7 @@ interface ChargeTypeFormModalProps {
   isOpen: boolean
   onClose: () => void
   chargeType?: ChargeType | null  // null = creación, objeto = edición
+  monthlyPreset?: boolean         // true = prerellenar como cuota mensual
   onSave: (data: {
     name: string
     description?: string
@@ -20,6 +21,7 @@ export function ChargeTypeFormModal({
   isOpen,
   onClose,
   chargeType,
+  monthlyPreset = false,
   onSave,
 }: ChargeTypeFormModalProps) {
   const isEdit = !!chargeType
@@ -33,13 +35,28 @@ export function ChargeTypeFormModal({
 
   useEffect(() => {
     if (isOpen) {
-      setName(chargeType?.name ?? '')
-      setDescription(chargeType?.description ?? '')
-      setDefaultAmount(chargeType?.default_amount != null ? String(chargeType.default_amount) : '')
-      setIsRecurring(chargeType?.is_recurring ?? true)
+      if (chargeType) {
+        // Modo edición: cargar datos existentes
+        setName(chargeType.name)
+        setDescription(chargeType.description ?? '')
+        setDefaultAmount(chargeType.default_amount != null ? String(chargeType.default_amount) : '')
+        setIsRecurring(chargeType.is_recurring)
+      } else if (monthlyPreset) {
+        // Prellenado para cuota mensual
+        setName('Cuota mensual')
+        setDescription('Cuota administrativa mensual por cada unidad activa')
+        setDefaultAmount('')  // monto vacío y obligatorio — no inventar valor
+        setIsRecurring(true)
+      } else {
+        // Nuevo tipo en blanco
+        setName('')
+        setDescription('')
+        setDefaultAmount('')
+        setIsRecurring(true)
+      }
       setErrors({})
     }
-  }, [isOpen, chargeType])
+  }, [isOpen, chargeType, monthlyPreset])
 
   const validate = () => {
     const errs: Record<string, string> = {}

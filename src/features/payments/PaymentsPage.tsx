@@ -1,7 +1,7 @@
-import { useEffect, useCallback } from 'react'
+import { useEffect, useCallback, useState } from 'react'
 import {
   Wallet, TrendingDown, TrendingUp, AlertTriangle,
-  Calendar, RefreshCw, Clock,
+  Calendar, RefreshCw, Clock, CheckCircle2,
 } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { Card, CardContent } from '@/components/ui/Card'
@@ -11,7 +11,7 @@ import { GenerateChargesModal } from './GenerateChargesModal'
 import { DebtorsTab } from './tabs/DebtorsTab'
 import { PaymentHistoryTab } from './tabs/PaymentHistoryTab'
 import { ChargeTypesTab } from './tabs/ChargeTypesTab'
-import { useState } from 'react'
+import toast from 'react-hot-toast'
 
 type TabId = 'deudores' | 'historial' | 'tipos'
 
@@ -23,19 +23,58 @@ const TABS: { id: TabId; label: string }[] = [
 
 export function PaymentsPage() {
   const { canManagePayments, canViewPayments } = usePermissions()
-  const { chargeTypes, kpis, fetchKpis, fetchChargeTypes, generateMonthlyCharges } = usePayments()
+
+  // ─── Estado único compartido con todas las pestañas ──────────────────────
+  const paymentsState = usePayments()
+  const {
+    kpis,
+    chargeTypesRecurring,
+    loading,
+    fetchKpis,
+    fetchChargeTypes,
+    fetchCharges,
+    fetchPayments,
+    generateMonthlyChargesRpc,
+  } = paymentsState
 
   const [activeTab, setActiveTab] = useState<TabId>('deudores')
   const [generateOpen, setGenerateOpen] = useState(false)
+  const [refreshing, setRefreshing] = useState(false)
+  const [refreshDone, setRefreshDone] = useState(false)
 
-  const refresh = useCallback(() => {
+  // Carga inicial
+  useEffect(() => {
     fetchKpis()
     fetchChargeTypes()
-  }, [fetchKpis, fetchChargeTypes])
+    fetchCharges({ status: 'pendiente' })
+  }, [fetchKpis, fetchChargeTypes, fetchCharges])
 
-  useEffect(() => {
-    refresh()
-  }, [refresh])
+  // ─── Botón Actualizar: refresca TODOS los estados compartidos ─────────────
+  const handleRefresh = useCallback(async () => {
+    setRefreshing(true)
+    setRefreshDone(false)
+    try {
+      await Promise.all([
+        fetchKpis(),
+        fetchChargeTypes(),
+        fetchCharges({ status: 'pendiente' }),
+        fetchPayments(),
+      ])
+      setRefreshDone(true)
+      toast.success('Información actualizada')
+      setTimeout(() => setRefreshDone(false), 3000)
+    } catch {
+      toast.error('Error al actualizar. Inténtalo de nuevo.')
+    } finally {
+      setRefreshing(false)
+    }
+  }, [fetchKpis, fetchChargeTypes, fetchCharges, fetchPayments])
+
+  // Callback para cuando se cambia de tab desde el modal de generación
+  const handleGoToChargeTypes = useCallback(() => {
+    setGenerateOpen(false)
+    setActiveTab('tipos')
+  }, [])
 
   if (!canViewPayments) {
     return (
@@ -71,11 +110,14 @@ export function PaymentsPage() {
           <div className="flex items-center gap-3">
             <Button
               variant="secondary"
-              onClick={refresh}
+              onClick={handleRefresh}
+              disabled={refreshing}
               className="flex items-center gap-2"
             >
-              <RefreshCw className="h-4 w-4" />
-              <span className="hidden sm:inline">Actualizar</span>
+              <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
+              <span className="hidden sm:inline">
+                {refreshing ? 'Actualizando…' : refreshDone ? 'Actualizado ✓' : 'Actualizar'}
+              </span>
             </Button>
             <Button
               variant="primary"
@@ -193,21 +235,50 @@ export function PaymentsPage() {
           </nav>
         </div>
 
-        {/* Tab content */}
+        {/* Tab content — pasa el estado compartido para evitar hooks duplicados */}
         <div className="p-6">
-          {activeTab === 'deudores'  && <DebtorsTab canManage={canManagePayments} />}
-          {activeTab === 'historial' && <PaymentHistoryTab />}
-          {activeTab === 'tipos'     && <ChargeTypesTab canManage={canManagePayments} />}
+          {activeTab === 'deudores'  && (
+            <DebtorsTab
+              canManage={canManagePayments}
+              paymentsState={paymentsState}
+              onRefreshKpis={fetchKpis}
+            />
+          )}
+          {activeTab === 'historial' && (
+            <PaymentHistoryTab paymentsState={paymentsState} />
+          )}
+          {activeTab === 'tipos' && (
+            <ChargeTypesTab
+              canManage={canManagePayments}
+              paymentsState={paymentsState}
+            />
+          )}
         </div>
       </div>
 
-      {/* Modal generar cuotas */}
+      {/* Modal generar cuotas — usa solo tipos recurrentes válidos */}
       <GenerateChargesModal
         isOpen={generateOpen}
         onClose={() => setGenerateOpen(false)}
-        chargeTypes={chargeTypes}
-        onGenerate={generateMonthlyCharges}
+        chargeTypes={chargeTypesRecurring}
+        onGenerate={generateMonthlyChargesRpc}
+        onConfigureMonthlyType={handleGoToChargeTypes}
+        loading={loading}
       />
+
+      {/* Icono de carga global */}
+      {(refreshing) && (
+        <div className="fixed bottom-6 right-6 bg-white rounded-xl shadow-lg border border-gray-200 px-4 py-2 flex items-center gap-2 text-sm text-gray-700 z-50">
+          <RefreshCw className="h-4 w-4 animate-spin text-primary-500" />
+          Actualizando…
+        </div>
+      )}
+      {refreshDone && !refreshing && (
+        <div className="fixed bottom-6 right-6 bg-white rounded-xl shadow-lg border border-green-200 px-4 py-2 flex items-center gap-2 text-sm text-green-700 z-50">
+          <CheckCircle2 className="h-4 w-4" />
+          Información actualizada
+        </div>
+      )}
     </div>
   )
 }

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { X, Calendar, AlertTriangle, CheckCircle2, Loader2 } from 'lucide-react'
+import { X, Calendar, AlertTriangle, CheckCircle2, Loader2, Settings } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { Select } from '@/components/ui/Select'
 import { Input } from '@/components/ui/Input'
@@ -8,13 +8,17 @@ import type { ChargeType } from '@/types'
 interface GenerateChargesModalProps {
   isOpen: boolean
   onClose: () => void
+  /** Solo tipos recurrentes, no internos, con monto > 0 */
   chargeTypes: ChargeType[]
   onGenerate: (params: {
     chargeTypeId: string
     periodMonth: number
     periodYear: number
     dueDate: string
-  }) => Promise<{ inserted: number; skipped: number }>
+  }) => Promise<{ inserted: number; skipped: number; activeUnits: number }>
+  /** Callback para ir a configurar la cuota mensual */
+  onConfigureMonthlyType: () => void
+  loading?: boolean
 }
 
 const MONTHS = [
@@ -37,23 +41,28 @@ export function GenerateChargesModal({
   onClose,
   chargeTypes,
   onGenerate,
+  onConfigureMonthlyType,
+  loading: externalLoading = false,
 }: GenerateChargesModalProps) {
   const now = new Date()
   const [chargeTypeId, setChargeTypeId] = useState('')
   const [month, setMonth] = useState(String(now.getMonth() + 1))
   const [year, setYear] = useState(String(now.getFullYear()))
   const [dueDate, setDueDate] = useState('')
-  const [loading, setLoading] = useState(false)
-  const [result, setResult] = useState<{ inserted: number; skipped: number } | null>(null)
+  const [localLoading, setLocalLoading] = useState(false)
+  const [result, setResult] = useState<{ inserted: number; skipped: number; activeUnits: number } | null>(null)
 
-  // Auto-seleccionar el primer tipo recurrente al abrir
+  const loading = externalLoading || localLoading
+  const hasValidTypes = chargeTypes.length > 0
+
+  // Auto-seleccionar el primer tipo al abrir
   useEffect(() => {
     if (isOpen && chargeTypes.length > 0 && !chargeTypeId) {
-      const recurring = chargeTypes.find(ct => ct.is_recurring) ?? chargeTypes[0]
-      setChargeTypeId(recurring.id)
+      setChargeTypeId(chargeTypes[0].id)
     }
     if (!isOpen) {
       setResult(null)
+      setChargeTypeId('')
     }
   }, [isOpen, chargeTypes, chargeTypeId])
 
@@ -70,7 +79,7 @@ export function GenerateChargesModal({
 
   const handleGenerate = async () => {
     if (!chargeTypeId || !dueDate) return
-    setLoading(true)
+    setLocalLoading(true)
     try {
       const res = await onGenerate({
         chargeTypeId,
@@ -80,7 +89,7 @@ export function GenerateChargesModal({
       })
       setResult(res)
     } finally {
-      setLoading(false)
+      setLocalLoading(false)
     }
   }
 
@@ -120,15 +129,40 @@ export function GenerateChargesModal({
               </div>
               <div>
                 <p className="font-semibold text-gray-900 text-lg">{result.inserted} cuota(s) generada(s)</p>
+                <p className="text-sm text-gray-500 mt-1">
+                  de {result.activeUnits} unidad(es) activa(s)
+                </p>
                 {result.skipped > 0 && (
-                  <p className="text-sm text-gray-500 mt-1">{result.skipped} cuota(s) ya existían y se omitieron</p>
+                  <p className="text-sm text-gray-400 mt-0.5">{result.skipped} ya existían y se omitieron</p>
                 )}
               </div>
               <Button variant="primary" onClick={onClose} className="mt-2">
                 Cerrar
               </Button>
             </div>
+          ) : !hasValidTypes ? (
+            /* Onboarding: no existe cuota mensual configurada */
+            <div className="text-center py-4 space-y-4">
+              <div className="w-14 h-14 rounded-full bg-amber-100 flex items-center justify-center mx-auto">
+                <Settings className="h-7 w-7 text-amber-500" />
+              </div>
+              <div>
+                <p className="font-semibold text-gray-900">Aún no has configurado una cuota mensual</p>
+                <p className="text-sm text-gray-500 mt-2">
+                  Define el nombre y el monto antes de generar cuotas para las unidades activas.
+                </p>
+              </div>
+              <Button
+                variant="primary"
+                onClick={onConfigureMonthlyType}
+                className="flex items-center gap-2 mx-auto"
+              >
+                <Calendar className="h-4 w-4" />
+                Configurar cuota mensual
+              </Button>
+            </div>
           ) : (
+            /* Formulario de generación */
             <>
               <Select
                 label="Tipo de cobro"
@@ -170,8 +204,14 @@ export function GenerateChargesModal({
                 <div className="bg-blue-50 border border-blue-100 rounded-xl p-3 flex gap-3">
                   <AlertTriangle className="h-4 w-4 text-blue-500 shrink-0 mt-0.5" />
                   <div className="text-sm text-blue-700">
-                    <p className="font-medium">Se generará una cuota de <span className="font-bold">${(selectedType.default_amount ?? 0).toFixed(2)}</span> por cada unidad activa.</p>
-                    <p className="text-blue-600 mt-0.5 text-xs">Las cuotas ya existentes para este periodo serán omitidas automáticamente.</p>
+                    <p className="font-medium">
+                      Se generará una cuota de{' '}
+                      <span className="font-bold">${(selectedType.default_amount ?? 0).toFixed(2)}</span>{' '}
+                      por cada unidad activa.
+                    </p>
+                    <p className="text-blue-600 mt-0.5 text-xs">
+                      Las cuotas ya existentes para este periodo serán omitidas automáticamente.
+                    </p>
                   </div>
                 </div>
               )}
@@ -180,7 +220,7 @@ export function GenerateChargesModal({
         </div>
 
         {/* Footer */}
-        {!result && (
+        {!result && hasValidTypes && (
           <div className="px-6 py-4 border-t border-gray-100 flex justify-end gap-3">
             <Button variant="secondary" onClick={onClose} disabled={loading}>Cancelar</Button>
             <Button

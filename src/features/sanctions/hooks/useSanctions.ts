@@ -312,56 +312,23 @@ export function useSanctions() {
   }, [companyId])
 
   /**
-   * Anula una sanción.
-   * Cambia su estado a 'anulada'. Si tiene una multa (charge) asociada y está pendiente/parcial,
-   * también anula la multa correspondiente (status = 'anulada', balance = 0).
+  /**
+   * Anula una sanción usando la RPC atómica.
+   * Valida en backend: no hay pagos aplicados, actualiza cargo a 'anulada', balance=0.
    */
   const nullifySanction = useCallback(async (id: string, resolutionNotes?: string) => {
     if (!companyId) return null
     setLoading(true)
     try {
-      // 1. Obtener la sanción para conocer el charge_id
-      const { data: sanction, error: fetchErr } = await supabase
-        .from('sanctions')
-        .select('charge_id')
-        .eq('id', id)
-        .eq('company_id', companyId)
-        .single()
-
-      if (fetchErr) throw fetchErr
-
-      // 2. Anular el cargo asociado si existe
-      if (sanction.charge_id) {
-        const { error: chargeErr } = await supabase
-          .from('charges')
-          .update({
-            status: 'anulada',
-            balance: 0,
-            updated_at: new Date().toISOString(),
-          })
-          .eq('id', sanction.charge_id)
-          .eq('company_id', companyId)
-
-        if (chargeErr) throw chargeErr
-      }
-
-      // 3. Actualizar la sanción
-      const { data: updatedSanction, error: sanctionErr } = await supabase
-        .from('sanctions')
-        .update({
-          status: 'anulada',
-          resolution_notes: resolutionNotes ?? 'Sanción anulada administrativamente',
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', id)
-        .eq('company_id', companyId)
-        .select()
-        .single()
-
-      if (sanctionErr) throw sanctionErr
-
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data, error: err } = await (supabase as any).rpc('nullify_sanction_atomic', {
+        p_sanction_id: id,
+        p_notes: resolutionNotes ?? 'Sanción anulada administrativamente',
+      })
+      if (err) throw err
       toast.success('Sanción y multa asociada anuladas correctamente')
-      return updatedSanction as Sanction
+      const result = typeof data === 'string' ? JSON.parse(data) : data
+      return result
     } catch (e) {
       const msg = e instanceof Error ? e.message : 'Error al anular la sanción'
       toast.error(msg)
@@ -372,27 +339,31 @@ export function useSanctions() {
   }, [companyId])
 
   /**
-   * Resuelve una sanción (actualiza estado a 'resuelta').
+   * Resuelve una sanción usando la RPC atómica.
+   * @param outcome 'confirm' = ratificar multa | 'modify' = modificar monto | 'annul' = anular multa
+   * @param newAmount Nuevo monto (solo para outcome='modify')
    */
-  const resolveSanction = useCallback(async (id: string, resolutionNotes: string) => {
+  const resolveSanction = useCallback(async (
+    id: string,
+    resolutionNotes: string,
+    outcome: 'confirm' | 'modify' | 'annul' = 'confirm',
+    newAmount?: number
+  ) => {
     if (!companyId) return null
     setLoading(true)
     try {
-      const { data, error: err } = await supabase
-        .from('sanctions')
-        .update({
-          status: 'resuelta',
-          resolution_notes: resolutionNotes,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', id)
-        .eq('company_id', companyId)
-        .select()
-        .single()
-
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data, error: err } = await (supabase as any).rpc('resolve_sanction_atomic', {
+        p_sanction_id: id,
+        p_outcome: outcome,
+        p_notes: resolutionNotes,
+        p_new_amount: newAmount ?? null,
+      })
       if (err) throw err
-      toast.success('Sanción resuelta correctamente')
-      return data as Sanction
+      const outcomeLabels = { confirm: 'confirmada', modify: 'modificada y confirmada', annul: 'anulada' }
+      toast.success(`Sanción ${outcomeLabels[outcome]} correctamente`)
+      const result = typeof data === 'string' ? JSON.parse(data) : data
+      return result
     } catch (e) {
       const msg = e instanceof Error ? e.message : 'Error al resolver la sanción'
       toast.error(msg)
@@ -403,27 +374,22 @@ export function useSanctions() {
   }, [companyId])
 
   /**
-   * Apela una sanción (actualiza estado a 'apelacion').
+   * Apela una sanción usando la RPC atómica.
+   * Suspende el cargo asociado (status='suspendida') mientras está en apelación.
    */
   const appealSanction = useCallback(async (id: string, notes: string) => {
     if (!companyId) return null
     setLoading(true)
     try {
-      const { data, error: err } = await supabase
-        .from('sanctions')
-        .update({
-          status: 'apelacion',
-          resolution_notes: notes,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', id)
-        .eq('company_id', companyId)
-        .select()
-        .single()
-
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data, error: err } = await (supabase as any).rpc('appeal_sanction_atomic', {
+        p_sanction_id: id,
+        p_notes: notes,
+      })
       if (err) throw err
-      toast.success('Estado de sanción cambiado a apelación')
-      return data as Sanction
+      toast.success('Sanción en apelación — cobro suspendido hasta resolución')
+      const result = typeof data === 'string' ? JSON.parse(data) : data
+      return result
     } catch (e) {
       const msg = e instanceof Error ? e.message : 'Error al apelar la sanción'
       toast.error(msg)
@@ -433,7 +399,9 @@ export function useSanctions() {
     }
   }, [companyId])
 
+
   // ─── KPIs ──────────────────────────────────────────────────────────────────
+
 
   const fetchKpis = useCallback(async () => {
     if (!companyId) return

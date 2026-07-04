@@ -18,7 +18,7 @@ export type VehicleStatus = 'activa' | 'inactiva' | 'mantenimiento'
 export type DriverStatus  = 'activo' | 'inactivo'
 export type DocumentStatus  = 'vigente' | 'por_vencer' | 'vencido'
 export type PaymentStatus   = 'pagado'  | 'pendiente'  | 'moroso'  | 'anulado'
-export type ChargeStatus    = 'pendiente' | 'parcial' | 'pagada' | 'anulada'
+export type ChargeStatus    = 'pendiente' | 'parcial' | 'pagada' | 'anulada' | 'suspendida'
 export type PaymentMethod   = 'efectivo' | 'transferencia' | 'deposito' | 'cheque' | 'otro'
 export type SanctionStatus  = 'pendiente' | 'apelacion' | 'resuelta' | 'anulada'
 export type MeetingType     = 'ordinaria' | 'extraordinaria' | 'asamblea' | 'capacitacion' | 'otra'
@@ -267,6 +267,10 @@ export interface ChargeType {
   description: string | null
   default_amount: number | null
   is_recurring: boolean
+  /** true = gestionado internamente (ej: multa por sanción). No visible en UI de admin. */
+  is_system: boolean
+  /** Categoría del tipo: 'monthly' | 'manual' | 'sanction' */
+  category: string
   created_at: string
   updated_at: string
 }
