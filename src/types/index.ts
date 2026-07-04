@@ -294,7 +294,7 @@ export interface Charge {
   // Joins
   member?: Pick<Member, 'id' | 'first_name' | 'last_name' | 'document_id'>
   vehicle?: Pick<Vehicle, 'id' | 'disk_number' | 'plate'> | null
-  charge_type?: Pick<ChargeType, 'id' | 'name'>
+  charge_type?: Pick<ChargeType, 'id' | 'name' | 'is_system' | 'category'>
 }
 
 /** Registro de transacción de pago */
