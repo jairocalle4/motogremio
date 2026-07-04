@@ -47,8 +47,10 @@ export default defineConfig({
       workbox: {
         maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
         globPatterns: ['**/*.{js,css,html,png,svg,woff,woff2}'],
-        navigateFallback: '/offline.html',
+        navigateFallback: '/index.html',
         navigateFallbackDenylist: [/supabase\.co/],
+        skipWaiting: true,
+        clientsClaim: true,
       }
     })
   ],
