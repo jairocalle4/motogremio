@@ -1,10 +1,13 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import toast from 'react-hot-toast'
 import { Modal } from '@/components/ui/Modal'
 import { Button } from '@/components/ui/Button'
 import { Textarea } from '@/components/ui/Textarea'
+import { Input } from '@/components/ui/Input'
 import type { Sanction } from '@/types'
 import { Calendar, ShieldAlert, User, Car, DollarSign, X, CheckCircle, Ban } from 'lucide-react'
 import { useSanctions } from '../hooks/useSanctions'
+import { usePayments } from '@/hooks/usePayments'
 
 interface SanctionDetailModalProps {
   isOpen: boolean
@@ -35,24 +38,51 @@ export function SanctionDetailModal({
   onActionSuccess,
 }: SanctionDetailModalProps) {
   const { resolveSanction, appealSanction, nullifySanction } = useSanctions()
+  const { payments, fetchPayments } = usePayments()
+
   const [actionType, setActionType] = useState<'resolve' | 'appeal' | 'nullify' | null>(null)
+  const [outcome, setOutcome] = useState<'confirm' | 'modify' | 'annul'>('confirm')
+  const [newAmount, setNewAmount] = useState('')
   const [notes, setNotes] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
+  const hasFine = !!sanction?.charge
+  const fine = sanction?.charge
+
+  // Cargar historial de pagos asociados a esta multa si los hay
+  useEffect(() => {
+    if (isOpen && sanction?.charge_id) {
+      fetchPayments()
+    }
+  }, [isOpen, sanction?.charge_id, fetchPayments])
+
   if (!isOpen || !sanction) return null
+
+  // Pagos asociados filtrados para esta multa específica
+  const associatedPayments = payments.filter(p => 
+    p.id && sanction.charge_id && 
+    (p as any).payment_allocations?.some((alloc: any) => alloc.charge_id === sanction.charge_id)
+  )
 
   const handleAction = async () => {
     if (!notes.trim() && actionType !== 'resolve') {
       setError('Por favor, ingresa una justificación o nota explicativa.')
       return
     }
+    if (actionType === 'resolve' && outcome === 'modify') {
+      const parsedAmount = parseFloat(newAmount)
+      if (isNaN(parsedAmount) || parsedAmount <= 0) {
+        setError('Por favor, ingresa un nuevo monto válido y mayor a cero.')
+        return
+      }
+    }
     setError('')
     setLoading(true)
     try {
       if (actionType === 'resolve') {
-        // Por defecto: confirmar la multa tal como está (sin modificar ni anular)
-        await resolveSanction(sanction.id, notes.trim() || 'Resuelta administrativamente', 'confirm')
+        const amt = outcome === 'modify' ? parseFloat(newAmount) : undefined
+        await resolveSanction(sanction.id, notes.trim() || 'Resuelta administrativamente', outcome, amt)
       } else if (actionType === 'appeal') {
         await appealSanction(sanction.id, notes.trim())
       } else if (actionType === 'nullify') {
@@ -61,6 +91,8 @@ export function SanctionDetailModal({
       onActionSuccess?.()
       setActionType(null)
       setNotes('')
+      setNewAmount('')
+      setOutcome('confirm')
       onClose()
     } catch (e) {
       console.error(e)
@@ -69,8 +101,8 @@ export function SanctionDetailModal({
     }
   }
 
-  const hasFine = !!sanction.charge
-  const fine = sanction.charge
+  // Comprobar si la multa ya tiene algún abono o pago
+  const hasPaymentsApplied = fine && (Number(fine.amount) - Number(fine.balance)) > 0
 
   return (
     <Modal
@@ -79,6 +111,8 @@ export function SanctionDetailModal({
         if (!loading) {
           setActionType(null)
           setNotes('')
+          setNewAmount('')
+          setOutcome('confirm')
           onClose()
         }
       }}
@@ -194,9 +228,23 @@ export function SanctionDetailModal({
                 <p className="text-sm font-bold text-green-700">${Number(fine.balance).toFixed(2)}</p>
               </div>
             </div>
+
+            {/* Listar pagos aplicados si los hay */}
+            {associatedPayments.length > 0 && (
+              <div className="pt-2 border-t border-green-100 mt-2">
+                <p className="text-xs font-semibold text-green-800 mb-1">Abonos realizados:</p>
+                <div className="space-y-1">
+                  {associatedPayments.map((p, idx) => (
+                    <div key={idx} className="flex justify-between text-xs text-green-700">
+                      <span>{new Date(p.payment_date + 'T00:00:00').toLocaleDateString('es-EC')} ({p.payment_method})</span>
+                      <span className="font-bold">${Number(p.amount).toFixed(2)}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         )}
-
 
         {/* Notas de resolución existentes */}
         {sanction.resolution_notes && (
@@ -211,7 +259,7 @@ export function SanctionDetailModal({
           <div className="p-4 border border-primary-200 bg-primary-50/30 rounded-xl space-y-3">
             <div className="flex items-center justify-between">
               <h4 className="text-xs font-bold text-primary-800 uppercase">
-                {actionType === 'resolve' && 'Resolver / Cumplir Sanción'}
+                {actionType === 'resolve' && 'Resolver Sanción'}
                 {actionType === 'appeal' && 'Registrar Apelación'}
                 {actionType === 'nullify' && 'Anular Sanción y Multa'}
               </h4>
@@ -219,6 +267,8 @@ export function SanctionDetailModal({
                 onClick={() => {
                   setActionType(null)
                   setNotes('')
+                  setNewAmount('')
+                  setOutcome('confirm')
                   setError('')
                 }}
                 className="text-gray-400 hover:text-gray-600"
@@ -227,17 +277,99 @@ export function SanctionDetailModal({
               </button>
             </div>
 
+            {/* Opciones exclusivas de resolución */}
+            {actionType === 'resolve' && (
+              <div className="space-y-3 border-b border-primary-100 pb-3">
+                <label className="block text-xs font-bold text-gray-700 uppercase">Resultado de la resolución *</label>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => { setOutcome('confirm'); setError('') }}
+                    className={`flex-1 py-2 text-xs font-medium border rounded-xl transition-colors ${
+                      outcome === 'confirm'
+                        ? 'bg-primary-600 text-white border-primary-600'
+                        : 'bg-white text-gray-700 hover:bg-gray-50 border-gray-300'
+                    }`}
+                  >
+                    Confirmar multa
+                  </button>
+                  <button
+                    onClick={() => {
+                      if (hasPaymentsApplied) {
+                        toast.error('No se puede modificar una multa con pagos aplicados')
+                        return
+                      }
+                      setOutcome('modify')
+                      setError('')
+                    }}
+                    disabled={!!hasPaymentsApplied}
+                    className={`flex-1 py-2 text-xs font-medium border rounded-xl transition-colors disabled:opacity-50 ${
+                      outcome === 'modify'
+                        ? 'bg-primary-600 text-white border-primary-600'
+                        : 'bg-white text-gray-700 hover:bg-gray-50 border-gray-300'
+                    }`}
+                  >
+                    Modificar multa
+                  </button>
+                  <button
+                    onClick={() => {
+                      if (hasPaymentsApplied) {
+                        toast.error('No se puede anular una multa con pagos aplicados')
+                        return
+                      }
+                      setOutcome('annul')
+                      setError('')
+                    }}
+                    disabled={!!hasPaymentsApplied}
+                    className={`flex-1 py-2 text-xs font-medium border rounded-xl transition-colors disabled:opacity-50 ${
+                      outcome === 'annul'
+                        ? 'bg-primary-600 text-white border-primary-600'
+                        : 'bg-white text-gray-700 hover:bg-gray-50 border-gray-300'
+                    }`}
+                  >
+                    Anular multa
+                  </button>
+                </div>
+
+                {outcome === 'confirm' && (
+                  <p className="text-xs text-blue-600 bg-blue-50 p-2 rounded-lg">
+                    ℹ️ La sanción será confirmada y el saldo pendiente volverá a estar disponible para cobro.
+                  </p>
+                )}
+
+                {outcome === 'modify' && (
+                  <div className="space-y-2 pt-2">
+                    <p className="text-xs text-gray-500">Monto actual: <b>${fine ? Number(fine.amount).toFixed(2) : '0.00'}</b></p>
+                    <Input
+                      label="Nuevo monto *"
+                      placeholder="Ej. 6.00"
+                      type="number"
+                      step="0.01"
+                      value={newAmount}
+                      onChange={(e) => setNewAmount(e.target.value)}
+                      disabled={loading}
+                    />
+                  </div>
+                )}
+
+                {outcome === 'annul' && (
+                  <p className="text-xs text-red-600 bg-red-50 p-2 rounded-lg">
+                    ⚠️ La sanción y su deuda asociada serán anuladas. No se registrará ningún pago.
+                  </p>
+                )}
+              </div>
+            )}
+
             <Textarea
-              label={actionType === 'resolve' ? 'Notas de resolución (Opcional)' : 'Notas o justificación (Requerido)'}
+              label="Resolución / observación *"
               placeholder={
                 actionType === 'resolve'
-                  ? 'Describa cómo se resolvió la sanción...'
-                  : 'Detalle las razones o descargo...'
+                  ? 'Escribe el motivo del fallo o dictamen administrativo...'
+                  : 'Detalle las razones o descargo de la apelación...'
               }
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               error={error}
-              required={actionType !== 'resolve'}
+              required
               disabled={loading}
             />
 
@@ -248,6 +380,8 @@ export function SanctionDetailModal({
                 onClick={() => {
                   setActionType(null)
                   setNotes('')
+                  setNewAmount('')
+                  setOutcome('confirm')
                   setError('')
                 }}
                 disabled={loading}
@@ -255,7 +389,7 @@ export function SanctionDetailModal({
                 Cancelar
               </Button>
               <Button
-                variant={actionType === 'nullify' ? 'danger' : 'primary'}
+                variant={actionType === 'nullify' || (actionType === 'resolve' && outcome === 'annul') ? 'danger' : 'primary'}
                 size="sm"
                 onClick={handleAction}
                 disabled={loading}
@@ -280,26 +414,26 @@ export function SanctionDetailModal({
               </Button>
             )}
 
-            {(sanction.status === 'pendiente' || sanction.status === 'apelacion') && (
-              <>
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  onClick={() => setActionType('nullify')}
-                  className="text-red-600 hover:text-red-700 hover:bg-red-50 flex items-center gap-1"
-                >
-                  <Ban className="h-3.5 w-3.5" /> Anular
-                </Button>
+            {sanction.status === 'pendiente' && (
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => setActionType('nullify')}
+                className="text-red-600 hover:text-red-700 hover:bg-red-50 flex items-center gap-1"
+              >
+                <Ban className="h-3.5 w-3.5" /> Anular
+              </Button>
+            )}
 
-                <Button
-                  variant="primary"
-                  size="sm"
-                  onClick={() => setActionType('resolve')}
-                  className="flex items-center gap-1"
-                >
-                  <CheckCircle className="h-3.5 w-3.5" /> Resolver Sanción
-                </Button>
-              </>
+            {sanction.status === 'apelacion' && (
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={() => { setActionType('resolve'); setOutcome('confirm') }}
+                className="flex items-center gap-1"
+              >
+                <CheckCircle className="h-3.5 w-3.5" /> Resolver Sanción
+              </Button>
             )}
           </div>
         )}
