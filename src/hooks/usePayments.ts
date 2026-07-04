@@ -149,7 +149,7 @@ export function usePayments() {
           *,
           member:members!charges_member_id_fkey(id, first_name, last_name, document_id),
           vehicle:vehicles!charges_vehicle_id_fkey(id, disk_number, plate),
-          charge_type:charge_types!charges_charge_type_id_fkey(id, name)
+          charge_type:charge_types!charges_charge_type_id_fkey(id, name, is_system, category)
         `)
         .eq('company_id', companyId)
 

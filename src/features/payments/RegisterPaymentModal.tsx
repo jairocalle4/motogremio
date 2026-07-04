@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react'
-import { X, DollarSign, Loader2, AlertTriangle } from 'lucide-react'
-import { Button } from '@/components/ui/Button'
+import { X, DollarSign } from 'lucide-react'
 import { Select } from '@/components/ui/Select'
 import { Input } from '@/components/ui/Input'
 import type { Charge, Member, PaymentMethod } from '@/types'
@@ -45,10 +44,16 @@ export function RegisterPaymentModal({
   const [notes, setNotes] = useState('')
   const [loading, setLoading] = useState(false)
 
-  // Inicializar con todas las cuotas seleccionadas
+  // Inicializar seleccionando las cuotas. Si hay alguna sanción, solo auto-seleccionar esa
+  // y obligar a que sea la única seleccionada.
   useEffect(() => {
-    if (isOpen) {
-      setSelectedChargeIds(pendingCharges.map(c => c.id))
+    if (isOpen && pendingCharges.length > 0) {
+      const sanctionCharge = pendingCharges.find(c => c.charge_type?.category === 'sanction')
+      if (sanctionCharge) {
+        setSelectedChargeIds([sanctionCharge.id])
+      } else {
+        setSelectedChargeIds(pendingCharges.map(c => c.id))
+      }
       setPaymentMethod('efectivo')
       setReferenceNumber('')
       setNotes('')
@@ -57,13 +62,29 @@ export function RegisterPaymentModal({
   }, [isOpen, pendingCharges])
 
   const toggleCharge = (id: string) => {
-    setSelectedChargeIds(prev =>
-      prev.includes(id) ? prev.filter(c => c !== id) : [...prev, id]
-    )
+    const clickedCharge = pendingCharges.find(c => c.id === id)
+    const isClickedSanction = clickedCharge?.charge_type?.category === 'sanction'
+
+    setSelectedChargeIds(prev => {
+      // Si hacemos click en una multa de sanción, pasa a ser la única seleccionada
+      if (isClickedSanction) {
+        return prev.includes(id) ? [] : [id]
+      }
+      
+      // Si hacemos click en otro cargo normal, filtramos cualquier sanción previa seleccionada
+      const newIds = prev.includes(id) ? prev.filter(c => c !== id) : [...prev, id]
+      const filtered = pendingCharges.filter(c => newIds.includes(c.id))
+      return filtered
+        .filter(c => c.charge_type?.category !== 'sanction')
+        .map(c => c.id)
+    })
   }
 
   const selectedCharges = pendingCharges.filter(c => selectedChargeIds.includes(c.id))
   const totalAmount = selectedCharges.reduce((sum, c) => sum + Number(c.balance), 0)
+
+  // Detectar si la selección actual contiene una sanción
+  const isPayingSanction = selectedCharges.some(c => c.charge_type?.category === 'sanction')
 
   const handleSubmit = async () => {
     if (!member || selectedChargeIds.length === 0) return
@@ -123,58 +144,80 @@ export function RegisterPaymentModal({
               </div>
             ) : (
               <div className="space-y-2">
-                {pendingCharges.map(charge => (
-                  <label
-                    key={charge.id}
-                    className={`flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition-all ${
-                      selectedChargeIds.includes(charge.id)
-                        ? 'border-primary-300 bg-primary-50'
-                        : 'border-gray-200 hover:border-gray-300'
-                    }`}
-                  >
-                    <input
-                      type="checkbox"
-                      className="mt-0.5 h-4 w-4 rounded text-primary-600 border-gray-300 focus:ring-primary-500"
-                      checked={selectedChargeIds.includes(charge.id)}
-                      onChange={() => toggleCharge(charge.id)}
-                    />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-gray-900 truncate">{charge.description}</p>
-                      <div className="flex items-center gap-2 mt-0.5">
-                        {charge.period_month && charge.period_year && (
-                          <span className="text-xs text-gray-500">
-                            {MONTHS[charge.period_month]} {charge.period_year}
-                          </span>
-                        )}
-                        {charge.status === 'parcial' && (
-                          <span className="text-xs bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded-full font-medium">
-                            Parcial
-                          </span>
-                        )}
-                        <span className="text-xs text-gray-400">vence {new Date(charge.due_date + 'T00:00:00').toLocaleDateString('es-EC')}</span>
+                {pendingCharges.map(charge => {
+                  const isSanction = charge.charge_type?.category === 'sanction'
+                  // Si hay una sanción seleccionada, inhabilitar otros checkbox normales
+                  // Si hay cargos normales seleccionados, inhabilitar checkbox de sanciones
+                  const isDisabled = isPayingSanction ? !selectedChargeIds.includes(charge.id) : (isSanction && selectedChargeIds.length > 0)
+
+                  return (
+                    <label
+                      key={charge.id}
+                      className={`flex items-start gap-3 p-3 rounded-xl border transition-all ${
+                        isDisabled
+                          ? 'opacity-40 border-gray-100 cursor-not-allowed bg-gray-50/50'
+                          : selectedChargeIds.includes(charge.id)
+                          ? 'border-primary-300 bg-primary-50 cursor-pointer'
+                          : 'border-gray-200 hover:border-gray-300 cursor-pointer'
+                      }`}
+                    >
+                      <input
+                        type="checkbox"
+                        className="mt-0.5 h-4 w-4 rounded text-primary-600 border-gray-300 focus:ring-primary-500 disabled:opacity-50"
+                        checked={selectedChargeIds.includes(charge.id)}
+                        disabled={isDisabled}
+                        onChange={() => toggleCharge(charge.id)}
+                      />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-gray-900 truncate">{charge.description}</p>
+                        <div className="flex items-center gap-2 mt-0.5">
+                          {charge.period_month && charge.period_year && (
+                            <span className="text-xs text-gray-500">
+                              {MONTHS[charge.period_month]} {charge.period_year}
+                            </span>
+                          )}
+                          {isSanction && (
+                            <span className="text-xs bg-red-100 text-red-700 px-1.5 py-0.5 rounded-full font-medium">
+                              Multa disciplinaria
+                            </span>
+                          )}
+                          {charge.status === 'parcial' && !isSanction && (
+                            <span className="text-xs bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded-full font-medium">
+                              Parcial
+                            </span>
+                          )}
+                          <span className="text-xs text-gray-400">vence {new Date(charge.due_date + 'T00:00:00').toLocaleDateString('es-EC')}</span>
+                        </div>
                       </div>
-                    </div>
-                    <div className="text-right shrink-0">
-                      <p className="text-sm font-bold text-gray-900">${Number(charge.balance).toFixed(2)}</p>
-                      {charge.balance !== charge.amount && (
-                        <p className="text-xs text-gray-400 line-through">${Number(charge.amount).toFixed(2)}</p>
-                      )}
-                    </div>
-                  </label>
-                ))}
+                      <div className="text-right shrink-0">
+                        <p className="text-sm font-bold text-gray-900">${Number(charge.balance).toFixed(2)}</p>
+                        {charge.balance !== charge.amount && (
+                          <p className="text-xs text-gray-400 line-through">${Number(charge.amount).toFixed(2)}</p>
+                        )}
+                      </div>
+                    </label>
+                  )
+                })}
               </div>
             )}
           </div>
 
-          {/* Resumen */}
+          {/* Resumen y Nota Explicativa para Sanciones */}
           {selectedCharges.length > 0 && (
-            <div className="bg-green-50 border border-green-200 rounded-xl p-4">
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium text-green-800">
-                  Total a cobrar ({selectedCharges.length} cuota{selectedCharges.length !== 1 ? 's' : ''})
-                </span>
-                <span className="text-xl font-bold text-green-700">${totalAmount.toFixed(2)}</span>
+            <div className="space-y-2">
+              <div className="bg-green-50 border border-green-200 rounded-xl p-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium text-green-800">
+                    Total a cobrar ({selectedCharges.length} cuota{selectedCharges.length !== 1 ? 's' : ''})
+                  </span>
+                  <span className="text-xl font-bold text-green-700">${totalAmount.toFixed(2)}</span>
+                </div>
               </div>
+              {isPayingSanction && (
+                <div className="bg-amber-50 border border-amber-200 text-amber-800 text-xs rounded-xl p-3">
+                  ⚠️ Las multas por sanciones se pagan en una sola operación. No se admiten abonos parciales.
+                </div>
+              )}
             </div>
           )}
 
@@ -199,45 +242,38 @@ export function RegisterPaymentModal({
           {/* Referencia (opcional) */}
           {(paymentMethod === 'transferencia' || paymentMethod === 'deposito' || paymentMethod === 'cheque') && (
             <Input
-              label="Número de referencia / comprobante"
-              placeholder="Ej: TRN-20240611-001"
+              label="Número de referencia / transferencia"
+              placeholder="Ej. 123456"
               value={referenceNumber}
               onChange={e => setReferenceNumber(e.target.value)}
             />
           )}
 
-          {/* Notas */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">Notas (opcional)</label>
-            <textarea
-              className="w-full px-3 py-2 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent resize-none"
-              rows={2}
-              placeholder="Observaciones adicionales..."
-              value={notes}
-              onChange={e => setNotes(e.target.value)}
-            />
-          </div>
-
-          {selectedCharges.length === 0 && pendingCharges.length > 0 && (
-            <div className="flex items-center gap-2 text-amber-700 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2.5">
-              <AlertTriangle className="h-4 w-4 shrink-0" />
-              <p className="text-sm">Selecciona al menos una cuota para continuar</p>
-            </div>
-          )}
+          {/* Observaciones */}
+          <Input
+            label="Observaciones"
+            placeholder="Opcional..."
+            value={notes}
+            onChange={e => setNotes(e.target.value)}
+          />
         </div>
 
         {/* Footer */}
         <div className="px-6 py-4 border-t border-gray-100 flex justify-end gap-3 sticky bottom-0 bg-white rounded-b-2xl">
-          <Button variant="secondary" onClick={onClose} disabled={loading}>Cancelar</Button>
-          <Button
-            variant="primary"
-            onClick={handleSubmit}
-            disabled={loading || selectedChargeIds.length === 0 || totalAmount <= 0}
+          <button
+            onClick={onClose}
+            className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-xl hover:bg-gray-50 transition-colors"
+            disabled={loading}
           >
-            {loading ? (
-              <span className="flex items-center gap-2"><Loader2 className="h-4 w-4 animate-spin" />Registrando...</span>
-            ) : `Registrar $${totalAmount.toFixed(2)}`}
-          </Button>
+            Cancelar
+          </button>
+          <button
+            onClick={handleSubmit}
+            className="px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-xl hover:bg-green-700 transition-colors disabled:opacity-50"
+            disabled={loading || selectedChargeIds.length === 0}
+          >
+            {loading ? 'Procesando...' : isPayingSanction ? 'Pagar multa completa' : 'Registrar pago'}
+          </button>
         </div>
       </div>
     </div>
