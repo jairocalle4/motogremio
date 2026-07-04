@@ -90,8 +90,7 @@ export function usePayments() {
 
   const createChargeType = useCallback(async (data: ChargeTypeFormData) => {
     if (!companyId) return null
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: result, error: err } = await (supabase as any)
+    const { data: result, error: err } = await supabase
       .from('charge_types')
       .insert({ ...data, company_id: companyId, is_system: false, category: data.is_recurring ? 'monthly' : 'manual' })
       .select()
@@ -106,8 +105,7 @@ export function usePayments() {
 
   const updateChargeType = useCallback(async (id: string, data: Partial<ChargeTypeFormData>) => {
     if (!companyId) return null
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: result, error: err } = await (supabase as any)
+    const { data: result, error: err } = await supabase
       .from('charge_types')
       .update({ ...data, updated_at: new Date().toISOString() })
       .eq('id', id)
@@ -125,8 +123,7 @@ export function usePayments() {
 
   const deleteChargeType = useCallback(async (id: string) => {
     if (!companyId) return
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { error: err } = await (supabase as any)
+    const { error: err } = await supabase
       .from('charge_types')
       .delete()
       .eq('id', id)
@@ -158,8 +155,7 @@ export function usePayments() {
 
       if (params.memberId)     query = query.eq('member_id', params.memberId)
       if (params.vehicleId)    query = query.eq('vehicle_id', params.vehicleId)
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      if (params.status)       query = (query as any).eq('status', params.status)
+      if (params.status)       query = query.eq('status', params.status)
       if (params.periodMonth)  query = query.eq('period_month', params.periodMonth)
       if (params.periodYear)   query = query.eq('period_year', params.periodYear)
 
@@ -186,8 +182,7 @@ export function usePayments() {
     if (!companyId) return { inserted: 0, skipped: 0, activeUnits: 0 }
     setLoading(true)
     try {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data, error: rpcErr } = await (supabase as any).rpc('generate_monthly_charges_rpc', {
+      const { data, error: rpcErr } = await supabase.rpc('generate_monthly_charges_rpc', {
         p_charge_type_id: params.chargeTypeId,
         p_period_month:   params.periodMonth,
         p_period_year:    params.periodYear,

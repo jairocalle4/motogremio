@@ -320,8 +320,7 @@ export function useSanctions() {
     if (!companyId) return null
     setLoading(true)
     try {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data, error: err } = await (supabase as any).rpc('nullify_sanction_atomic', {
+      const { data, error: err } = await supabase.rpc('nullify_sanction_atomic', {
         p_sanction_id: id,
         p_notes: resolutionNotes ?? 'Sanción anulada administrativamente',
       })
@@ -352,12 +351,11 @@ export function useSanctions() {
     if (!companyId) return null
     setLoading(true)
     try {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data, error: err } = await (supabase as any).rpc('resolve_sanction_atomic', {
+      const { data, error: err } = await supabase.rpc('resolve_sanction_atomic', {
         p_sanction_id: id,
         p_outcome: outcome,
         p_notes: resolutionNotes,
-        p_new_amount: newAmount ?? null,
+        p_new_amount: newAmount ?? undefined,
       })
       if (err) throw err
       const outcomeLabels = { confirm: 'confirmada', modify: 'modificada y confirmada', annul: 'anulada' }
@@ -381,8 +379,7 @@ export function useSanctions() {
     if (!companyId) return null
     setLoading(true)
     try {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data, error: err } = await (supabase as any).rpc('appeal_sanction_atomic', {
+      const { data, error: err } = await supabase.rpc('appeal_sanction_atomic', {
         p_sanction_id: id,
         p_notes: notes,
       })

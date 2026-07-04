@@ -95,32 +95,38 @@ export type Database = {
       }
       charge_types: {
         Row: {
+          category: string
           company_id: string
           created_at: string | null
           default_amount: number | null
           description: string | null
           id: string
           is_recurring: boolean | null
+          is_system: boolean
           name: string
           updated_at: string | null
         }
         Insert: {
+          category?: string
           company_id: string
           created_at?: string | null
           default_amount?: number | null
           description?: string | null
           id?: string
           is_recurring?: boolean | null
+          is_system?: boolean
           name: string
           updated_at?: string | null
         }
         Update: {
+          category?: string
           company_id?: string
           created_at?: string | null
           default_amount?: number | null
           description?: string | null
           id?: string
           is_recurring?: boolean | null
+          is_system?: boolean
           name?: string
           updated_at?: string | null
         }
@@ -2023,6 +2029,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      appeal_sanction_atomic: {
+        Args: { p_notes: string; p_sanction_id: string }
+        Returns: Json
+      }
       assign_user_role: {
         Args: {
           target_company_id: string
@@ -2112,6 +2122,15 @@ export type Database = {
           p_max_vehicles: number
           p_name: Database["public"]["Enums"]["plan_name"]
           p_price_monthly: number
+        }
+        Returns: Json
+      }
+      generate_monthly_charges_rpc: {
+        Args: {
+          p_charge_type_id: string
+          p_due_date: string
+          p_period_month: number
+          p_period_year: number
         }
         Returns: Json
       }
@@ -2240,6 +2259,10 @@ export type Database = {
         Args: { p_invoice_id: string; p_notes: string }
         Returns: boolean
       }
+      nullify_sanction_atomic: {
+        Args: { p_notes: string; p_sanction_id: string }
+        Returns: Json
+      }
       preview_company_plan_change: {
         Args: { p_company_id: string; p_new_plan_id: string }
         Returns: Json
@@ -2280,9 +2303,22 @@ export type Database = {
         }
         Returns: string
       }
+      resolve_sanction_atomic: {
+        Args: {
+          p_new_amount?: number
+          p_notes: string
+          p_outcome: string
+          p_sanction_id: string
+        }
+        Returns: Json
+      }
       seed_default_charge_type_for_company: {
         Args: { p_company_id: string }
         Returns: undefined
+      }
+      seed_monthly_charge_type: {
+        Args: { p_amount?: number; p_company_id: string; p_name?: string }
+        Returns: string
       }
       suspend_company_for_nonpayment: {
         Args: { p_company_id: string }
@@ -2385,7 +2421,12 @@ export type Database = {
     }
     Enums: {
       attendance_status: "asistio" | "ausente" | "justificado" | "tarde"
-      charge_status: "pendiente" | "parcial" | "pagada" | "anulada"
+      charge_status:
+        | "pendiente"
+        | "parcial"
+        | "pagada"
+        | "anulada"
+        | "suspendida"
       communication_status: "pendiente" | "preparado" | "enviado" | "fallido"
       document_status: "vigente" | "por_vencer" | "vencido"
       driver_status: "activo" | "inactivo"
@@ -2542,7 +2583,13 @@ export const Constants = {
   public: {
     Enums: {
       attendance_status: ["asistio", "ausente", "justificado", "tarde"],
-      charge_status: ["pendiente", "parcial", "pagada", "anulada"],
+      charge_status: [
+        "pendiente",
+        "parcial",
+        "pagada",
+        "anulada",
+        "suspendida",
+      ],
       communication_status: ["pendiente", "preparado", "enviado", "fallido"],
       document_status: ["vigente", "por_vencer", "vencido"],
       driver_status: ["activo", "inactivo"],
