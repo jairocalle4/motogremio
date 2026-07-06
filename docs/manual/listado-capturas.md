@@ -51,6 +51,10 @@
 | 41 | `41-super-admin-companias.png` | 12. Super Admin — Compañías | ⏳ Pendiente | Sí |
 | 42 | `42-super-admin-planes.png` | 12. Super Admin — Planes | ⏳ Pendiente | Sí |
 | 43 | `43-super-admin-auditoria.png` | 12. Super Admin — Auditoría | ⏳ Pendiente | Sí |
+| 44 | `44-forgot-password.png` | 5.2 ¿Olvidaste tu contraseña? — Solicitar | ⏳ Pendiente | Sí |
+| 45 | `45-reset-email-sent.png` | 5.2 ¿Olvidaste tu contraseña? — Correo enviado | ⏳ Pendiente | Sí |
+| 46 | `46-reset-password.png` | 5.2 ¿Olvidaste tu contraseña? — Nueva contraseña | ⏳ Pendiente | Sí |
+| 47 | `47-reset-password-expired.png` | 5.2 ¿Olvidaste tu contraseña? — Enlace expirado | ⏳ Pendiente | Sí |
 
 ---
 

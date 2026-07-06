@@ -11,6 +11,10 @@
 - [ ] Todos los módulos visibles (no placeholder) están documentados.
 - [ ] Los módulos placeholder (`/auditoria`, `/super-admin/metrics`, `/super-admin/security`) NO se presentan como disponibles en el manual principal.
 - [ ] La ruta del Portal del Socio (`/dashboard` con vista especial para rol `socio`) está diferenciada del Dashboard de compañía.
+- [ ] El enlace “¿Olvidaste tu contraseña?” y el flujo de restablecimiento de contraseña están documentados paso a paso.
+- [ ] Se documenta el comportamiento de respuesta genérica para evitar la enumeración de cuentas.
+- [ ] Se documenta que el enlace de recuperación abre la ruta correcta `/auth/reset-password`.
+- [ ] Se documenta la pantalla de enlace inválido o expirado y la opción de solicitar un nuevo enlace.
 
 ### Roles y Permisos
 - [ ] Los 8 roles del sistema están listados con sus nombres visibles en la interfaz.

@@ -142,6 +142,28 @@ El sistema lo llevará automáticamente al panel principal según su rol:
 - Si es Superadministrador → Panel de Superadministrador.
 - Si es cualquier otro rol → Dashboard de la compañía.
 
+### 5.2 ¿Olvidaste tu contraseña?
+
+#### ¿Para qué sirve?
+Recuperar el acceso a tu cuenta mediante un enlace seguro enviado por correo electrónico si olvidaste tu clave actual.
+
+#### ¿Quién puede realizarlo?
+Cualquier usuario registrado en el sistema.
+
+#### Pasos
+
+1. En la pantalla de inicio de sesión (`/login`), presiona el enlace **¿Olvidaste tu contraseña?** ubicado debajo del campo de contraseña.
+2. El sistema te redirigirá a la pantalla de recuperación (`/auth/forgot-password`).
+3. Ingresa la dirección de correo electrónico asociada a tu cuenta.
+4. Presiona el botón **Enviar enlace de recuperación**.
+5. Verás un mensaje indicando que, si la dirección está registrada, recibirás un enlace de acceso.
+6. Revisa tu bandeja de entrada de correo electrónico (y la carpeta de Correo no deseado o Spam).
+7. Haz clic en el enlace seguro recibido.
+8. Se abrirá la aplicación en la pantalla para crear una nueva contraseña (`/auth/reset-password`).
+9. Escribe y confirma tu nueva contraseña (mínimo 6 caracteres).
+10. Presiona **Guardar nueva contraseña**.
+11. Recibirás un mensaje de éxito y la sesión de recuperación se cerrará. Presiona **Iniciar sesión ahora** para volver al Login e ingresar con tu nueva clave.
+
 #### Posibles errores
 
 | Mensaje | Causa | Solución |
@@ -154,7 +176,7 @@ El sistema lo llevará automáticamente al panel principal según su rol:
 
 ---
 
-### 5.2 Cambiar contraseña
+### 5.3 Cambiar contraseña
 
 #### ¿Para qué sirve?
 Actualizar la contraseña de su cuenta por seguridad.
@@ -175,7 +197,7 @@ Cualquier usuario autenticado.
 
 ---
 
-### 5.3 Cerrar sesión
+### 5.4 Cerrar sesión
 
 #### Pasos
 

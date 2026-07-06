@@ -30,16 +30,18 @@
 | 19 | Configuración de compañía | `/configuracion` | super_admin, admin | ✅ Disponible | Sí |
 | 20 | Auditoría de compañía | `/auditoria` | super_admin, admin | ⚠️ Placeholder | Solo inventario |
 | 21 | Cambio de contraseña | `/account/security` | Todos los autenticados | ✅ Disponible | Sí |
-| 22 | Dashboard super admin | `/super-admin` | super_admin | ✅ Disponible | Sí (sección SA) |
-| 23 | Compañías (SA) | `/super-admin/companies` | super_admin | ✅ Disponible | Sí (sección SA) |
-| 24 | Detalle compañía (SA) | `/super-admin/companies/:id` | super_admin | ✅ Disponible | Sí (sección SA) |
-| 25 | Planes (SA) | `/super-admin/plans` | super_admin | ✅ Disponible | Sí (sección SA) |
-| 26 | Suscripciones (SA) | `/super-admin/subscriptions` | super_admin | ✅ Disponible | Sí (sección SA) |
-| 27 | Alertas Globales (SA) | `/super-admin/alerts` | super_admin | ✅ Disponible | Sí (sección SA) |
-| 28 | Configuración Global (SA) | `/super-admin/settings` | super_admin | ✅ Disponible | Sí (sección SA) |
-| 29 | Auditoría (SA) | `/super-admin/auditoria` | super_admin | ✅ Disponible | Sí (sección SA) |
-| 30 | Métricas (SA) | `/super-admin/metrics` | super_admin | ⚠️ Placeholder | Solo inventario |
-| 31 | Seguridad (SA) | `/super-admin/security` | super_admin | ⚠️ Placeholder | Solo inventario |
+| 22 | Solicitar recuperación de contraseña | `/auth/forgot-password` | Todos | ✅ Disponible | Sí |
+| 23 | Restablecer contraseña | `/auth/reset-password` | Todos | ✅ Disponible | Sí |
+| 24 | Dashboard super admin | `/super-admin` | super_admin | ✅ Disponible | Sí (sección SA) |
+| 25 | Compañías (SA) | `/super-admin/companies` | super_admin | ✅ Disponible | Sí (sección SA) |
+| 26 | Detalle compañía (SA) | `/super-admin/companies/:id` | super_admin | ✅ Disponible | Sí (sección SA) |
+| 27 | Planes (SA) | `/super-admin/plans` | super_admin | ✅ Disponible | Sí (sección SA) |
+| 28 | Suscripciones (SA) | `/super-admin/subscriptions` | super_admin | ✅ Disponible | Sí (sección SA) |
+| 29 | Alertas Globales (SA) | `/super-admin/alerts` | super_admin | ✅ Disponible | Sí (sección SA) |
+| 30 | Configuración Global (SA) | `/super-admin/settings` | super_admin | ✅ Disponible | Sí (sección SA) |
+| 31 | Auditoría (SA) | `/super-admin/auditoria` | super_admin | ✅ Disponible | Sí (sección SA) |
+| 32 | Métricas (SA) | `/super-admin/metrics` | super_admin | ⚠️ Placeholder | Solo inventario |
+| 33 | Seguridad (SA) | `/super-admin/security` | super_admin | ⚠️ Placeholder | Solo inventario |
 
 ---
 
@@ -47,6 +49,10 @@
 
 ### Autenticación
 - Inicio de sesión con correo y contraseña
+- Enlace "¿Olvidaste tu contraseña?" que dirige a la solicitud de recuperación
+- Pantalla para solicitar el enlace de recuperación con protección de privacidad (sin revelar existencia)
+- Pantalla para ingresar la nueva contraseña desde el enlace de correo de Supabase Auth
+- Cierre global de sesiones tras restablecer la contraseña exitosamente
 - Mostrar / ocultar contraseña
 - Redirección según el rol (super_admin → panel SA; otros → dashboard)
 - Manejo de errores de autenticación en español
