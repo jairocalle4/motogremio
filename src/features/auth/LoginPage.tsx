@@ -159,6 +159,15 @@ export function LoginPage() {
                 }
                 {...register('password')}
               />
+              <div className="text-right">
+                <button
+                  type="button"
+                  onClick={() => navigate('/auth/forgot-password')}
+                  className="text-xs text-primary-400 hover:text-primary-300 transition-colors font-medium"
+                >
+                  ¿Olvidaste tu contraseña?
+                </button>
+              </div>
             </div>
 
             {/* Error del servidor */}

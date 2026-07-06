@@ -39,9 +39,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     // Escuchar cambios de autenticación
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (_event, session) => {
+      async (event, session) => {
         setSession(session)
         setUser(session?.user ?? null)
+        if (event === 'PASSWORD_RECOVERY') {
+          // Si es recuperación de contraseña, dejamos que el componente ResetPasswordPage lo maneje.
+          // Ponemos el loading en false para permitir renderizar la ruta pública correcta.
+          setLoading(false)
+          return
+        }
         if (session?.user) {
           await fetchProfile(session.user.id)
         } else {
