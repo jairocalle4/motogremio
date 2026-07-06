@@ -28,6 +28,17 @@ export function ProtectedRoute({ allowedRoles }: ProtectedRouteProps) {
     )
   }
 
+  const hash = window.location.hash
+  const query = new URLSearchParams(window.location.search)
+  const isRecovery = hash.includes('access_token=') || hash.includes('type=recovery') || query.has('code') || location.pathname === '/auth/reset-password'
+
+  if (isRecovery) {
+    if (location.pathname !== '/auth/reset-password') {
+      return <Navigate to="/auth/reset-password" replace />
+    }
+    return <Outlet />
+  }
+
   if (!user) {
     return <Navigate to="/login" state={{ from: location }} replace />
   }

@@ -26,11 +26,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    // Interceptar flujo de recuperación de contraseña antes de evaluar sesión automática
+    const hash = window.location.hash
+    const query = new URLSearchParams(window.location.search)
+    const isRecoveryUrl = hash.includes('access_token=') || hash.includes('type=recovery') || query.has('code')
+
+    if (isRecoveryUrl) {
+      // Si la URL es de recuperación, no cargamos el perfil ni redirigimos
+      setLoading(false)
+    }
+
     // Obtener sesión inicial
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session)
       setUser(session?.user ?? null)
-      if (session?.user) {
+      if (session?.user && !isRecoveryUrl) {
         fetchProfile(session.user.id)
       } else {
         setLoading(false)
@@ -42,7 +52,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       async (event, session) => {
         setSession(session)
         setUser(session?.user ?? null)
-        if (event === 'PASSWORD_RECOVERY') {
+        if (event === 'PASSWORD_RECOVERY' || (session && isRecoveryUrl)) {
           // Si es recuperación de contraseña, dejamos que el componente ResetPasswordPage lo maneje.
           // Ponemos el loading en false para permitir renderizar la ruta pública correcta.
           setLoading(false)
