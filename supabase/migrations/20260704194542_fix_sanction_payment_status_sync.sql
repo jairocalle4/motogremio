@@ -201,7 +201,7 @@ $$;
 --    Pedro Moran: multa $2 pagada (balance = 0) pero sanción 'pendiente'.
 -- ─────────────────────────────────────────────────────────────────────────────
 
--- Regla segura 1: Sincronizar sanciones cuyos cargos estén totalmente pagados con allocations válidos
+-- Regla segura 1: Sincronizar sanciones cuyos cargos estén totalmente pagados con allocations válidos (Solo si la compañía existe)
 UPDATE public.sanctions s
 SET status = 'resuelta'::public.sanction_status,
     updated_at = now()
@@ -210,14 +210,16 @@ WHERE c.id = s.charge_id
   AND c.company_id = '074bb7ba-afaa-4ae0-a979-724f0472d6b9'
   AND c.status = 'pagada'::public.charge_status
   AND c.balance = 0
-  AND s.status = 'pendiente'::public.sanction_status;
+  AND s.status = 'pendiente'::public.sanction_status
+  AND EXISTS (SELECT 1 FROM public.companies WHERE id = '074bb7ba-afaa-4ae0-a979-724f0472d6b9');
 
--- Registrar auditoría del ajuste para Pedro Moran
+-- Registrar auditoría del ajuste para Pedro Moran (Solo si la compañía y la sanción existen)
 INSERT INTO public.audit_logs (company_id, action, table_name, record_id, new_data)
-VALUES (
+SELECT
   '074bb7ba-afaa-4ae0-a979-724f0472d6b9',
   'SANCTION_NORMALIZED',
   'sanctions',
   'ac10d224-6f0e-4938-85af-fa71b6e3eeec',
   jsonb_build_object('reason', 'Normalizar estado a resuelta debido a pago completo verificado de $2.00', 'charge_id', 'ee53f772-ac9c-4893-902d-8a8597294877')
-);
+WHERE EXISTS (SELECT 1 FROM public.companies WHERE id = '074bb7ba-afaa-4ae0-a979-724f0472d6b9')
+  AND EXISTS (SELECT 1 FROM public.sanctions WHERE id = 'ac10d224-6f0e-4938-85af-fa71b6e3eeec');
