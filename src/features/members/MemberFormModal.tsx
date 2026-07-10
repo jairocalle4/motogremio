@@ -44,14 +44,19 @@ const memberSchema = z
       .optional()
       .or(z.literal('')),
 
-    // Teléfono (opcional, si se llena: solo dígitos, 7-15 chars)
+    // Teléfono (opcional, si se llena: celular de Ecuador de 10 dígitos empezando con 09)
     phone: z
       .string()
-      .regex(/^\d*$/, 'El teléfono debe contener solo números')
-      .min(7, 'El teléfono debe tener al menos 7 dígitos')
-      .max(15, 'El teléfono no puede superar 15 dígitos')
       .optional()
-      .or(z.literal('')),
+      .or(z.literal(''))
+      .refine(
+        (val) => {
+          if (!val || val === '') return true
+          const cleanVal = val.replace(/\s+/g, '')
+          return /^09\d{8}$/.test(cleanVal)
+        },
+        'El teléfono debe ser un celular de Ecuador válido (ej. 0998765432) de 10 dígitos'
+      ),
 
     // Dirección (opcional, máx 200 chars)
     address: z

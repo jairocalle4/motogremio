@@ -28,10 +28,16 @@ const driverSchema = z
     last_name:   z.string().min(2, 'Mínimo 2 caracteres').max(80, 'Máximo 80 caracteres').trim(),
     phone: z
       .string()
-      .regex(/^\d*$/, 'Solo se permiten números')
-      .max(15, 'Máximo 15 dígitos')
       .optional()
-      .or(z.literal('')),
+      .or(z.literal(''))
+      .refine(
+        (val) => {
+          if (!val || val === '') return true
+          const cleanVal = val.replace(/\s+/g, '')
+          return /^09\d{8}$/.test(cleanVal)
+        },
+        'El teléfono debe ser un celular de Ecuador válido (ej. 0998765432) de 10 dígitos'
+      ),
     address:          z.string().max(200, 'Máximo 200 caracteres').optional().or(z.literal('')),
     status:           z.enum(['activo', 'inactivo'] as const),
     notes:            z.string().max(500, 'Máximo 500 caracteres').optional().or(z.literal('')),

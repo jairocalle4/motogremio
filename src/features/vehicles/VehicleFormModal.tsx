@@ -19,13 +19,21 @@ const vehicleSchema = z.object({
   disk_number: z
     .string()
     .min(1, 'El número de disco es obligatorio')
+    .regex(/^\d+$/, 'El número de disco debe contener solo números')
     .max(10, 'Máximo 10 caracteres'),
 
   plate: z
     .string()
     .min(1, 'La placa es obligatoria')
-    .max(20, 'Máximo 20 caracteres')
-    .transform((v) => v.toUpperCase().trim()),
+    .transform((v) => v.toUpperCase().replace(/[^A-Z0-9]/g, '').trim())
+    .refine(
+      (val) => {
+        const regTradicional = /^[A-Z]{3}\d{3,4}$/;
+        const regTricimoto = /^[A-Z]{2}\d{3}[A-Z]$/;
+        return regTradicional.test(val) || regTricimoto.test(val);
+      },
+      { message: 'Placa inválida. Formatos aceptados: AAA1234 (auto/mototaxi) o AA123B (moto), máximo 7 caracteres.' }
+    ),
 
   member_id: z
     .string()

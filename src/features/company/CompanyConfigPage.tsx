@@ -32,7 +32,7 @@ import {
 const companySchema = z.object({
   legal_name: z.string().min(3, 'La razón social es obligatoria'),
   trade_name: z.string().min(1, 'El nombre comercial es obligatorio'),
-  ruc: z.string().length(13, 'El RUC debe tener 13 dígitos'),
+  ruc: z.string().regex(/^\d{13}$/, 'El RUC debe contener exactamente 13 números (sin letras ni caracteres especiales)'),
   address: z.string().nullable().optional(),
   phone: z.string().nullable().optional(),
   email: z.string().email('Correo inválido').nullable().optional().or(z.literal('')),

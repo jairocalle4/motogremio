@@ -38,7 +38,7 @@ type Plan = Database['public']['Tables']['plans']['Row']
 const companySchema = z.object({
   legal_name: z.string().min(3, 'El nombre legal debe tener al menos 3 caracteres.'),
   trade_name: z.string().default(''),
-  ruc: z.string().length(13, 'El RUC debe tener exactamente 13 caracteres.'),
+  ruc: z.string().regex(/^\d{13}$/, 'El RUC debe contener exactamente 13 números (sin letras ni caracteres especiales).'),
   plan_id: z.string().min(1, 'Selecciona un plan.'),
   status: z.enum(['activa', 'inactiva']),
   service_type: z.enum(['mototaxi', 'taxi', 'camioneta', 'transporte_mixto', 'otro']),
