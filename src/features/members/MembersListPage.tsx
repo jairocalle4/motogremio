@@ -21,7 +21,6 @@ import {
   Eye,
   Edit2,
   AlertTriangle,
-  FileSpreadsheet,
 } from 'lucide-react'
 import type { Member, MemberStatus } from '@/types'
 
@@ -198,14 +197,6 @@ export function MembersListPage() {
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <Button
-            variant="outline"
-            className="flex items-center gap-2"
-            onClick={() => toast('Función de exportación próximamente disponible.', { icon: '📊' })}
-          >
-            <FileSpreadsheet className="w-4 h-4" />
-            Exportar
-          </Button>
           {canManageMembers && (
             <Button
               className="flex items-center gap-2"

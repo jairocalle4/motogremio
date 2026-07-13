@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { Bike, ArrowLeft, CheckCircle2 } from 'lucide-react'
+import { Zap, ArrowLeft, CheckCircle2 } from 'lucide-react'
 import { supabase } from '@/lib/supabaseClient'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
@@ -61,7 +61,7 @@ export function ForgotPasswordPage() {
 
         <div className="relative flex items-center gap-3 z-10">
           <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-primary-600 to-primary-400 flex items-center justify-center shadow-lg">
-            <Bike className="h-6 w-6 text-white" />
+            <Zap className="h-6 w-6 text-white" />
           </div>
           <div>
             <p className="text-white font-bold text-xl tracking-tight">{APP_NAME}</p>
@@ -73,7 +73,7 @@ export function ForgotPasswordPage() {
           <h2 className="text-white text-3xl font-extrabold leading-tight tracking-tight mb-4">
             Recupera tu acceso de<br />forma segura y rápida
           </h2>
-          <p className="text-slate-350 text-sm leading-relaxed">
+          <p className="text-slate-300 text-sm leading-relaxed">
             {APP_SLOGAN}. Ingresa tu dirección de correo electrónico institucional o personal para restablecer tu contraseña.
           </p>
         </div>
@@ -89,7 +89,10 @@ export function ForgotPasswordPage() {
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] rounded-full bg-primary-500/10 blur-3xl" />
         </div>
 
-        <div className="w-full max-w-sm bg-slate-900/40 backdrop-blur-md border border-slate-800 p-8 rounded-2xl shadow-xl z-10">
+        <div
+          className="w-full max-w-sm bg-slate-900/40 backdrop-blur-md border border-slate-800 p-8 rounded-2xl shadow-xl z-10"
+          style={{ animation: 'fadeSlideIn 0.35s cubic-bezier(0.22, 1, 0.36, 1) both' }}
+        >
           {success ? (
             <div className="space-y-6 text-center">
               <div className="w-12 h-12 rounded-full bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center mx-auto text-emerald-400">

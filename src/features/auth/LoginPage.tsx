@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { Eye, EyeOff, Bike } from 'lucide-react'
+import { Eye, EyeOff, Zap } from 'lucide-react'
 import { useAuth } from '@/context/useAuth'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
@@ -25,6 +25,12 @@ export function LoginPage() {
 
   const [showPassword, setShowPassword] = useState(false)
   const [serverError,  setServerError]  = useState<string | null>(null)
+  const [isLeaving,    setIsLeaving]    = useState(false)
+
+  const handleForgotPassword = () => {
+    setIsLeaving(true)
+    setTimeout(() => navigate('/auth/forgot-password'), 280)
+  }
 
   const {
     register, handleSubmit,
@@ -57,7 +63,7 @@ export function LoginPage() {
         {/* Logo */}
         <div className="relative flex items-center gap-3 z-10">
           <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-primary-600 to-primary-400 flex items-center justify-center shadow-lg shadow-primary-500/20">
-            <Bike className="h-6 w-6 text-white" />
+            <Zap className="h-6 w-6 text-white" />
           </div>
           <div>
             <p className="text-white font-bold text-xl tracking-tight">{APP_NAME}</p>
@@ -111,13 +117,19 @@ export function LoginPage() {
         {/* Logo mobile */}
         <div className="flex items-center gap-2.5 mb-8 lg:hidden z-10">
           <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-primary-600 to-primary-400 flex items-center justify-center shadow-lg">
-            <Bike className="h-5 w-5 text-white" />
+            <Zap className="h-5 w-5 text-white" />
           </div>
           <p className="font-bold text-xl text-white tracking-tight">{APP_NAME}</p>
         </div>
 
         {/* Card de login */}
-        <div className="w-full max-w-sm bg-slate-900/40 backdrop-blur-md border border-slate-800 p-8 rounded-2xl shadow-xl z-10">
+        <div
+          className="w-full max-w-sm bg-slate-900/40 backdrop-blur-md border border-slate-800 p-8 rounded-2xl shadow-xl z-10 transition-all duration-280"
+          style={{
+            opacity: isLeaving ? 0 : 1,
+            transform: isLeaving ? 'translateX(-20px) scale(0.97)' : 'translateX(0) scale(1)',
+          }}
+        >
           <div className="mb-6">
             <h1 className="text-2xl font-bold text-white tracking-tight mb-1">Bienvenido</h1>
             <p className="text-sm text-slate-400">Ingresa a tu cuenta para continuar</p>
@@ -162,7 +174,7 @@ export function LoginPage() {
               <div className="text-right">
                 <button
                   type="button"
-                  onClick={() => navigate('/auth/forgot-password')}
+                  onClick={handleForgotPassword}
                   className="text-xs text-primary-400 hover:text-primary-300 transition-colors font-medium"
                 >
                   ¿Olvidaste tu contraseña?
