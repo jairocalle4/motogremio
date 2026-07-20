@@ -3,7 +3,7 @@ import { supabase } from '@/lib/supabaseClient'
 import { useAuth } from '@/context/useAuth'
 import { calculateDocumentStatus } from '@/utils/statusCalculator'
 import { getPrimaryLicense } from '@/hooks/useDrivers'
-import { isWithinInterval, parseISO, startOfDay, subDays } from 'date-fns'
+import { isWithinInterval, parseISO, startOfDay } from 'date-fns'
 
 export interface ReportsData {
   socios: {
@@ -228,8 +228,8 @@ export function useReports(activeTab: string = 'resumen') {
   const [error, setError] = useState<string | null>(null)
   const [data, setData] = useState<ReportsData | null>(null)
   const [dateRange, setDateRange] = useState<{ startDate: string; endDate: string }>({
-    startDate: subDays(new Date(), 30).toISOString().split('T')[0],
-    endDate: new Date().toISOString().split('T')[0],
+    startDate: '',
+    endDate: '',
   })
 
   // States for lazy-loaded entities
